@@ -14,7 +14,7 @@ public class EclipseAlloyHoe extends BaseHoe implements PoweredTool {
                 .attributes(HoeItem.createAttributes(GooTier.ECLIPSEALLOY, -2.0F, -1.0F))
                 .fireResistant());
         registerAbility(Ability.DROPTELEPORT);
-        registerAbility(Ability.HAMMER, new AbilityParams(3, 7, 2));
+        registerAbility(Ability.HAMMER, new AbilityParams(3, 13, 2));
     }
 
     @Override

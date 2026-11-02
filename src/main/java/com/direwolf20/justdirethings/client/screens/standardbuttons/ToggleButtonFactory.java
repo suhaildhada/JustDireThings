@@ -99,7 +99,10 @@ public class ToggleButtonFactory {
             new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/ignore.png"), Component.translatable("justdirethings.ability.hammer_off")),
             new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer3.png"), Component.translatable("justdirethings.ability.hammer_3")),
             new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer5.png"), Component.translatable("justdirethings.ability.hammer_5")),
-            new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer7.png"), Component.translatable("justdirethings.ability.hammer_7"))
+            new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer7.png"), Component.translatable("justdirethings.ability.hammer_7")),
+            new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer7.png"), Component.translatable("justdirethings.ability.hammer_9")),
+            new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer7.png"), Component.translatable("justdirethings.ability.hammer_11")),
+            new TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/hammer7.png"), Component.translatable("justdirethings.ability.hammer_13"))
     );
     /**
      * LEFT or RIGHT Click Button

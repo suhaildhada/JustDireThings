@@ -16,7 +16,7 @@ public class EclipseAlloyPickaxe extends BasePickaxe implements PoweredTool {
         registerAbility(Ability.OREXRAY);
         registerAbility(Ability.OREMINER);
         registerAbility(Ability.SMELTER);
-        registerAbility(Ability.HAMMER, new AbilityParams(3, 7, 2));
+        registerAbility(Ability.HAMMER, new AbilityParams(3, 13, 2));
         registerAbility(Ability.DROPTELEPORT);
         registerAbility(Ability.INSTABREAK);
     }

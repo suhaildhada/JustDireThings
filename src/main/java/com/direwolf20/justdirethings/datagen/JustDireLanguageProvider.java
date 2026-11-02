@@ -278,7 +278,7 @@ public class JustDireLanguageProvider extends net.neoforged.neoforge.common.data
         //add("justdirethings." + Ability.RUNSPEED.getName() + ".flavortext", "");
         add("justdirethings." + Ability.SMOKER.getName() + ".detailtext", "Auto Smelt Mob Drops");
         //add("justdirethings." + Ability.RUNSPEED.getName() + ".flavortext", "");
-        add("justdirethings." + Ability.HAMMER.getName() + ".detailtext", "3x3, 5x5, or 7x7 depending on tool tier");
+        add("justdirethings." + Ability.HAMMER.getName() + ".detailtext", "3x3, 5x5, 7x7, 9x9, 11x11, or 13x13 depending on tool tier");
         //add("justdirethings." + Ability.RUNSPEED.getName() + ".flavortext", "");
         add("justdirethings." + Ability.LAVAREPAIR.getName() + ".detailtext", "Drop item in Lava to repair it");
         //add("justdirethings." + Ability.RUNSPEED.getName() + ".flavortext", "");
@@ -414,6 +414,9 @@ public class JustDireLanguageProvider extends net.neoforged.neoforge.common.data
         add(Ability.HAMMER.getLocalization() + "_3", "Hammer: 3x3");
         add(Ability.HAMMER.getLocalization() + "_5", "Hammer: 5x5");
         add(Ability.HAMMER.getLocalization() + "_7", "Hammer: 7x7");
+        add(Ability.HAMMER.getLocalization() + "_9", "Hammer: 9x9");
+        add(Ability.HAMMER.getLocalization() + "_11", "Hammer: 11x11");
+        add(Ability.HAMMER.getLocalization() + "_13", "Hammer: 13x13");
         add(Ability.OREXRAY.getLocalization(), "X-Ray");
         add(Ability.DROPTELEPORT.getLocalization(), "Drops Teleporter");
         add(Ability.GLOWING.getLocalization(), "Mob X-Ray");

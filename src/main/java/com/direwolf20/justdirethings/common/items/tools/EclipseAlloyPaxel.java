@@ -24,7 +24,7 @@ public class EclipseAlloyPaxel extends BasePaxel implements PoweredTool {
         registerAbility(Ability.TREEFELLER);
         registerAbility(Ability.LEAFBREAKER);
         registerAbility(Ability.SMELTER);
-        registerAbility(Ability.HAMMER, new AbilityParams(3, 7, 2));
+        registerAbility(Ability.HAMMER, new AbilityParams(3, 13, 2));
         registerAbility(Ability.DROPTELEPORT);
         registerAbility(Ability.INSTABREAK);
     }
