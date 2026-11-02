@@ -13,16 +13,15 @@ public record ClientSoundPayload(
         float volume
 ) implements CustomPacketPayload {
     public static final Type<ClientSoundPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "client_sound_packet"));
-
-    @Override
-    public Type<ClientSoundPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ClientSoundPayload> STREAM_CODEC = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, ClientSoundPayload::soundEvent,
             ByteBufCodecs.FLOAT, ClientSoundPayload::pitch,
             ByteBufCodecs.FLOAT, ClientSoundPayload::volume,
             ClientSoundPayload::new
     );
+
+    @Override
+    public Type<ClientSoundPayload> type() {
+        return TYPE;
+    }
 }

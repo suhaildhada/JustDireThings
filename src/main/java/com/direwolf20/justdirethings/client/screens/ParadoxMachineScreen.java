@@ -22,17 +22,25 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.List;
 
 public class ParadoxMachineScreen extends BaseMachineScreen<ParadoxMachineContainer> {
-    protected static final ResourceLocation PARADOXBAR = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/paradoxbar.png");
-    private boolean renderParadox = false;
-    private int targetType = 0;
+    protected static final ResourceLocation PARADOXBAR    = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/paradoxbar.png");
+    private                boolean          renderParadox = false;
+    private                int              targetType    = 0;
+
     public ParadoxMachineScreen(ParadoxMachineContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof ParadoxMachineBE paradoxMachineBE) {
             renderParadox = paradoxMachineBE.renderParadox;
-            targetType = paradoxMachineBE.targetType;
+            targetType    = paradoxMachineBE.targetType;
         }
+    }
+
+    @Override
+    public void setTopSection() {
+        extraWidth  = 80;
+        extraHeight = 0;
     }
 
     @Override
@@ -41,12 +49,6 @@ public class ParadoxMachineScreen extends BaseMachineScreen<ParadoxMachineContai
         addSnapshotButton();
         addRenderButton();
         addTargetButton();
-    }
-
-    @Override
-    public void setTopSection() {
-        extraWidth = 80;
-        extraHeight = 0;
     }
 
     public void addSnapshotButton() {
@@ -68,12 +70,6 @@ public class ParadoxMachineScreen extends BaseMachineScreen<ParadoxMachineContai
             targetType = ((ToggleButton) b).getTexturePosition();
             saveSettings();
         }));
-    }
-
-    @Override
-    public void saveSettings() {
-        super.saveSettings();
-        PacketDistributor.sendToServer(new ParadoxRenderPayload(renderParadox, targetType));
     }
 
     @Override
@@ -100,40 +96,23 @@ public class ParadoxMachineScreen extends BaseMachineScreen<ParadoxMachineContai
     }
 
     @Override
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        super.renderTooltip(pGuiGraphics, pX, pY);
-        paradoxBarTooltip(pGuiGraphics, pX, pY);
-    }
-
-    public void paradoxBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (baseMachineBE instanceof ParadoxMachineBE paradoxMachineBE) {
-            if (MiscTools.inBounds(topSectionLeft + topSectionWidth - 18 - 5, topSectionTop + 5, 18, 72, pX, pY)) {
-                String energyFormatted = String.format("%.2f", paradoxMachineBE.paradoxEnergy);
-
-                pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                        Component.translatable("justdirethings.paradoxenergy", energyFormatted, paradoxMachineBE.getMaxParadoxEnergy())
-                )), pX, pY);
-            }
-        }
-    }
-
-    @Override
     public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         if (baseMachineBE instanceof ParadoxMachineBE paradoxMachineBE && baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
             if (MiscTools.inBounds(topSectionLeft + 5, topSectionTop + 5, 18, 72, pX, pY)) {
                 int totalBlocks = paradoxMachineBE.testRestoreBlocks().size();
                 int totalEntities = paradoxMachineBE.getEntitiesFromNBT().size();
                 int totalCostEnergy = paradoxMachineBE.getEnergyCost(totalBlocks, totalEntities);
-                if (hasShiftDown())
+                if (hasShiftDown()) {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy())),
                             Component.translatable("justdirethings.screen.paradoxenergycost", MagicHelpers.formatted(totalCostEnergy))
                     )), pX, pY);
-                else
+                } else {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy())),
                             Component.translatable("justdirethings.screen.paradoxenergycost", MagicHelpers.withSuffix(totalCostEnergy))
                     )), pX, pY);
+                }
             }
         }
     }
@@ -145,16 +124,41 @@ public class ParadoxMachineScreen extends BaseMachineScreen<ParadoxMachineContai
                 int totalBlocks = paradoxMachineBE.testRestoreBlocks().size();
                 int totalEntities = paradoxMachineBE.getEntitiesFromNBT().size();
                 int totalCostFluid = paradoxMachineBE.getFluidCost(totalBlocks, totalEntities);
-                if (hasShiftDown())
+                if (hasShiftDown()) {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.formatted(this.container.getFluidAmount()), MagicHelpers.formatted(fluidMachineBE.getMaxMB())),
                             Component.translatable("justdirethings.screen.paradoxfluidcost", MagicHelpers.formatted(totalCostFluid))
                     )), pX, pY);
-                else
+                } else {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.withSuffix(this.container.getFluidAmount()), MagicHelpers.withSuffix(fluidMachineBE.getMaxMB())),
                             Component.translatable("justdirethings.screen.paradoxfluidcost", MagicHelpers.withSuffix(totalCostFluid))
                     )), pX, pY);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        super.renderTooltip(pGuiGraphics, pX, pY);
+        paradoxBarTooltip(pGuiGraphics, pX, pY);
+    }
+
+    @Override
+    public void saveSettings() {
+        super.saveSettings();
+        PacketDistributor.sendToServer(new ParadoxRenderPayload(renderParadox, targetType));
+    }
+
+    public void paradoxBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        if (baseMachineBE instanceof ParadoxMachineBE paradoxMachineBE) {
+            if (MiscTools.inBounds(topSectionLeft + topSectionWidth - 18 - 5, topSectionTop + 5, 18, 72, pX, pY)) {
+                String energyFormatted = String.format("%.2f", paradoxMachineBE.paradoxEnergy);
+
+                pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(List.of(
+                        Component.translatable("justdirethings.paradoxenergy", energyFormatted, paradoxMachineBE.getMaxParadoxEnergy())
+                )), pX, pY);
             }
         }
     }

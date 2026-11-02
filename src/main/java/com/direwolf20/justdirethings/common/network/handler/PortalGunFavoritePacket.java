@@ -17,10 +17,12 @@ public class PortalGunFavoritePacket {
         context.enqueueWork(() -> {
             Player sender = context.player();
             ItemStack itemStack = sender.getMainHandItem();
-            if (!(itemStack.getItem() instanceof PortalGunV2))
+            if (!(itemStack.getItem() instanceof PortalGunV2)) {
                 itemStack = sender.getOffhandItem();
-            if (!(itemStack.getItem() instanceof PortalGunV2))
+            }
+            if (!(itemStack.getItem() instanceof PortalGunV2)) {
                 return;
+            }
 
             PortalGunV2.setFavoritePosition(itemStack, payload.favorite());
             PortalGunV2.setStayOpen(itemStack, payload.staysOpen());

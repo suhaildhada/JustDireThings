@@ -39,8 +39,9 @@ public class EventKeyInput {
     @SubscribeEvent
     public static void handleEventInput(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null)
+        if (mc.player == null) {
             return;
+        }
 
         if (KeyBindings.toolUI.consumeClick()) {
             PacketDistributor.sendToServer(new ToolSettingsGUIPayload());
@@ -49,8 +50,7 @@ public class EventKeyInput {
         KeyMapping keyMapping = KeyBindings.toggleTool;
         ItemStack portalGun = PortalGunV2.getPortalGunv2(mc.player);
         if (!portalGun.isEmpty()) {
-            if (!(mc.screen instanceof AdvPortalRadialMenu) && keyMapping.consumeClick() && ((keyMapping.getKeyModifier() == KeyModifier.NONE
-                    && KeyModifier.getActiveModifier() == KeyModifier.NONE) || keyMapping.getKeyModifier() != KeyModifier.NONE)) {
+            if (!(mc.screen instanceof AdvPortalRadialMenu) && keyMapping.consumeClick() && (keyMapping.getKeyModifier() != KeyModifier.NONE || KeyModifier.getActiveModifier() == KeyModifier.NONE)) {
                 mc.setScreen(new AdvPortalRadialMenu(portalGun));
             }
         }
@@ -67,8 +67,9 @@ public class EventKeyInput {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.screen != null)
+        if (mc.level == null || mc.player == null || mc.screen != null) {
             return;
+        }
         Player player = mc.player;
         if (event.getAction() == InputConstants.PRESS) {
             for (int i = 0; i < mc.player.getInventory().items.size(); i++) {
@@ -93,21 +94,6 @@ public class EventKeyInput {
         }
     }
 
-    // Handling mouse clicks
-    @SubscribeEvent
-    public static void onMouseInput(InputEvent.MouseButton.Post event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.screen != null || event.getButton() == 0 || event.getButton() == 1 || event.getAction() != InputConstants.PRESS)
-            return;
-        Player player = mc.player;
-        for (int i = 0; i < mc.player.getInventory().items.size(); i++) {
-            ItemStack itemStack = mc.player.getInventory().getItem(i);
-            if (itemStack.getItem() instanceof ToggleableTool toggleableTool && itemStack.getItem() instanceof LeftClickableTool) {
-                activateAbilities(itemStack, event.getButton(), toggleableTool, player, i, true);
-            }
-        }
-    }
-
     private static void activateAbilities(ItemStack itemStack, int key, ToggleableTool toggleableTool, Player player, int invSlot, boolean isMouse) {
         List<Ability> abilities = LeftClickableTool.getCustomBindingListFor(itemStack, key, isMouse, player);
         if (!abilities.isEmpty()) {
@@ -119,6 +105,22 @@ public class EventKeyInput {
                 toggleableTool.useOnAbility(useoncontext, itemStack, key, isMouse);
             }
             PacketDistributor.sendToServer(new LeftClickPayload(0, false, BlockPos.ZERO, -1, invSlot, key, isMouse)); //Type 0 == air
+        }
+    }
+
+    // Handling mouse clicks
+    @SubscribeEvent
+    public static void onMouseInput(InputEvent.MouseButton.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null || mc.screen != null || event.getButton() == 0 || event.getButton() == 1 || event.getAction() != InputConstants.PRESS) {
+            return;
+        }
+        Player player = mc.player;
+        for (int i = 0; i < mc.player.getInventory().items.size(); i++) {
+            ItemStack itemStack = mc.player.getInventory().getItem(i);
+            if (itemStack.getItem() instanceof ToggleableTool toggleableTool && itemStack.getItem() instanceof LeftClickableTool) {
+                activateAbilities(itemStack, event.getButton(), toggleableTool, player, i, true);
+            }
         }
     }
 }

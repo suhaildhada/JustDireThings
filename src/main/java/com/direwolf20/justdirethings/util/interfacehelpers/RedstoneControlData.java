@@ -5,10 +5,10 @@ import com.direwolf20.justdirethings.util.MiscHelpers;
 import java.util.Objects;
 
 public class RedstoneControlData {
-    public boolean receivingRedstone = false;
-    public boolean checkedRedstone = false;
-    public boolean pulsed = false;
-    public MiscHelpers.RedstoneMode redstoneMode = MiscHelpers.RedstoneMode.IGNORED;
+    public boolean                  receivingRedstone = false;
+    public boolean                  checkedRedstone   = false;
+    public boolean                  pulsed            = false;
+    public MiscHelpers.RedstoneMode redstoneMode      = MiscHelpers.RedstoneMode.IGNORED;
 
     public RedstoneControlData() {
 
@@ -25,8 +25,12 @@ public class RedstoneControlData {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         RedstoneControlData that = (RedstoneControlData) o;
         return receivingRedstone == that.receivingRedstone &&
                 pulsed == that.pulsed &&

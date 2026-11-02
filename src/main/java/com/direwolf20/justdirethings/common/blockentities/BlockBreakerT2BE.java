@@ -29,9 +29,9 @@ import java.util.Comparator;
 import java.util.List;
 
 public class BlockBreakerT2BE extends BlockBreakerT1BE implements PoweredMachineBE, AreaAffectingBE, FilterableBE {
-    public FilterData filterData = new FilterData(false, false, 0);
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
     public final PoweredMachineContainerData poweredMachineData;
+    public       FilterData                  filterData        = new FilterData(false, false, 0);
+    public       AreaAffectingData           areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
 
     public BlockBreakerT2BE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.BlockBreakerT2BE.get(), pPos, pBlockState);
@@ -59,13 +59,13 @@ public class BlockBreakerT2BE extends BlockBreakerT1BE implements PoweredMachine
     }
 
     @Override
-    public FilterBasicHandler getFilterHandler() {
-        return getData(Registration.HANDLER_BASIC_FILTER);
+    public FilterData getFilterData() {
+        return filterData;
     }
 
     @Override
-    public FilterData getFilterData() {
-        return filterData;
+    public FilterBasicHandler getFilterHandler() {
+        return getData(Registration.HANDLER_BASIC_FILTER);
     }
 
     @Override
@@ -84,15 +84,29 @@ public class BlockBreakerT2BE extends BlockBreakerT1BE implements PoweredMachine
         return hasEnoughPower(getStandardEnergyCost());
     }
 
-    @Override
-    public boolean tryBreakBlock(ItemStack tool, FakePlayer fakePlayer, BlockPos breakPos, BlockState blockState) {
-        if (extractEnergy(getStandardEnergyCost(), false) < getStandardEnergyCost())
-            return false;
-        return super.tryBreakBlock(tool, fakePlayer, breakPos, blockState);
-    }
-
-    public Direction getFacing() {
-        return getDirectionValue();
+    public boolean isBlockValid(FakePlayer fakePlayer, BlockPos blockPos) {
+        if (!super.isBlockValid(fakePlayer, blockPos)) {
+            return false; //Do the same checks as normal, then check the filters
+        }
+        if (filterData.blockItemFilter == 0) { //Block Comparison
+            ItemStack blockItemStack = level.getBlockState(blockPos).getCloneItemStack(new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false), level, blockPos, fakePlayer);
+            return isStackValidFilter(blockItemStack);
+        } else { //Item Drop Comparison
+            ItemStack tool = getTool();
+            List<ItemStack> drops = Block.getDrops(level.getBlockState(blockPos), (ServerLevel) level, blockPos, level.getBlockEntity(blockPos), fakePlayer, tool);
+            for (ItemStack drop : drops) {
+                if (tool.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbility(tool, Ability.SMELTER)) {
+                    if (isStackValidFilter(Helpers.getSmeltedItem(level, drop))) {
+                        return true;
+                    }
+                } else {
+                    if (isStackValidFilter(drop)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -119,23 +133,15 @@ public class BlockBreakerT2BE extends BlockBreakerT1BE implements PoweredMachine
         return blockPositions;
     }
 
-    public boolean isBlockValid(FakePlayer fakePlayer, BlockPos blockPos) {
-        if (!super.isBlockValid(fakePlayer, blockPos))
-            return false; //Do the same checks as normal, then check the filters
-        if (filterData.blockItemFilter == 0) { //Block Comparison
-            ItemStack blockItemStack = level.getBlockState(blockPos).getCloneItemStack(new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false), level, blockPos, fakePlayer);
-            return isStackValidFilter(blockItemStack);
-        } else { //Item Drop Comparison
-            ItemStack tool = getTool();
-            List<ItemStack> drops = Block.getDrops(level.getBlockState(blockPos), (ServerLevel) level, blockPos, level.getBlockEntity(blockPos), fakePlayer, tool);
-            for (ItemStack drop : drops) {
-                if (tool.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbility(tool, Ability.SMELTER)) {
-                    if (isStackValidFilter(Helpers.getSmeltedItem(level, drop))) return true;
-                } else {
-                    if (isStackValidFilter(drop)) return true;
-                }
-            }
+    public Direction getFacing() {
+        return getDirectionValue();
+    }
+
+    @Override
+    public boolean tryBreakBlock(ItemStack tool, FakePlayer fakePlayer, BlockPos breakPos, BlockState blockState) {
+        if (extractEnergy(getStandardEnergyCost(), false) < getStandardEnergyCost()) {
+            return false;
         }
-        return false;
+        return super.tryBreakBlock(tool, fakePlayer, breakPos, blockState);
     }
 }

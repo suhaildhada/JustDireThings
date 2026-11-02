@@ -37,32 +37,47 @@ import java.util.Map;
 
 public class ParadoxEntity extends Entity {
     private static final EntityDataAccessor<Integer> REQUIRED_CONSUMPTION = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> CONSUMPTION = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> RADIUS = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Float> SHRINK_SCALE = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Integer> TARGET_RADIUS = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> GROWTH_TICKS = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> CONSUMPTION          = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> RADIUS               = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float>   SHRINK_SCALE         = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> TARGET_RADIUS        = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> GROWTH_TICKS         = SynchedEntityData.defineId(ParadoxEntity.class, EntityDataSerializers.INT);
 
-    public int growthDuration = 50; // Time in ticks for a smooth growth
-    private final Map<BlockPos, Integer> blocksToAbsorb = new HashMap<>();
-    private int maxRadius = 12;
-    private double itemSuckSpeed = 0.5;
-    private boolean collapsing = false;
-    private int maxBlocksForPerf = 40;
-    public int radiusGrowthTime = 1200;
-    public int radiusGrowthTimer = 0;
-    public int maxRadiusGrowthTimer;
-    public int growthPerBlock = 10;
-    public int growthPerItem = 10;
+    private final Map<BlockPos, Integer> blocksToAbsorb    = new HashMap<>();
+    private final int                    maxRadius         = 12;
+    private final double                 itemSuckSpeed     = 0.5;
+    private final int                    maxBlocksForPerf  = 40;
+    public        int                    growthDuration    = 50; // Time in ticks for a smooth growth
+    public        int                    radiusGrowthTime  = 1200;
+    public        int                    radiusGrowthTimer = 0;
+    public        int                    maxRadiusGrowthTimer;
+    public        int                    growthPerBlock    = 10;
+    public        int                    growthPerItem     = 10;
+    private       boolean                collapsing        = false;
+
+
+    public ParadoxEntity(Level level, BlockPos blockPos) {
+        this(Registration.ParadoxEntity.get(), level);
+        this.moveTo(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
+    }
 
     public ParadoxEntity(EntityType<? extends Entity> entityType, Level level) {
         super(entityType, level);
         maxRadiusGrowthTimer = radiusGrowthTime * maxRadius + radiusGrowthTime;
     }
 
-    public ParadoxEntity(Level level, BlockPos blockPos) {
-        this(Registration.ParadoxEntity.get(), level);
-        this.moveTo(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
+    public void decRadiusGrowthTimer(int value) {
+        radiusGrowthTimer = Math.max(0, radiusGrowthTimer - value);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(REQUIRED_CONSUMPTION, 100);
+        builder.define(CONSUMPTION, 0);
+        builder.define(RADIUS, 0);
+        builder.define(SHRINK_SCALE, 1.0f);
+        builder.define(TARGET_RADIUS, 0);
+        builder.define(GROWTH_TICKS, 0);
     }
 
     @Override
@@ -81,8 +96,9 @@ public class ParadoxEntity extends Entity {
                 return;
             }
 
-            if (tickCount == 1 || tickCount % 600 == 0)
+            if (tickCount == 1 || tickCount % 600 == 0) {
                 level().playSound(null, getX(), getY(), getZ(), Registration.PARADOX_AMBIENT.get(), SoundSource.HOSTILE, 1F, 1f);
+            }
 
             // Calculate the exact target radius based on the growth timer
             int calculatedTargetRadius = Math.min(maxRadius, Math.max(0, radiusGrowthTimer / radiusGrowthTime));
@@ -113,12 +129,28 @@ public class ParadoxEntity extends Entity {
         }
     }
 
+    public int getRadius() {
+        return this.entityData.get(RADIUS);
+    }
+
+    public void setRadius(int radius) {
+        this.entityData.set(RADIUS, Math.min(radius, maxRadius));
+    }
+
+    public int getTargetRadius() {
+        return this.entityData.get(TARGET_RADIUS);
+    }
+
     public void incRadiusGrowthTimer(int value) {
         radiusGrowthTimer = Math.min(maxRadiusGrowthTimer, radiusGrowthTimer + value);
     }
 
-    public void decRadiusGrowthTimer(int value) {
-        radiusGrowthTimer = Math.max(0, radiusGrowthTimer - value);
+    public float getShrinkScale() {
+        return this.entityData.get(SHRINK_SCALE);
+    }
+
+    public int getGrowthTicks() {
+        return this.entityData.get(GROWTH_TICKS);
     }
 
     private void handleBlockAbsorption(int currentRadius) {
@@ -146,8 +178,9 @@ public class ParadoxEntity extends Entity {
 
             Vec3 targetVec = position().add(0, 0.5, 0);
             ItemStack blockStack = new ItemStack(level().getBlockState(pos).getBlock());
-            if (blockStack.equals(ItemStack.EMPTY) || blockStack.getItem().equals(Items.AIR))
+            if (blockStack.equals(ItemStack.EMPTY) || blockStack.getItem().equals(Items.AIR)) {
                 blockStack = new ItemStack(Items.STONE);
+            }
             ParadoxParticleData data = new ParadoxParticleData(blockStack, targetVec.x, targetVec.y, targetVec.z, 1, this.getUUID());
 
             Vec3 sourcePos = pos.getCenter();
@@ -155,21 +188,24 @@ public class ParadoxEntity extends Entity {
             double y = sourcePos.y + (random.nextDouble() - 0.5);
             double z = sourcePos.z + (random.nextDouble() - 0.5);
             float spawnChance = 1;
-            if (blocksToAbsorb.size() > maxBlocksForPerf * 2)
+            if (blocksToAbsorb.size() > maxBlocksForPerf * 2) {
                 spawnChance = 0.25f;
-            else if (blocksToAbsorb.size() > maxBlocksForPerf)
+            } else if (blocksToAbsorb.size() > maxBlocksForPerf) {
                 spawnChance = 0.50f;
+            }
 
-            if (random.nextFloat() < spawnChance)
+            if (random.nextFloat() < spawnChance) {
                 ((ServerLevel) level()).sendParticles(data, x, y, z, 1, 0, 0, 0, 0.1);
+            }
 
             // Update the countdown
             if (timeLeft <= 0) {
                 int particles = 50;
-                if (blocksToAbsorb.size() > maxBlocksForPerf * 2)
+                if (blocksToAbsorb.size() > maxBlocksForPerf * 2) {
                     particles = 10;
-                else if (blocksToAbsorb.size() > maxBlocksForPerf)
+                } else if (blocksToAbsorb.size() > maxBlocksForPerf) {
                     particles = 20;
+                }
                 for (int i = 0; i < particles; i++) {
                     x = sourcePos.x + (random.nextDouble() - 0.5);
                     y = sourcePos.y + (random.nextDouble() - 0.5);
@@ -187,59 +223,16 @@ public class ParadoxEntity extends Entity {
         }
     }
 
-    public boolean isBlockWithinRadius(BlockPos pos) {
-        BlockPos centerPos = getOnPos();
-        int radius = getTargetRadius();
-        AABB aabb = new AABB(centerPos.getX() - radius, centerPos.getY() - radius, centerPos.getZ() - radius, centerPos.getX() + radius + 1, centerPos.getY() + radius + 1, centerPos.getZ() + radius + 1);
-
-        return aabb.contains(pos.getX(), pos.getY(), pos.getZ());
-    }
-
-    private void handleItemsPostShrink(int targetRadius) {
-        List<ItemEntity> items = level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(getRadius() + 0.25f));
-        List<ItemEntity> newItems = level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(targetRadius + 0.25f));
-        for (ItemEntity item : items) {
-            if (!newItems.contains(item))
-                item.setNoGravity(false);
-        }
-
-        List<LivingEntity> livingEntities = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(getRadius() + 0.25f));
-        List<LivingEntity> newLivingEntities = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(targetRadius + 0.25f));
-
-        for (LivingEntity livingEntity : livingEntities) {
-            if (!newLivingEntities.contains(livingEntity))
-                livingEntity.setNoGravity(false);
-        }
-    }
-
-    private boolean isValidItem(ItemEntity entity) {
-        ItemStack itemStack = entity.getItem();
-        if (itemStack.is(JustDireItemTags.PARADOX_DENY))
-            return false;
-        return true;
-    }
-
-    private boolean isValidEntity(Entity entity) {
-        if (entity.isMultipartEntity())
-            return false;
-        if (entity instanceof PartEntity<?>)
-            return false;
-        if (entity instanceof Player)
-            return false;
-        if (entity.getType().is(JustDireEntityTags.PARADOX_ABSORB_DENY))
-            return false;
-        if (entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED))
-            return false;
-        return true;
-    }
-
     private void handleItemAbsorption(int currentRadius) {
         List<ItemEntity> items = level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(currentRadius + 0.25f));
 
         for (ItemEntity item : items) {
-            if (!isValidItem(item))
+            if (!isValidItem(item)) {
                 continue;
-            if (collapsing) break;
+            }
+            if (collapsing) {
+                break;
+            }
             Vec3 itemPosition = item.position();
             Vec3 direction = position().subtract(itemPosition).normalize().scale(itemSuckSpeed);
             item.setNoGravity(true);
@@ -249,20 +242,23 @@ public class ParadoxEntity extends Entity {
             // Check if the item is close enough to be voided
             if (position().closerThan(item.position(), 0.25)) {
                 ItemStack itemStack = item.getItem();
-                if (itemStack.is(Registration.TimeCrystal.get()))
+                if (itemStack.is(Registration.TimeCrystal.get())) {
                     collapse();
-                else {
+                } else {
                     incRadiusGrowthTimer(growthPerItem * itemStack.getCount());
                 }
                 item.discard(); // Remove the item from the world
             }
         }
-        if (collapsing) return;
+        if (collapsing) {
+            return;
+        }
         List<LivingEntity> livingEntities = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(currentRadius + 0.25f));
 
         for (LivingEntity livingEntity : livingEntities) {
-            if (!isValidEntity(livingEntity))
+            if (!isValidEntity(livingEntity)) {
                 continue;
+            }
             Vec3 position = livingEntity.position();
             Vec3 direction = position().subtract(position).normalize().scale(itemSuckSpeed);
             livingEntity.setNoGravity(true);
@@ -276,59 +272,86 @@ public class ParadoxEntity extends Entity {
         }
     }
 
+    public boolean isBlockValid(BlockPos blockPos) {
+        BlockState blockState = level().getBlockState(blockPos);
+        if (blockState.isAir()) {
+            return false;
+        }
+        if (blockState.is(JustDireBlockTags.PARADOX_ABSORB_DENY)) {
+            return false;
+        }
+        if (blocksToAbsorb.containsKey(blockPos)) {
+            return false;
+        }
+        if (blockState.getDestroySpeed(level(), blockPos) < 0) {
+            return false;
+        }
+        if (blockState.getBlock() instanceof LiquidBlock liquidBlock) {
+            return blockState.getFluidState().isSource();
+        }
+        return true;
+    }
+
+    public boolean isBlockWithinRadius(BlockPos pos) {
+        BlockPos centerPos = getOnPos();
+        int radius = getTargetRadius();
+        AABB aabb = new AABB(centerPos.getX() - radius, centerPos.getY() - radius, centerPos.getZ() - radius, centerPos.getX() + radius + 1, centerPos.getY() + radius + 1, centerPos.getZ() + radius + 1);
+
+        return aabb.contains(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    private boolean isValidItem(ItemEntity entity) {
+        ItemStack itemStack = entity.getItem();
+        return !itemStack.is(JustDireItemTags.PARADOX_DENY);
+    }
+
     private void collapse() {
         collapsing = true;
         handleItemsPostShrink(0);
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.WITHER_AMBIENT, SoundSource.HOSTILE, 1.0f, 0.25f);
     }
 
-    public boolean isBlockValid(BlockPos blockPos) {
-        BlockState blockState = level().getBlockState(blockPos);
-        if (blockState.isAir())
+    private boolean isValidEntity(Entity entity) {
+        if (entity.isMultipartEntity()) {
             return false;
-        if (blockState.is(JustDireBlockTags.PARADOX_ABSORB_DENY))
-            return false;
-        if (blocksToAbsorb.containsKey(blockPos))
-            return false;
-        if (blockState.getDestroySpeed(level(), blockPos) < 0)
-            return false;
-        if (blockState.getBlock() instanceof LiquidBlock liquidBlock) {
-            if (blockState.getFluidState().isSource())
-                return true;
-            else
-                return false;
         }
-        return true;
+        if (entity instanceof PartEntity<?>) {
+            return false;
+        }
+        if (entity instanceof Player) {
+            return false;
+        }
+        if (entity.getType().is(JustDireEntityTags.PARADOX_ABSORB_DENY)) {
+            return false;
+        }
+        return !entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED);
     }
 
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(REQUIRED_CONSUMPTION, 100);
-        builder.define(CONSUMPTION, 0);
-        builder.define(RADIUS, 0);
-        builder.define(SHRINK_SCALE, 1.0f);
-        builder.define(TARGET_RADIUS, 0);
-        builder.define(GROWTH_TICKS, 0);
-    }
+    private void handleItemsPostShrink(int targetRadius) {
+        List<ItemEntity> items = level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(getRadius() + 0.25f));
+        List<ItemEntity> newItems = level().getEntitiesOfClass(ItemEntity.class, getBoundingBox().inflate(targetRadius + 0.25f));
+        for (ItemEntity item : items) {
+            if (!newItems.contains(item)) {
+                item.setNoGravity(false);
+            }
+        }
 
-    public int getRadius() {
-        return this.entityData.get(RADIUS);
-    }
+        List<LivingEntity> livingEntities = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(getRadius() + 0.25f));
+        List<LivingEntity> newLivingEntities = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(targetRadius + 0.25f));
 
-    public void setRadius(int radius) {
-        this.entityData.set(RADIUS, Math.min(radius, maxRadius));
-    }
-
-    public int getGrowthTicks() {
-        return this.entityData.get(GROWTH_TICKS);
+        for (LivingEntity livingEntity : livingEntities) {
+            if (!newLivingEntities.contains(livingEntity)) {
+                livingEntity.setNoGravity(false);
+            }
+        }
     }
 
     public void setGrowthTicks(int growthTicks) {
         this.entityData.set(GROWTH_TICKS, growthTicks);
     }
 
-    public int getTargetRadius() {
-        return this.entityData.get(TARGET_RADIUS);
+    public void setShrinkScale(float scale) {
+        this.entityData.set(SHRINK_SCALE, scale);
     }
 
     public void setTargetRadius(int radius) {
@@ -336,46 +359,23 @@ public class ParadoxEntity extends Entity {
         setGrowthTicks(0); // Reset growth ticks
     }
 
-    public float getShrinkScale() {
-        return this.entityData.get(SHRINK_SCALE);
-    }
-
-    public void setShrinkScale(float scale) {
-        this.entityData.set(SHRINK_SCALE, scale);
-    }
-
-    public int getRequiredConsumption() {
-        return this.entityData.get(REQUIRED_CONSUMPTION);
-    }
-
-    public int getConsumed() {
-        return this.entityData.get(CONSUMPTION);
-    }
-
-    public void setRequiredConsumption(int totalRequired) {
-        this.entityData.set(REQUIRED_CONSUMPTION, totalRequired);
-    }
-
-    public void setConsumption(int consumed) {
-        this.entityData.set(CONSUMPTION, consumed);
-    }
-
-    public void consume(int amt) {
-        this.entityData.set(CONSUMPTION, getConsumed() + amt);
-    }
-
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains("requiredConsumption"))
+        if (compound.contains("requiredConsumption")) {
             this.entityData.set(REQUIRED_CONSUMPTION, compound.getInt("requiredConsumption"));
-        if (compound.contains("consumed"))
+        }
+        if (compound.contains("consumed")) {
             this.entityData.set(CONSUMPTION, compound.getInt("consumed"));
-        if (compound.contains("radius"))
+        }
+        if (compound.contains("radius")) {
             this.entityData.set(RADIUS, compound.getInt("radius"));
-        if (compound.contains("targetRadius"))
+        }
+        if (compound.contains("targetRadius")) {
             this.entityData.set(TARGET_RADIUS, compound.getInt("targetRadius"));
-        if (compound.contains("radiusGrowthTimer"))
+        }
+        if (compound.contains("radiusGrowthTimer")) {
             this.radiusGrowthTimer = compound.getInt("radiusGrowthTimer");
+        }
     }
 
     @Override
@@ -385,5 +385,25 @@ public class ParadoxEntity extends Entity {
         compound.putInt("radius", getRadius());
         compound.putInt("targetRadius", getTargetRadius());
         compound.putInt("radiusGrowthTimer", radiusGrowthTimer);
+    }
+
+    public int getRequiredConsumption() {
+        return this.entityData.get(REQUIRED_CONSUMPTION);
+    }
+
+    public void setRequiredConsumption(int totalRequired) {
+        this.entityData.set(REQUIRED_CONSUMPTION, totalRequired);
+    }
+
+    public int getConsumed() {
+        return this.entityData.get(CONSUMPTION);
+    }
+
+    public void setConsumption(int consumed) {
+        this.entityData.set(CONSUMPTION, consumed);
+    }
+
+    public void consume(int amt) {
+        this.entityData.set(CONSUMPTION, getConsumed() + amt);
     }
 }

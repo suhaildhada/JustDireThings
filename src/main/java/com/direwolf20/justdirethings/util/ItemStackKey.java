@@ -8,15 +8,15 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Objects;
 
 public class ItemStackKey {
-    public final Holder<Item> item;
-    public final DataComponentPatch dataComponents;
-    private final int hash;
+    public final  Holder<Item>       item;
+    public final  DataComponentPatch dataComponents;
+    private final int                hash;
 
 
     public ItemStackKey(ItemStack stack, boolean compareNBT) {
-        this.item = stack.getItemHolder();
+        this.item           = stack.getItemHolder();
         this.dataComponents = compareNBT ? stack.getComponentsPatch() : DataComponentPatch.EMPTY;
-        this.hash = Objects.hash(item, dataComponents);
+        this.hash           = Objects.hash(item, dataComponents);
     }
 
     public ItemStack getStack() {

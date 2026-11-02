@@ -26,12 +26,15 @@ public class TimeCrystal extends Item {
 
     @Override
     public void inventoryTick(@NotNull ItemStack itemStack, @NotNull Level world, @NotNull Entity entity, int itemSlot, boolean isSelected) {
-        if (world.isClientSide) return;
+        if (world.isClientSide) {
+            return;
+        }
         if (entity instanceof LivingEntity livingEntity) {
             // 5% chance to trigger an effect
             if (world.random.nextFloat() < 0.005f) {
-                if (timeProtection(entity))
+                if (timeProtection(entity)) {
                     return;
+                }
                 boolean applySlowness = world.random.nextBoolean();
 
                 if (applySlowness) {

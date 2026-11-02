@@ -11,14 +11,13 @@ public record InventoryHolderMoveItemsPayload(
         int moveType
 ) implements CustomPacketPayload {
     public static final Type<InventoryHolderMoveItemsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "inventory_holder_move_items"));
+    public static final StreamCodec<FriendlyByteBuf, InventoryHolderMoveItemsPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, InventoryHolderMoveItemsPayload::moveType,
+            InventoryHolderMoveItemsPayload::new
+    );
 
     @Override
     public Type<InventoryHolderMoveItemsPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, InventoryHolderMoveItemsPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, InventoryHolderMoveItemsPayload::moveType,
-            InventoryHolderMoveItemsPayload::new
-    );
 }

@@ -27,7 +27,7 @@ public class BlockBreakerT2Screen extends BaseMachineScreen<BlockBreakerT2Contai
 
     @Override
     public void setTopSection() {
-        extraWidth = 60;
+        extraWidth  = 60;
         extraHeight = 0;
     }
 
@@ -48,10 +48,11 @@ public class BlockBreakerT2Screen extends BaseMachineScreen<BlockBreakerT2Contai
     @Override
     protected void drawMachineSlot(GuiGraphics guiGraphics, Slot slot) {
         ItemStack itemStack = slot.getItem();
-        if (itemStack.isEmpty())
+        if (itemStack.isEmpty()) {
             guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 18, 0, 18, 18);
-        else
+        } else {
             super.drawMachineSlot(guiGraphics, slot);
+        }
     }
 
     @Override

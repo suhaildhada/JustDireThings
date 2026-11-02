@@ -15,12 +15,6 @@ public record GhostSlotPayload(
         int mbAmt
 ) implements CustomPacketPayload {
     public static final Type<GhostSlotPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ghost_slot"));
-
-    @Override
-    public Type<GhostSlotPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<RegistryFriendlyByteBuf, GhostSlotPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, GhostSlotPayload::slotNumber,
             ItemStack.OPTIONAL_STREAM_CODEC, GhostSlotPayload::stack,
@@ -28,4 +22,9 @@ public record GhostSlotPayload(
             ByteBufCodecs.INT, GhostSlotPayload::mbAmt,
             GhostSlotPayload::new
     );
+
+    @Override
+    public Type<GhostSlotPayload> type() {
+        return TYPE;
+    }
 }

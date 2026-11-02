@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(JustDireThings.MODID)
 public class JustDireThings {
-    public static final String MODID = "justdirethings";
+    public static final  String MODID  = "justdirethings";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public JustDireThings(IEventBus modEventBus, ModContainer container) {
@@ -56,20 +56,6 @@ public class JustDireThings {
         if (FMLLoader.getDist().isClient()) {
             modEventBus.addListener(ClientSetup::init);
         }
-    }
-
-    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
-        event.put(Registration.DecoyEntity.get(),
-                DecoyEntity.createAttributes().build());
-    }
-
-    private void registerCustomAttributes(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER,
-                Registration.PHASE);
-    }
-
-    private void registerChunkLoaders(RegisterTicketControllersEvent event) {
-        event.register(Registration.TICKET_CONTROLLER);
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
@@ -210,8 +196,9 @@ public class JustDireThings {
         //Blocks
         event.registerBlock(Capabilities.ItemHandler.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof BaseMachineBE)
+                    if (be instanceof BaseMachineBE) {
                         return be.getData(Registration.MACHINE_HANDLER);
+                    }
                     return null;
                 },
                 Registration.BlockBreakerT1.get(),
@@ -230,24 +217,27 @@ public class JustDireThings {
         );
         event.registerBlock(Capabilities.ItemHandler.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof InventoryHolderBE inventoryHolderBE)
+                    if (be instanceof InventoryHolderBE inventoryHolderBE) {
                         return inventoryHolderBE.getInventoryHolderHandler();
+                    }
                     return null;
                 },
                 Registration.InventoryHolder.get()
         );
         event.registerBlock(Capabilities.ItemHandler.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof BaseMachineBE)
+                    if (be instanceof BaseMachineBE) {
                         return be.getData(Registration.GENERATOR_ITEM_HANDLER);
+                    }
                     return null;
                 },
                 Registration.GeneratorT1.get()
         );
         event.registerBlock(Capabilities.ItemHandler.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof BaseMachineBE)
+                    if (be instanceof BaseMachineBE) {
                         return be.getData(Registration.GENERATOR_FLUID_ITEM_HANDLER);
+                    }
                     return null;
                 },
                 Registration.GeneratorFluidT1.get()
@@ -267,8 +257,9 @@ public class JustDireThings {
         );
         event.registerBlock(Capabilities.EnergyStorage.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof PoweredMachineBE)
+                    if (be instanceof PoweredMachineBE) {
                         return be.getData(Registration.ENERGYSTORAGE_MACHINES);
+                    }
                     return null;
                 },
                 Registration.BlockBreakerT2.get(),
@@ -283,8 +274,9 @@ public class JustDireThings {
         );
         event.registerBlock(Capabilities.EnergyStorage.BLOCK,
                 (level, pos, state, be, side) -> {
-                    if (be instanceof PoweredMachineBE)
+                    if (be instanceof PoweredMachineBE) {
                         return be.getData(Registration.ENERGYSTORAGE_GENERATORS);
+                    }
                     return null;
                 },
                 Registration.GeneratorT1.get(),
@@ -338,5 +330,19 @@ public class JustDireThings {
                 },
                 Registration.ExperienceHolder.get()
         );
+    }
+
+    private void registerChunkLoaders(RegisterTicketControllersEvent event) {
+        event.register(Registration.TICKET_CONTROLLER);
+    }
+
+    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(Registration.DecoyEntity.get(),
+                DecoyEntity.createAttributes().build());
+    }
+
+    private void registerCustomAttributes(EntityAttributeModificationEvent event) {
+        event.add(EntityType.PLAYER,
+                Registration.PHASE);
     }
 }

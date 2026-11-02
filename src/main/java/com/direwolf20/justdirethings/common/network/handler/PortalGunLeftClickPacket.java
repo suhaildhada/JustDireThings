@@ -17,12 +17,14 @@ public class PortalGunLeftClickPacket {
         context.enqueueWork(() -> {
             Player sender = context.player();
             ItemStack itemStack = sender.getMainHandItem();
-            if (!(itemStack.getItem() instanceof PortalGun portalGun))
+            if (!(itemStack.getItem() instanceof PortalGun portalGun)) {
                 itemStack = sender.getOffhandItem();
-            if (!(itemStack.getItem() instanceof PortalGun portalGun))
+            }
+            if (!(itemStack.getItem() instanceof PortalGun portalGun)) {
                 return;
+            }
 
-            portalGun.spawnProjectile(sender.level(), sender, itemStack, true);
+            PortalGun.spawnProjectile(sender.level(), sender, itemStack, true);
 
         });
     }

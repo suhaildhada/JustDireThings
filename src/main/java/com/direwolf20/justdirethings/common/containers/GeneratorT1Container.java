@@ -28,14 +28,6 @@ public class GeneratorT1Container extends BaseMachineContainer {
         addFuelSlotRange(machineHandler, 0, 80, 13, 1, 18);
     }
 
-    public int getBurnRemaining() {
-        return this.data == null ? 0 : this.data.get(2);
-    }
-
-    public int getMaxBurn() {
-        return this.data == null ? 0 : this.data.get(3);
-    }
-
     protected int addFuelSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {
         for (int i = 0; i < amount; i++) {
             addSlot(new FuelSlot(handler, index, x, y));
@@ -46,17 +38,25 @@ public class GeneratorT1Container extends BaseMachineContainer {
     }
 
     @Override
-    public boolean stillValid(Player playerIn) {
-        return stillValid(ContainerLevelAccess.create(player.level(), pos), player, Registration.GeneratorT1.get());
-    }
-
-    @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         return super.quickMoveStack(playerIn, index);
+    }
+
+    public int getBurnRemaining() {
+        return this.data == null ? 0 : this.data.get(2);
+    }
+
+    public int getMaxBurn() {
+        return this.data == null ? 0 : this.data.get(3);
     }
 
     @Override
     public void removed(Player playerIn) {
         super.removed(playerIn);
+    }
+
+    @Override
+    public boolean stillValid(Player playerIn) {
+        return stillValid(ContainerLevelAccess.create(player.level(), pos), player, Registration.GeneratorT1.get());
     }
 }

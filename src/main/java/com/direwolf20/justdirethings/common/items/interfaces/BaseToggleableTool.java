@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import static com.direwolf20.justdirethings.util.TooltipHelpers.*;
 
 public abstract class BaseToggleableTool extends BasePoweredItem implements ToggleableTool {
-    protected final EnumSet<Ability> abilities = EnumSet.noneOf(Ability.class);
+    protected final EnumSet<Ability>            abilities     = EnumSet.noneOf(Ability.class);
     protected final Map<Ability, AbilityParams> abilityParams = new EnumMap<>(Ability.class);
 
     public BaseToggleableTool(Properties pProperties) {
@@ -61,19 +61,27 @@ public abstract class BaseToggleableTool extends BasePoweredItem implements Togg
 
     @Override
     public InteractionResult useOn(UseOnContext pContext) {
-        if (bindDrops(pContext))
+        if (bindDrops(pContext)) {
             return InteractionResult.SUCCESS;
-        if (useOnAbility(pContext))
+        }
+        if (useOnAbility(pContext)) {
             return InteractionResult.SUCCESS;
+        }
         return super.useOn(pContext);
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (!level.isClientSide && player.isShiftKeyDown())
+        if (!level.isClientSide && player.isShiftKeyDown()) {
             openSettings(player);
+        }
         useAbility(level, player, hand);
         return super.use(level, player, hand);
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return super.getUseAnimation(stack);
     }
 
     @Override
@@ -95,24 +103,18 @@ public abstract class BaseToggleableTool extends BasePoweredItem implements Togg
     }
 
     @Override
-    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
-        if (stack.getItem() instanceof PoweredItem) {
-            IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-            if (energyStorage == null) return amount;
-            HolderLookup.RegistryLookup<Enchantment> registrylookup = entity.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
-            int unbreakingLevel = stack.getEnchantmentLevel(registrylookup.getOrThrow(Enchantments.UNBREAKING));
-            double reductionFactor = Math.min(1.0, unbreakingLevel * 0.1);
-            int finalEnergyCost = (int) Math.max(0, amount - (amount * reductionFactor));
-            energyStorage.extractEnergy(finalEnergyCost, false);
-            return 0;
+    public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
+        if (canUseAbility(stack, Ability.LAVAREPAIR)) {
+            return Helpers.doLavaRepair(stack, entity);
         }
-        return super.damageItem(stack, amount, entity, onBroken);
+        return false;
     }
 
     @Override
     public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
-        if (stack.getItem() instanceof PoweredTool)
+        if (stack.getItem() instanceof PoweredTool) {
             return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
+        }
         return super.isPrimaryItemFor(stack, enchantment);
     }
 
@@ -121,19 +123,24 @@ public abstract class BaseToggleableTool extends BasePoweredItem implements Togg
     }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return super.getUseAnimation(stack);
-    }
-
-    @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
         return false;
     }
 
     @Override
-    public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
-        if (canUseAbility(stack, Ability.LAVAREPAIR))
-            return Helpers.doLavaRepair(stack, entity);
-        return false;
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        if (stack.getItem() instanceof PoweredItem) {
+            IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+            if (energyStorage == null) {
+                return amount;
+            }
+            HolderLookup.RegistryLookup<Enchantment> registrylookup = entity.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+            int unbreakingLevel = stack.getEnchantmentLevel(registrylookup.getOrThrow(Enchantments.UNBREAKING));
+            double reductionFactor = Math.min(1.0, unbreakingLevel * 0.1);
+            int finalEnergyCost = (int) Math.max(0, amount - (amount * reductionFactor));
+            energyStorage.extractEnergy(finalEnergyCost, false);
+            return 0;
+        }
+        return super.damageItem(stack, amount, entity, onBroken);
     }
 }

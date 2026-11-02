@@ -31,37 +31,37 @@ import java.util.Map;
 import java.util.UUID;
 
 public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
-    private static final Logger LOGGER = LogUtils.getLogger();
-    private static final int TIME_BETWEEN_APPLICATIONS = 5;
-    private static final EntityDataAccessor<Float> DATA_RADIUS = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Boolean> DATA_WAITING = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<ParticleOptions> DATA_PARTICLE = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.PARTICLE);
-    private static final float MAX_RADIUS = 32.0F;
-    private static final float MINIMAL_RADIUS = 0.5F;
-    private static final float DEFAULT_RADIUS = 3.0F;
-    public static final float DEFAULT_WIDTH = 6.0F;
-    public static final float HEIGHT = 0.5F;
-    private PotionContents potionContents = PotionContents.EMPTY;
-    private final Map<Entity, Integer> victims = Maps.newHashMap();
-    private int duration = 600;
-    private int waitTime = 20;
-    private int reapplicationDelay = 20;
-    private int durationOnUse;
-    private float radiusOnUse;
-    private float radiusPerTick;
+    public static final  float                               DEFAULT_WIDTH             = 6.0F;
+    public static final  float                               HEIGHT                    = 0.5F;
+    private static final Logger                              LOGGER                    = LogUtils.getLogger();
+    private static final int                                 TIME_BETWEEN_APPLICATIONS = 5;
+    private static final EntityDataAccessor<Float>           DATA_RADIUS               = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean>         DATA_WAITING              = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<ParticleOptions> DATA_PARTICLE             = SynchedEntityData.defineId(JustDireAreaEffectCloud.class, EntityDataSerializers.PARTICLE);
+    private static final float                               MAX_RADIUS                = 32.0F;
+    private static final float                               MINIMAL_RADIUS            = 0.5F;
+    private static final float                               DEFAULT_RADIUS            = 3.0F;
+    private final        Map<Entity, Integer>                victims                   = Maps.newHashMap();
+    private              PotionContents                      potionContents            = PotionContents.EMPTY;
+    private              int                                 duration                  = 600;
+    private              int                                 waitTime                  = 20;
+    private              int                                 reapplicationDelay        = 20;
+    private              int                                 durationOnUse;
+    private              float                               radiusOnUse;
+    private              float                               radiusPerTick;
     @Nullable
-    private LivingEntity owner;
+    private              LivingEntity                        owner;
     @Nullable
-    private UUID ownerUUID;
-
-    public JustDireAreaEffectCloud(EntityType<? extends JustDireAreaEffectCloud> entityType, Level level) {
-        super(entityType, level);
-        this.noPhysics = true;
-    }
+    private              UUID                                ownerUUID;
 
     public JustDireAreaEffectCloud(Level level, double x, double y, double z) {
         this(Registration.JustDireAreaEffectCloud.get(), level);
         this.setPos(x, y, z);
+    }
+
+    public JustDireAreaEffectCloud(EntityType<? extends JustDireAreaEffectCloud> entityType, Level level) {
+        super(entityType, level);
+        this.noPhysics = true;
     }
 
     @Override
@@ -69,69 +69,6 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
         p_326332_.define(DATA_RADIUS, 3.0F);
         p_326332_.define(DATA_WAITING, false);
         p_326332_.define(DATA_PARTICLE, ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, -1));
-    }
-
-    public void setRadius(float radius) {
-        if (!this.level().isClientSide) {
-            this.getEntityData().set(DATA_RADIUS, Mth.clamp(radius, 0.0F, 32.0F));
-        }
-    }
-
-    @Override
-    public void refreshDimensions() {
-        double d0 = this.getX();
-        double d1 = this.getY();
-        double d2 = this.getZ();
-        super.refreshDimensions();
-        this.setPos(d0, d1, d2);
-    }
-
-    public float getRadius() {
-        return this.getEntityData().get(DATA_RADIUS);
-    }
-
-    public void setPotionContents(PotionContents p_330869_) {
-        this.potionContents = p_330869_;
-        this.updateColor();
-    }
-
-    private void updateColor() {
-        ParticleOptions particleoptions = this.entityData.get(DATA_PARTICLE);
-        if (particleoptions instanceof ColorParticleOption colorparticleoption) {
-            int i = this.potionContents.equals(PotionContents.EMPTY) ? 0 : this.potionContents.getColor();
-            this.entityData.set(DATA_PARTICLE, ColorParticleOption.create(colorparticleoption.getType(), FastColor.ARGB32.opaque(i)));
-        }
-    }
-
-    public void addEffect(MobEffectInstance effectInstance) {
-        this.setPotionContents(this.potionContents.withEffectAdded(effectInstance));
-    }
-
-    public ParticleOptions getParticle() {
-        return this.getEntityData().get(DATA_PARTICLE);
-    }
-
-    public void setParticle(ParticleOptions particleOption) {
-        this.getEntityData().set(DATA_PARTICLE, particleOption);
-    }
-
-    /**
-     * Sets if the cloud is waiting. While waiting, the radius is ignored and the cloud shows fewer particles in its area.
-     */
-    protected void setWaiting(boolean waiting) {
-        this.getEntityData().set(DATA_WAITING, waiting);
-    }
-
-    public boolean isWaiting() {
-        return this.getEntityData().get(DATA_WAITING);
-    }
-
-    public int getDuration() {
-        return this.duration;
-    }
-
-    public void setDuration(int duration) {
-        this.duration = duration;
     }
 
     @Override
@@ -148,10 +85,10 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
             int i;
             float f1;
             if (flag) {
-                i = 2;
+                i  = 2;
                 f1 = 0.2F;
             } else {
-                i = Mth.ceil((float) Math.PI * f * f);
+                i  = Mth.ceil((float) Math.PI * f * f);
                 f1 = f;
             }
 
@@ -235,10 +172,12 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
                                     this.victims.put(livingentity, this.tickCount + this.reapplicationDelay);
                                     boolean affectedAnything = false;
                                     for (MobEffectInstance mobeffectinstance : list) {
-                                        if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && livingentity.is(getOwner()))
+                                        if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && livingentity.is(getOwner())) {
                                             continue;
-                                        if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !livingentity.is(getOwner()))
+                                        }
+                                        if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !livingentity.is(getOwner())) {
                                             continue;
+                                        }
                                         if (mobeffectinstance.getEffect().value().isInstantenous()) {
                                             mobeffectinstance.getEffect()
                                                     .value()
@@ -275,41 +214,26 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
         }
     }
 
-    public float getRadiusOnUse() {
-        return this.radiusOnUse;
+    public boolean isWaiting() {
+        return this.getEntityData().get(DATA_WAITING);
     }
 
-    public void setRadiusOnUse(float radiusOnUse) {
-        this.radiusOnUse = radiusOnUse;
+    public float getRadius() {
+        return this.getEntityData().get(DATA_RADIUS);
     }
 
-    public float getRadiusPerTick() {
-        return this.radiusPerTick;
+    public void setRadius(float radius) {
+        if (!this.level().isClientSide) {
+            this.getEntityData().set(DATA_RADIUS, Mth.clamp(radius, 0.0F, 32.0F));
+        }
     }
 
-    public void setRadiusPerTick(float radiusPerTick) {
-        this.radiusPerTick = radiusPerTick;
+    public ParticleOptions getParticle() {
+        return this.getEntityData().get(DATA_PARTICLE);
     }
 
-    public int getDurationOnUse() {
-        return this.durationOnUse;
-    }
-
-    public void setDurationOnUse(int durationOnUse) {
-        this.durationOnUse = durationOnUse;
-    }
-
-    public int getWaitTime() {
-        return this.waitTime;
-    }
-
-    public void setWaitTime(int waitTime) {
-        this.waitTime = waitTime;
-    }
-
-    public void setOwner(@Nullable LivingEntity owner) {
-        this.owner = owner;
-        this.ownerUUID = owner == null ? null : owner.getUUID();
+    public void setParticle(ParticleOptions particleOption) {
+        this.getEntityData().set(DATA_PARTICLE, particleOption);
     }
 
     @Nullable
@@ -324,18 +248,30 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
         return this.owner;
     }
 
+    public void setOwner(@Nullable LivingEntity owner) {
+        this.owner     = owner;
+        this.ownerUUID = owner == null ? null : owner.getUUID();
+    }
+
+    /**
+     * Sets if the cloud is waiting. While waiting, the radius is ignored and the cloud shows fewer particles in its area.
+     */
+    protected void setWaiting(boolean waiting) {
+        this.getEntityData().set(DATA_WAITING, waiting);
+    }
+
     /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
-        this.tickCount = compound.getInt("Age");
-        this.duration = compound.getInt("Duration");
-        this.waitTime = compound.getInt("WaitTime");
+        this.tickCount          = compound.getInt("Age");
+        this.duration           = compound.getInt("Duration");
+        this.waitTime           = compound.getInt("WaitTime");
         this.reapplicationDelay = compound.getInt("ReapplicationDelay");
-        this.durationOnUse = compound.getInt("DurationOnUse");
-        this.radiusOnUse = compound.getFloat("RadiusOnUse");
-        this.radiusPerTick = compound.getFloat("RadiusPerTick");
+        this.durationOnUse      = compound.getInt("DurationOnUse");
+        this.radiusOnUse        = compound.getFloat("RadiusOnUse");
+        this.radiusPerTick      = compound.getFloat("RadiusPerTick");
         this.setRadius(compound.getFloat("Radius"));
         if (compound.hasUUID("Owner")) {
             this.ownerUUID = compound.getUUID("Owner");
@@ -389,6 +325,15 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
     }
 
     @Override
+    public void refreshDimensions() {
+        double d0 = this.getX();
+        double d1 = this.getY();
+        double d2 = this.getZ();
+        super.refreshDimensions();
+        this.setPos(d0, d1, d2);
+    }
+
+    @Override
     public PushReaction getPistonPushReaction() {
         return PushReaction.IGNORE;
     }
@@ -396,5 +341,62 @@ public class JustDireAreaEffectCloud extends Entity implements TraceableEntity {
     @Override
     public EntityDimensions getDimensions(Pose pose) {
         return EntityDimensions.scalable(this.getRadius() * 2.0F, 0.5F);
+    }
+
+    public void setPotionContents(PotionContents p_330869_) {
+        this.potionContents = p_330869_;
+        this.updateColor();
+    }
+
+    private void updateColor() {
+        ParticleOptions particleoptions = this.entityData.get(DATA_PARTICLE);
+        if (particleoptions instanceof ColorParticleOption colorparticleoption) {
+            int i = this.potionContents.equals(PotionContents.EMPTY) ? 0 : this.potionContents.getColor();
+            this.entityData.set(DATA_PARTICLE, ColorParticleOption.create(colorparticleoption.getType(), FastColor.ARGB32.opaque(i)));
+        }
+    }
+
+    public void addEffect(MobEffectInstance effectInstance) {
+        this.setPotionContents(this.potionContents.withEffectAdded(effectInstance));
+    }
+
+    public int getDuration() {
+        return this.duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public float getRadiusOnUse() {
+        return this.radiusOnUse;
+    }
+
+    public void setRadiusOnUse(float radiusOnUse) {
+        this.radiusOnUse = radiusOnUse;
+    }
+
+    public float getRadiusPerTick() {
+        return this.radiusPerTick;
+    }
+
+    public void setRadiusPerTick(float radiusPerTick) {
+        this.radiusPerTick = radiusPerTick;
+    }
+
+    public int getDurationOnUse() {
+        return this.durationOnUse;
+    }
+
+    public void setDurationOnUse(int durationOnUse) {
+        this.durationOnUse = durationOnUse;
+    }
+
+    public int getWaitTime() {
+        return this.waitTime;
+    }
+
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
     }
 }

@@ -23,10 +23,8 @@ public class FluidContainerData implements ContainerData {
     @Override
     public void set(int index, int value) {
         switch (index) {
-            case 0 ->
-                    fluidMachineBE.setFluidStack(BuiltInRegistries.FLUID.byId(value), fluidMachineBE.getAmountStored()); //Double it'll be used by who knows
-            case 1 ->
-                    fluidMachineBE.setAmountStored((fluidMachineBE.getAmountStored() & 0xFFFF0000) | (value & 0xFFFF));
+            case 0 -> fluidMachineBE.setFluidStack(BuiltInRegistries.FLUID.byId(value), fluidMachineBE.getAmountStored()); //Double it'll be used by who knows
+            case 1 -> fluidMachineBE.setAmountStored((fluidMachineBE.getAmountStored() & 0xFFFF0000) | (value & 0xFFFF));
             case 2 -> fluidMachineBE.setAmountStored((fluidMachineBE.getAmountStored() & 0xFFFF) | (value << 16));
             default -> throw new IllegalArgumentException("Invalid index: " + index);
         }

@@ -47,44 +47,6 @@ public abstract class BaseMachineBlock extends Block implements EntityBlock {
         return false;
     }
 
-    @Override
-    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity entity, ItemStack stack) {
-        super.setPlacedBy(world, pos, state, entity, stack);
-        if (!world.isClientSide && entity instanceof Player player) {
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity instanceof BaseMachineBE baseMachineBE) {
-                if (stack.has(JustDireDataComponents.CUSTOM_DATA_1)) {
-                    CompoundTag compound = stack.get(JustDireDataComponents.CUSTOM_DATA_1).copyTag();
-                    if (!compound.isEmpty())
-                        blockEntity.loadCustomOnly(compound, world.registryAccess());
-                }
-                baseMachineBE.setPlacedBy(player.getUUID());
-            }
-        }
-    }
-
-    @Override
-    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult hit) {
-        if (level.isClientSide)
-            return InteractionResult.SUCCESS;
-
-        ItemStack itemStack = player.getMainHandItem();
-        if (itemStack.getItem() instanceof MachineSettingsCopier || itemStack.getItem() instanceof FerricoreWrench)
-            return InteractionResult.PASS;
-
-        BlockEntity te = level.getBlockEntity(blockPos);
-        if (!isValidBE(te))
-            return InteractionResult.FAIL;
-
-        openMenu(player, blockPos);
-
-        return InteractionResult.SUCCESS;
-    }
-
-    public abstract void openMenu(Player player, BlockPos blockPos);
-
-    public abstract boolean isValidBE(BlockEntity blockEntity);
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -111,15 +73,6 @@ public abstract class BaseMachineBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @javax.annotation.Nullable Direction direction) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof RedstoneControlledBE) {
-            return true;
-        }
-        return super.canConnectRedstone(state, level, pos, direction);
-    }
-
-    @Override
     public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
         if (newState.getBlock() != this) {
             BlockEntity blockEntity = worldIn.getBlockEntity(pos);
@@ -134,6 +87,36 @@ public abstract class BaseMachineBlock extends Block implements EntityBlock {
     }
 
     @Override
+    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
+        ItemStack itemStack = player.getMainHandItem();
+        if (itemStack.getItem() instanceof MachineSettingsCopier || itemStack.getItem() instanceof FerricoreWrench) {
+            return InteractionResult.PASS;
+        }
+
+        BlockEntity te = level.getBlockEntity(blockPos);
+        if (!isValidBE(te)) {
+            return InteractionResult.FAIL;
+        }
+
+        openMenu(player, blockPos);
+
+        return InteractionResult.SUCCESS;
+    }
+
+    public abstract boolean isValidBE(BlockEntity blockEntity);
+
+    public abstract void openMenu(Player player, BlockPos blockPos);
+
+    @Override
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(BlockStateProperties.FACING, rotation.rotate(state.getValue(BlockStateProperties.FACING)));
+    }
+
+    @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         List<ItemStack> drops = super.getDrops(state, builder); // Get default drops
         BlockEntity blockEntity = builder.getParameter(LootContextParams.BLOCK_ENTITY);
@@ -141,7 +124,7 @@ public abstract class BaseMachineBlock extends Block implements EntityBlock {
         if (blockEntity instanceof BaseMachineBE baseMachineBE && !baseMachineBE.isDefaultSettings()) {
             ItemStack itemStack = new ItemStack(Item.byBlock(this));
             CompoundTag compoundTag = new CompoundTag();
-            ((BaseMachineBE) blockEntity).saveAdditional(compoundTag, builder.getLevel().registryAccess());
+            baseMachineBE.saveAdditional(compoundTag, builder.getLevel().registryAccess());
             if (!compoundTag.isEmpty()) {
                 itemStack.set(JustDireDataComponents.CUSTOM_DATA_1, CustomData.of(compoundTag));
             }
@@ -153,18 +136,39 @@ public abstract class BaseMachineBlock extends Block implements EntityBlock {
     }
 
     @Override
+    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @javax.annotation.Nullable Direction direction) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof RedstoneControlledBE) {
+            return true;
+        }
+        return super.canConnectRedstone(state, level, pos, direction);
+    }
+
+    @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(BlockStateProperties.FACING, context.getNearestLookingDirection().getOpposite());
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.FACING);
+    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity entity, ItemStack stack) {
+        super.setPlacedBy(world, pos, state, entity, stack);
+        if (!world.isClientSide && entity instanceof Player player) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof BaseMachineBE baseMachineBE) {
+                if (stack.has(JustDireDataComponents.CUSTOM_DATA_1)) {
+                    CompoundTag compound = stack.get(JustDireDataComponents.CUSTOM_DATA_1).copyTag();
+                    if (!compound.isEmpty()) {
+                        blockEntity.loadCustomOnly(compound, world.registryAccess());
+                    }
+                }
+                baseMachineBE.setPlacedBy(player.getUUID());
+            }
+        }
     }
 
     @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(BlockStateProperties.FACING, rotation.rotate(state.getValue(BlockStateProperties.FACING)));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.FACING);
     }
 
     public BlockState direRotate(BlockState blockState, LevelAccessor level, BlockPos pos, Rotation direction) {

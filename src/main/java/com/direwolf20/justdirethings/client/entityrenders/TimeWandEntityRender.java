@@ -25,8 +25,9 @@ public class TimeWandEntityRender extends EntityRenderer<TimeWandEntity> {
     @Override
     public void render(TimeWandEntity pEntity, float pEntityYaw, float pPartialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int pPackedLight) {
         BlockPos blockPos = pEntity.blockPosition();
-        if (pEntity.level().getBlockState(blockPos).isAir())
+        if (pEntity.level().getBlockState(blockPos).isAir()) {
             return;
+        }
         matrixStackIn.pushPose();
 
         // Calculate the progress for tick rate and time remaining
@@ -84,20 +85,6 @@ public class TimeWandEntityRender extends EntityRenderer<TimeWandEntity> {
         renderBarFace(matrixStack, buffer, -0.4f, yStart - 0.5f, 0f, barProgress, barHeight, r, g, b, a, pPackedLight, new Quaternionf().rotateX((float) Math.PI / 2.0f));
     }
 
-    private void renderBarFace(PoseStack matrixStack, MultiBufferSource buffer, float xStart, float yStart, float zStart, float barWidth, float barHeight, float r, float g, float b, float a, int pPackedLight, Quaternionf rotation) {
-        matrixStack.pushPose();
-        matrixStack.mulPose(rotation);
-
-        RenderHelpers.renderBoxSolid(matrixStack, matrixStack.last().pose(), buffer, new AABB(xStart, yStart, zStart, xStart + barWidth, yStart + barHeight, zStart), r, g, b, a);
-
-        matrixStack.popPose();
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(TimeWandEntity pEntity) {
-        return null;
-    }
-
     private void drawText(PoseStack matrixStack, MultiBufferSource source, String text, Vector3f translateVector, Quaternionf rotate, int color) {
         matrixStack.pushPose();
         matrixStack.translate(translateVector.x(), translateVector.y(), translateVector.z());
@@ -116,5 +103,19 @@ public class TimeWandEntityRender extends EntityRenderer<TimeWandEntity> {
                 color
         );
         matrixStack.popPose();
+    }
+
+    private void renderBarFace(PoseStack matrixStack, MultiBufferSource buffer, float xStart, float yStart, float zStart, float barWidth, float barHeight, float r, float g, float b, float a, int pPackedLight, Quaternionf rotation) {
+        matrixStack.pushPose();
+        matrixStack.mulPose(rotation);
+
+        RenderHelpers.renderBoxSolid(matrixStack, matrixStack.last().pose(), buffer, new AABB(xStart, yStart, zStart, xStart + barWidth, yStart + barHeight, zStart), r, g, b, a);
+
+        matrixStack.popPose();
+    }
+
+    @Override
+    public ResourceLocation getTextureLocation(TimeWandEntity pEntity) {
+        return null;
     }
 }

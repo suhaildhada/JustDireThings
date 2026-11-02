@@ -23,17 +23,25 @@ import java.awt.*;
 import java.util.List;
 
 public class FuelCanisterScreen extends AbstractContainerScreen<FuelCanisterContainer> {
-    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fuelcanister.png");
-
     protected final FuelCanisterContainer container;
-    private ItemStack fuelCanister;
-    private boolean isAllowList;
-    private boolean isCompareNBT;
+    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fuelcanister.png");
+    private final ItemStack        fuelCanister;
+    private       boolean          isAllowList;
+    private         boolean               isCompareNBT;
 
     public FuelCanisterScreen(FuelCanisterContainer container, Inventory inv, Component name) {
         super(container, inv, name);
-        this.container = container;
+        this.container    = container;
         this.fuelCanister = container.fuelCanisterItemstack;
+    }
+
+    private static MutableComponent getTrans(String key, Object... args) {
+        return Component.translatable(JustDireThings.MODID + "." + key, args);
+    }
+
+    @Override
+    public void init() {
+        super.init();
     }
 
     @Override
@@ -66,18 +74,6 @@ public class FuelCanisterScreen extends AbstractContainerScreen<FuelCanisterCont
     }
 
     @Override
-    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
-        super.renderSlot(pGuiGraphics, pSlot);
-        if (!pSlot.getItem().isEmpty() && !container.handler.isItemValid(pSlot.getSlotIndex(), pSlot.getItem()))
-            pGuiGraphics.fill(RenderType.guiOverlay(), pSlot.x, pSlot.y, pSlot.x + 16, pSlot.y + Mth.ceil(16.0F), 0x7FFF0000);
-    }
-
-    @Override
-    public void init() {
-        super.init();
-    }
-
-    @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
     }
@@ -91,13 +87,20 @@ public class FuelCanisterScreen extends AbstractContainerScreen<FuelCanisterCont
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
+    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
+        super.renderSlot(pGuiGraphics, pSlot);
+        if (!pSlot.getItem().isEmpty() && !container.handler.isItemValid(pSlot.getSlotIndex(), pSlot.getItem())) {
+            pGuiGraphics.fill(RenderType.guiOverlay(), pSlot.x, pSlot.y, pSlot.x + 16, pSlot.y + Mth.ceil(16.0F), 0x7FFF0000);
+        }
     }
 
     @Override
-    public void onClose() {
-        super.onClose();
+    public boolean mouseClicked(double x, double y, int btn) {
+        return super.mouseClicked(x, y, btn);
+    }
+
+    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
+        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
     }
 
     @Override
@@ -113,21 +116,18 @@ public class FuelCanisterScreen extends AbstractContainerScreen<FuelCanisterCont
     }
 
     @Override
-    public boolean mouseClicked(double x, double y, int btn) {
-        return super.mouseClicked(x, y, btn);
+    public boolean isPauseScreen() {
+        return false;
     }
 
-    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
-        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
+    @Override
+    public void onClose() {
+        super.onClose();
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double pScrollX, double pScrollY) {
         return super.mouseScrolled(mouseX, mouseY, pScrollX, pScrollY);
-    }
-
-    private static MutableComponent getTrans(String key, Object... args) {
-        return Component.translatable(JustDireThings.MODID + "." + key, args);
     }
 
 }

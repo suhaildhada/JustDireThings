@@ -80,6 +80,12 @@ public class GooBlock_Base extends Block implements EntityBlock {
 
     @Nullable
     @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new GooBlockBE_Base(Registration.GooBlockBE_Tier1.get(), pos, state);
+    }
+
+    @Nullable
+    @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide()) {
             return (lvl, pos, blockState, t) -> {
@@ -93,11 +99,5 @@ public class GooBlock_Base extends Block implements EntityBlock {
                 tile.tickServer();
             }
         };
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new GooBlockBE_Base(Registration.GooBlockBE_Tier1.get(), pos, state);
     }
 }

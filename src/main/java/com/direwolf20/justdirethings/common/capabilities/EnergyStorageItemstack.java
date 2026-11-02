@@ -13,7 +13,7 @@ public class EnergyStorageItemstack extends EnergyStorage {
     public EnergyStorageItemstack(int capacity, ItemStack itemStack) {
         super(capacity, capacity, capacity, 0);
         this.itemStack = itemStack;
-        this.energy = itemStack.getOrDefault(JustDireDataComponents.FORGE_ENERGY, 0);
+        this.energy    = itemStack.getOrDefault(JustDireDataComponents.FORGE_ENERGY, 0);
     }
 
     public void setEnergy(int energy) {
@@ -23,8 +23,9 @@ public class EnergyStorageItemstack extends EnergyStorage {
 
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        if (!canReceive())
+        if (!canReceive()) {
             return 0;
+        }
 
         int energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
         if (!simulate) {
@@ -36,8 +37,9 @@ public class EnergyStorageItemstack extends EnergyStorage {
 
     @Override
     public int extractEnergy(int maxExtract, boolean simulate) {
-        if (!canExtract())
+        if (!canExtract()) {
             return 0;
+        }
 
         int energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract));
         if (!simulate) {
@@ -74,8 +76,9 @@ public class EnergyStorageItemstack extends EnergyStorage {
 
     @Override
     public void deserializeNBT(HolderLookup.Provider provider, Tag nbt) {
-        if (!(nbt instanceof IntTag intNbt))
+        if (!(nbt instanceof IntTag intNbt)) {
             throw new IllegalArgumentException("Can not deserialize to an instance that isn't the default implementation");
+        }
         this.energy = intNbt.getAsInt();
     }
 }

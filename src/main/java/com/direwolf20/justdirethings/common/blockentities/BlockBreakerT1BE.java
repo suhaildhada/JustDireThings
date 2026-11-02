@@ -31,31 +31,62 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import java.util.*;
 
 public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlledBE {
-    //BlockState we're breaking, ticks since we started, lastpacket progress we sent, and an iterator, because each packet needs a unique breaker ID
-    private record BlockBreakingProgress(BlockState blockState, int ticks, int lastSentProgress, int iterator,
-                                         float destroyProgress) {
-        public BlockBreakingProgress(BlockState blockState, int ticks, int iterator, float destroyProgress) {
-            this(blockState, ticks, -1, iterator, destroyProgress); // Initialize with -1 to indicate no progress sent yet
-        }
-    }
-
-    LinkedHashMap<BlockPos, BlockBreakingProgress> blockBreakingTracker = new LinkedHashMap<>();
     public RedstoneControlData redstoneControlData = new RedstoneControlData();
-    Map.Entry<BlockPos, BlockBreakingProgress> currentBlock;
-    public boolean sneaking = false;
+    public boolean             sneaking            = false;
+    LinkedHashMap<BlockPos, BlockBreakingProgress> blockBreakingTracker = new LinkedHashMap<>();
+    Map.Entry<BlockPos, BlockBreakingProgress>     currentBlock;
+
+    public BlockBreakerT1BE(BlockPos pPos, BlockState pBlockState) {
+        this(Registration.BlockBreakerT1BE.get(), pPos, pBlockState);
+    }
 
     public BlockBreakerT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
         MACHINE_SLOTS = 1; //Slot for a pickaxe
     }
 
-    public BlockBreakerT1BE(BlockPos pPos, BlockState pBlockState) {
-        this(Registration.BlockBreakerT1BE.get(), pPos, pBlockState);
-    }
-
     public void setBreakerSettings(boolean sneaking) {
         this.sneaking = sneaking;
         markDirtyClient();
+    }
+
+    @Override
+    public void tickClient() {
+    }
+
+    @Override
+    public void tickServer() {
+        super.tickServer();
+        FakePlayer fakePlayer = getFakePlayer((ServerLevel) level);
+        fakePlayer.setShiftKeyDown(sneaking);
+        doBlockBreak(fakePlayer);
+        fakePlayer.setShiftKeyDown(false);
+    }
+
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        this.sneaking = tag.getBoolean("sneaking");
+        super.loadAdditional(tag, provider);
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.putBoolean("sneaking", sneaking);
+    }
+
+    @Override
+    public boolean isDefaultSettings() {
+        if (!super.isDefaultSettings()) {
+            return false;
+        }
+        if (tickSpeed != 20) {
+            return false;
+        }
+        if (!getRedstoneControlData().equals(getDefaultRedstoneData())) {
+            return false;
+        }
+        return !sneaking;
     }
 
     @Override
@@ -66,10 +97,6 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
     @Override
     public BlockEntity getBlockEntity() {
         return this;
-    }
-
-    @Override
-    public void tickClient() {
     }
 
     public void clearTracker(FakePlayer fakePlayer) {
@@ -92,21 +119,15 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
     }
 
     public void clearTrackerIfNeeded(ItemStack tool, FakePlayer fakePlayer) {
-        if (blockBreakingTracker.isEmpty())
+        if (blockBreakingTracker.isEmpty()) {
             return;
-        if (tool.isEmpty())
+        }
+        if (tool.isEmpty()) {
             clearTracker(fakePlayer); //If we were breaking blocks before, and removed the tool, clear the progress
-        if (!isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE))
+        }
+        if (!isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE)) {
             clearTracker(fakePlayer); //If we are in Pulse Mode, don't clear, but otherwise, do clear on redstone signal turned off
-    }
-
-    @Override
-    public void tickServer() {
-        super.tickServer();
-        FakePlayer fakePlayer = getFakePlayer((ServerLevel) level);
-        fakePlayer.setShiftKeyDown(sneaking);
-        doBlockBreak(fakePlayer);
-        fakePlayer.setShiftKeyDown(false);
+        }
     }
 
     public boolean canMine() {
@@ -125,12 +146,17 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
             for (BlockPos blockPos : blocksToMine) {
                 BlockState blockState = level.getBlockState(blockPos);
                 if (!blockState.isAir() && !blockBreakingTracker.containsKey(blockPos)) //Start tracking the mine!
+                {
                     startMining(fakePlayer, blockPos, blockState, tool);
+                }
             }
         }
-        if (blockBreakingTracker.isEmpty() || !canMine()) return;
-        if (currentBlock == null && canRun())
+        if (blockBreakingTracker.isEmpty() || !canMine()) {
+            return;
+        }
+        if (currentBlock == null && canRun()) {
             currentBlock = blockBreakingTracker.entrySet().iterator().next();
+        }
         if (currentBlock != null && (mineBlock(currentBlock.getKey(), tool, fakePlayer))) {
             removePosFromTracker(currentBlock.getKey(), fakePlayer.getId() + currentBlock.getValue().iterator);
             currentBlock = null;
@@ -139,28 +165,35 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
 
     public boolean isBlockValid(FakePlayer fakePlayer, BlockPos blockPos) {
         BlockState blockState = level.getBlockState(blockPos);
-        if (blockState.isAir())
+        if (blockState.isAir()) {
             return false;
+        }
         if ((blockState.getBlock() instanceof LiquidBlock)) //No Liquids
+        {
             return false;
-        if (blockPos.equals(getBlockPos()))
+        }
+        if (blockPos.equals(getBlockPos())) {
             return false;
-        if (blockBreakingTracker.containsKey(blockPos))
+        }
+        if (blockBreakingTracker.containsKey(blockPos)) {
             return false;
-        if (blockState.getDestroySpeed(level, blockPos) < 0)
+        }
+        if (blockState.getDestroySpeed(level, blockPos) < 0) {
             return false;
-        if (!level.mayInteract(fakePlayer, blockPos))
+        }
+        if (!level.mayInteract(fakePlayer, blockPos)) {
             return false;
-        if (!canBreakAndPlaceAt(level, blockPos, fakePlayer)) //TODO Break only once its working
-            return false;
-        return true;
+        }
+        //TODO Break only once its working
+        return canBreakAndPlaceAt(level, blockPos, fakePlayer);
     }
 
     public List<BlockPos> findBlocksToMine(FakePlayer fakePlayer) {
         List<BlockPos> returnList = new ArrayList<>();
         BlockPos blockPos = getBlockPos().relative(getBlockState().getValue(BlockStateProperties.FACING));
-        if (isBlockValid(fakePlayer, blockPos))
+        if (isBlockValid(fakePlayer, blockPos)) {
             returnList.add(blockPos);
+        }
         return returnList;
     }
 
@@ -196,10 +229,11 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
         }
         BlockBreakingProgress progress = blockBreakingTracker.compute(blockPos, (pos, oldProgress) -> {
             int updatedTicks = oldProgress == null ? 1 : oldProgress.ticks + 1;
-            if (oldProgress == null)
+            if (oldProgress == null) {
                 return new BlockBreakingProgress(blockState, 1, -1, blockBreakingTracker.size() + generatePosHash(), getDestroyProgress(blockPos, tool, player, blockState));
-            else
+            } else {
                 return new BlockBreakingProgress(blockState, updatedTicks, oldProgress.lastSentProgress, oldProgress.iterator, oldProgress.destroyProgress);
+            }
         });
         float destroyProgress = progress.destroyProgress * progress.ticks;
         int currentProgress = (int) (destroyProgress * 10.0F);
@@ -240,7 +274,9 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
     public boolean tryBreakBlock(ItemStack tool, FakePlayer fakePlayer, BlockPos breakPos, BlockState blockState) {
         setFakePlayerData(tool, fakePlayer, breakPos, getFacing());
         BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, breakPos, level.getBlockState(breakPos), fakePlayer);
-        if (NeoForge.EVENT_BUS.post(event).isCanceled()) return false;
+        if (NeoForge.EVENT_BUS.post(event).isCanceled()) {
+            return false;
+        }
         breakBlock(fakePlayer, breakPos, tool, blockState);
         return true;
     }
@@ -251,8 +287,9 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
         boolean success = level.destroyBlock(breakPos, false, player);
         if (success) {
             Block.dropResources(state, level, breakPos, blockEntity, player, itemStack);
-            if (state.getDestroySpeed(level, breakPos) != 0.0F)
+            if (state.getDestroySpeed(level, breakPos) != 0.0F) {
                 itemStack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.MAIN_HAND));
+            }
         }
     }
 
@@ -269,28 +306,11 @@ public class BlockBreakerT1BE extends BaseMachineBE implements RedstoneControlle
         }
     }
 
-    @Override
-    public boolean isDefaultSettings() {
-        if (!super.isDefaultSettings())
-            return false;
-        if (tickSpeed != 20)
-            return false;
-        if (!getRedstoneControlData().equals(getDefaultRedstoneData()))
-            return false;
-        if (sneaking)
-            return false;
-        return true;
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putBoolean("sneaking", sneaking);
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        this.sneaking = tag.getBoolean("sneaking");
-        super.loadAdditional(tag, provider);
+    //BlockState we're breaking, ticks since we started, lastpacket progress we sent, and an iterator, because each packet needs a unique breaker ID
+    private record BlockBreakingProgress(BlockState blockState, int ticks, int lastSentProgress, int iterator,
+                                         float destroyProgress) {
+        public BlockBreakingProgress(BlockState blockState, int ticks, int iterator, float destroyProgress) {
+            this(blockState, ticks, -1, iterator, destroyProgress); // Initialize with -1 to indicate no progress sent yet
+        }
     }
 }

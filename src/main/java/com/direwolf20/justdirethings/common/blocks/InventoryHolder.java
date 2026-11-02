@@ -46,6 +46,23 @@ public class InventoryHolder extends BaseMachineBlock {
         return new InventoryHolderBE(pos, state);
     }
 
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return null;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (state.hasBlockEntity() && !state.is(newState.getBlock())) { //Replica of Default Block onRemove - to skip dropping items.
+            level.removeBlockEntity(pos);
+        }
+    }
+
+    @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof InventoryHolderBE;
+    }
+
     @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
@@ -55,15 +72,34 @@ public class InventoryHolder extends BaseMachineBlock {
     }
 
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof InventoryHolderBE;
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state;
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.hasBlockEntity() && !state.is(newState.getBlock())) { //Replica of Default Block onRemove - to skip dropping items.
-            level.removeBlockEntity(pos);
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops = super.getDrops(state, builder); // Get default drops
+        BlockEntity blockEntity = builder.getParameter(LootContextParams.BLOCK_ENTITY);
+
+        if (blockEntity instanceof BaseMachineBE baseMachineBE && !baseMachineBE.isDefaultSettings()) {
+            ItemStack itemStack = new ItemStack(Item.byBlock(this));
+            CompoundTag compoundTag = new CompoundTag();
+            baseMachineBE.saveAdditional(compoundTag, builder.getLevel().registryAccess());
+            ((InventoryHolderBE) blockEntity).saveInventory(compoundTag, builder.getLevel().registryAccess());
+            if (!compoundTag.isEmpty()) {
+                itemStack.set(JustDireDataComponents.CUSTOM_DATA_1, CustomData.of(compoundTag));
+            }
+            drops.clear(); // Clear any default drops
+            drops.add(itemStack); // Add your custom item stack with NBT data
         }
+
+        return drops;
+    }
+
+    //Override BaseMachineBlock being rotatable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState();
     }
 
     @Override
@@ -83,43 +119,7 @@ public class InventoryHolder extends BaseMachineBlock {
     }
 
     @Override
-    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-        List<ItemStack> drops = super.getDrops(state, builder); // Get default drops
-        BlockEntity blockEntity = builder.getParameter(LootContextParams.BLOCK_ENTITY);
-
-        if (blockEntity instanceof BaseMachineBE baseMachineBE && !baseMachineBE.isDefaultSettings()) {
-            ItemStack itemStack = new ItemStack(Item.byBlock(this));
-            CompoundTag compoundTag = new CompoundTag();
-            ((BaseMachineBE) blockEntity).saveAdditional(compoundTag, builder.getLevel().registryAccess());
-            ((InventoryHolderBE) blockEntity).saveInventory(compoundTag, builder.getLevel().registryAccess());
-            if (!compoundTag.isEmpty()) {
-                itemStack.set(JustDireDataComponents.CUSTOM_DATA_1, CustomData.of(compoundTag));
-            }
-            drops.clear(); // Clear any default drops
-            drops.add(itemStack); // Add your custom item stack with NBT data
-        }
-
-        return drops;
-    }
-
-    @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null;
-    }
-
-    //Override BaseMachineBlock being rotatable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState();
-    }
-
-    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state;
     }
 
     @Override

@@ -34,6 +34,11 @@ public class PlayerAccessor extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof PlayerAccessorBE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new PlayerAccessorContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
@@ -42,8 +47,8 @@ public class PlayerAccessor extends BaseMachineBlock {
     }
 
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof PlayerAccessorBE;
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state;
     }
 
     //Override BaseMachineBlock being rotatable
@@ -54,11 +59,6 @@ public class PlayerAccessor extends BaseMachineBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state;
     }
 
     @Override

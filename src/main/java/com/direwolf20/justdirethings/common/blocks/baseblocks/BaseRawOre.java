@@ -80,14 +80,14 @@ public class BaseRawOre extends Block {
         builder.add(BlockStateProperties.FACING);
     }
 
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
-        return shapes[state.getValue(BlockStateProperties.FACING).get3DDataValue()];
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter reader, BlockPos pos) {
+        return shapes[state.getValue(BlockStateProperties.FACING).get3DDataValue()];
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
         return shapes[state.getValue(BlockStateProperties.FACING).get3DDataValue()];
     }
 }

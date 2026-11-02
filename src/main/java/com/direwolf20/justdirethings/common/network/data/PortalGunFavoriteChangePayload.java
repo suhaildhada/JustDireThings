@@ -17,12 +17,6 @@ public record PortalGunFavoriteChangePayload(
         Vec3 coordinates
 ) implements CustomPacketPayload {
     public static final Type<PortalGunFavoriteChangePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_gun_favorite_change"));
-
-    @Override
-    public Type<PortalGunFavoriteChangePayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, PortalGunFavoriteChangePayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, PortalGunFavoriteChangePayload::favorite,
             ByteBufCodecs.BOOL, PortalGunFavoriteChangePayload::add,
@@ -31,4 +25,9 @@ public record PortalGunFavoriteChangePayload(
             NBTHelpers.VEC3_STREAM_CODEC, PortalGunFavoriteChangePayload::coordinates,
             PortalGunFavoriteChangePayload::new
     );
+
+    @Override
+    public Type<PortalGunFavoriteChangePayload> type() {
+        return TYPE;
+    }
 }

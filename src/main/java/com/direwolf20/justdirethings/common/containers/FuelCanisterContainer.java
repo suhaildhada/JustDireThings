@@ -12,10 +12,10 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 public class FuelCanisterContainer extends BaseContainer {
-    public static final int SLOTS = 1;
-    public FuelCanisterHandler handler;
-    public ItemStack fuelCanisterItemstack;
-    public Player playerEntity;
+    public static final int                 SLOTS = 1;
+    public              FuelCanisterHandler handler;
+    public              ItemStack           fuelCanisterItemstack;
+    public              Player              playerEntity;
 
     public FuelCanisterContainer(int windowId, Inventory playerInventory, Player player, RegistryFriendlyByteBuf extraData) {
         this(windowId, playerInventory, player, ItemStack.OPTIONAL_STREAM_CODEC.decode(extraData));
@@ -23,18 +23,14 @@ public class FuelCanisterContainer extends BaseContainer {
 
     public FuelCanisterContainer(int windowId, Inventory playerInventory, Player player, ItemStack fuelCanister) {
         super(Registration.FuelCanister_Container.get(), windowId);
-        playerEntity = player;
-        this.handler = new FuelCanisterHandler(SLOTS, fuelCanister);
+        playerEntity               = player;
+        this.handler               = new FuelCanisterHandler(SLOTS, fuelCanister);
         this.fuelCanisterItemstack = fuelCanister;
-        if (handler != null)
+        if (handler != null) {
             addSlotRange(handler, 0, 80, 35, 1, 18);
+        }
 
         addPlayerSlots(playerInventory, 8, 84);
-    }
-
-    @Override
-    public boolean stillValid(Player playerIn) {
-        return playerIn.getMainHandItem().equals(fuelCanisterItemstack);
     }
 
     @Override
@@ -74,9 +70,15 @@ public class FuelCanisterContainer extends BaseContainer {
         Level world = playerIn.level();
         if (!world.isClientSide) {
             ItemStack containerItem = handler.getStackInSlot(0);
-            if (!containerItem.isEmpty())
+            if (!containerItem.isEmpty()) {
                 ItemHandlerHelper.giveItemToPlayer(playerIn, containerItem);
+            }
         }
         super.removed(playerIn);
+    }
+
+    @Override
+    public boolean stillValid(Player playerIn) {
+        return playerIn.getMainHandItem().equals(fuelCanisterItemstack);
     }
 }

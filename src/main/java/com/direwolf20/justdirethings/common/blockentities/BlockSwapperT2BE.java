@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachineBE, AreaAffectingBE, FilterableBE {
-    public FilterData filterData = new FilterData();
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
     public final PoweredMachineContainerData poweredMachineData;
+    public       FilterData                  filterData        = new FilterData();
+    public       AreaAffectingData           areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
 
     public BlockSwapperT2BE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.BlockSwapperT2BE.get(), pPos, pBlockState);
@@ -46,13 +46,9 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
         return 50;
     }
 
-    public int getEnergyCost(int numBlocks) {
-        return numBlocks * getStandardEnergyCost();
-    }
-
     @Override
-    public AreaAffectingData getAreaAffectingData() {
-        return areaAffectingData;
+    public FilterData getFilterData() {
+        return filterData;
     }
 
     @Override
@@ -61,22 +57,14 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
     }
 
     @Override
-    public FilterData getFilterData() {
-        return filterData;
-    }
-
-    @Override
     public boolean isValidPartner(BlockEntity blockEntity) {
         return blockEntity.getClass() == this.getClass();
     }
 
-    public void setAreaOnly(double x, double y, double z) {
-        getAreaAffectingData().xRadius = Math.max(0, Math.min(x, maxRadius));
-        getAreaAffectingData().yRadius = Math.max(0, Math.min(y, maxRadius));
-        getAreaAffectingData().zRadius = Math.max(0, Math.min(z, maxRadius));
-        getAreaAffectingData().area = null;
-        if (getBlockEntity() instanceof BaseMachineBE baseMachineBE)
-            baseMachineBE.markDirtyClient();
+    @Override
+    public void addPartnerConnection(GlobalPos connectingPos, BlockSwapperT1BE be) {
+        super.addPartnerConnection(connectingPos, be);
+        updatePartnerArea();
     }
 
     public void updatePartnerArea() {
@@ -86,10 +74,19 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
         }
     }
 
+    public void setAreaOnly(double x, double y, double z) {
+        getAreaAffectingData().xRadius = Math.max(0, Math.min(x, maxRadius));
+        getAreaAffectingData().yRadius = Math.max(0, Math.min(y, maxRadius));
+        getAreaAffectingData().zRadius = Math.max(0, Math.min(z, maxRadius));
+        getAreaAffectingData().area    = null;
+        if (getBlockEntity() instanceof BaseMachineBE baseMachineBE) {
+            baseMachineBE.markDirtyClient();
+        }
+    }
+
     @Override
-    public void addPartnerConnection(GlobalPos connectingPos, BlockSwapperT1BE be) {
-        super.addPartnerConnection(connectingPos, be);
-        updatePartnerArea();
+    public AreaAffectingData getAreaAffectingData() {
+        return areaAffectingData;
     }
 
     @Override
@@ -107,30 +104,35 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
         return hasEnoughPower(getEnergyCost((width * height * depth)));
     }
 
+    public int getEnergyCost(int numBlocks) {
+        return numBlocks * getStandardEnergyCost();
+    }
+
     @Override
     public void postSwap(int numBlocks) {
         extractEnergy(getEnergyCost(numBlocks), false);
     }
 
-    public BlockPos getStartingPoint() {
-        return getBlockPos().offset(getAreaAffectingData().xOffset, getAreaAffectingData().yOffset, getAreaAffectingData().zOffset);
+    @Override
+    public AABB getAABB() {
+        return getAABB(getBlockPos());
     }
 
-    public boolean isInBothAreas(BlockPos blockPos) {
-        BlockEntity partnerBE = getPartnerBE();
-        if (!level.equals(partnerBE.getLevel()))
-            return false; //If my level is different than my partners we are not overlapping of course!
-        if (partnerBE instanceof BlockSwapperT2BE partnerSwapper) {
-            AABB thisAABB = getAABB(getBlockPos());
-            AABB thatAABB = partnerSwapper.getAABB(partnerSwapper.getBlockPos());
-            return (thisAABB.contains(blockPos.getX(), blockPos.getY(), blockPos.getZ()) && thatAABB.contains(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
+    @Override
+    public boolean isValidEntity(Entity entity) {
+        if (!super.isValidEntity(entity)) {
+            return false;
         }
-        return false;
+        if (isInBothAreas(entity.position())) {
+            return false;
+        }
+        return isEntityValidFilter(entity, this.level);
     }
 
     public boolean isInBothAreas(Vec3 vec3) {
-        if (!isSameLevel())
+        if (!isSameLevel()) {
             return false; //If my level is different than my partners we are not overlapping of course!
+        }
         if (getPartnerBE() instanceof BlockSwapperT2BE partnerSwapper) {
             AABB thisAABB = getAABB(getBlockPos());
             AABB thatAABB = partnerSwapper.getAABB(partnerSwapper.getBlockPos());
@@ -141,19 +143,22 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
 
     @Override
     public boolean isBlockPosValid(ServerLevel serverLevel, BlockPos blockPos) {
-        if (!super.isBlockPosValid(serverLevel, blockPos))
+        if (!super.isBlockPosValid(serverLevel, blockPos)) {
             return false; //Do the same checks as normal, then check the filters
-        if (isInBothAreas(blockPos))
+        }
+        if (isInBothAreas(blockPos)) {
             return false;
+        }
         BlockState blockState = serverLevel.getBlockState(blockPos);
-        if (blockState.isAir()) return true; //Don't need to filter AIR either way
+        if (blockState.isAir()) {
+            return true; //Don't need to filter AIR either way
+        }
         ItemStack blockItemStack = blockState.getBlock().getCloneItemStack(serverLevel, blockPos, blockState);
         return isStackValidFilter(blockItemStack);
     }
 
-    @Override
-    public AABB getAABB() {
-        return getAABB(getBlockPos());
+    public BlockPos getStartingPoint() {
+        return getBlockPos().offset(getAreaAffectingData().xOffset, getAreaAffectingData().yOffset, getAreaAffectingData().zOffset);
     }
 
     @Override
@@ -166,12 +171,16 @@ public class BlockSwapperT2BE extends BlockSwapperT1BE implements PoweredMachine
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public boolean isValidEntity(Entity entity) {
-        if (!super.isValidEntity(entity))
-            return false;
-        if (isInBothAreas(entity.position()))
-            return false;
-        return isEntityValidFilter(entity, this.level);
+    public boolean isInBothAreas(BlockPos blockPos) {
+        BlockEntity partnerBE = getPartnerBE();
+        if (!level.equals(partnerBE.getLevel())) {
+            return false; //If my level is different than my partners we are not overlapping of course!
+        }
+        if (partnerBE instanceof BlockSwapperT2BE partnerSwapper) {
+            AABB thisAABB = getAABB(getBlockPos());
+            AABB thatAABB = partnerSwapper.getAABB(partnerSwapper.getBlockPos());
+            return (thisAABB.contains(blockPos.getX(), blockPos.getY(), blockPos.getZ()) && thatAABB.contains(blockPos.getX(), blockPos.getY(), blockPos.getZ()));
+        }
+        return false;
     }
 }

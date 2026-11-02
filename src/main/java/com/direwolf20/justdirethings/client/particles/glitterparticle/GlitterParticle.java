@@ -12,44 +12,44 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Random;
 
 public class GlitterParticle extends TextureSheetParticle {
-    private double sourceX;
-    private double sourceY;
-    private double sourceZ;
-    private double targetX;
-    private double targetY;
-    private double targetZ;
-    private int speedModifier;
-    private String particleType;
-    private Random rand = new Random();
-    private int particlePicker;
     protected final SpriteSet spriteSet;
+    private final   double    sourceX;
+    private final   double    sourceY;
+    private final double sourceZ;
+    private final double targetX;
+    private final double targetY;
+    private final double targetZ;
+    private       int    speedModifier;
+    private final String particleType;
+    private final Random rand = new Random();
+    private final int    particlePicker;
 
     public GlitterParticle(ClientLevel world, double sourceX, double sourceY, double sourceZ, double targetX, double targetY, double targetZ, double xSpeed, double ySpeed, double zSpeed,
                            float size, float red, float green, float blue, float alpha, boolean collide, float maxAge, String particleType, SpriteSet sprite) {
         super(world, sourceX, sourceY, sourceZ);
-        xd = xSpeed;
-        yd = ySpeed;
-        zd = zSpeed;
-        rCol = red;
-        gCol = green;
-        bCol = blue;
-        this.alpha = alpha;
-        gravity = 0;
+        xd            = xSpeed;
+        yd            = ySpeed;
+        zd            = zSpeed;
+        rCol          = red;
+        gCol          = green;
+        bCol          = blue;
+        this.alpha    = alpha;
+        gravity       = 0;
         this.lifetime = Math.round(maxAge);
 
         setSize(0.001F, 0.001F);
 
-        xo = x;
-        yo = y;
-        zo = z;
-        this.quadSize = size;
-        this.sourceX = sourceX;
-        this.sourceY = sourceY;
-        this.sourceZ = sourceZ;
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.targetZ = targetZ;
-        this.hasPhysics = collide;
+        xo                = x;
+        yo                = y;
+        zo                = z;
+        this.quadSize     = size;
+        this.sourceX      = sourceX;
+        this.sourceY      = sourceY;
+        this.sourceZ      = sourceZ;
+        this.targetX      = targetX;
+        this.targetY      = targetY;
+        this.targetZ      = targetZ;
+        this.hasPhysics   = collide;
         this.particleType = particleType;
         this.setGravity(0f);
         particlePicker = rand.nextInt(3) + 1;
@@ -57,13 +57,13 @@ public class GlitterParticle extends TextureSheetParticle {
         this.setSprite(sprite.get(particlePicker, 4));
     }
 
+    public void setGravity(float value) {
+        gravity = value;
+    }
+
     @Override
     public void render(VertexConsumer p_225606_1_, Camera p_225606_2_, float p_225606_3_) {
         super.render(p_225606_1_, p_225606_2_, p_225606_3_);
-    }
-
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
     // [VanillaCopy] of super, without drag when onGround is true
@@ -94,8 +94,9 @@ public class GlitterParticle extends TextureSheetParticle {
 
         //The total distance between the particle and target
         double totalDistance = targetPos.distanceTo(partPos);
-        if (totalDistance < 0.1)
+        if (totalDistance < 0.1) {
             this.remove();
+        }
 
         double speedAdjust = 20;
 
@@ -106,13 +107,14 @@ public class GlitterParticle extends TextureSheetParticle {
         //This does not seem to be used but I will leave it here for now anyways
         BlockPos nextPos = new BlockPos((int) this.x + (int) moveX, (int) this.y + (int) moveY, (int) this.z + (int) moveZ);
 
-        if (age > 40)
+        if (age > 40) {
             this.hasPhysics = false;
+        }
         this.move(moveX, moveY, moveZ);
     }
 
-    public void setGravity(float value) {
-        gravity = value;
+    public ParticleRenderType getRenderType() {
+        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
     public void setSpeed(float mx, float my, float mz) {

@@ -22,17 +22,20 @@ public class GhostSlotPacket {
             Player sender = context.player();
 
             AbstractContainerMenu container = sender.containerMenu;
-            if (container == null)
+            if (container == null) {
                 return;
+            }
 
             Slot slot = container.slots.get(payload.slotNumber());
             ItemStack stack = payload.stack();
             stack.setCount(payload.count());
-            if (slot instanceof FilterBasicSlot)
+            if (slot instanceof FilterBasicSlot) {
                 slot.set(stack);
+            }
 
-            if (container instanceof BaseMachineContainer baseMachineContainer && baseMachineContainer.baseMachineBE instanceof BaseMachineBE baseMachineBE)
+            if (container instanceof BaseMachineContainer baseMachineContainer && baseMachineContainer.baseMachineBE instanceof BaseMachineBE baseMachineBE) {
                 baseMachineBE.markDirtyClient();
+            }
         });
     }
 }

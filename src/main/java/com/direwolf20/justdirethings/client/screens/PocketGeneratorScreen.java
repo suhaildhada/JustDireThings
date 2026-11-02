@@ -29,17 +29,25 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGeneratorContainer> {
-    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/pocketgenerator.png");
-
     protected final PocketGeneratorContainer container;
-    private ItemStack pocketGenerator;
-    private IEnergyStorage energyStorage;
+    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/pocketgenerator.png");
+    private         ItemStack                pocketGenerator;
+    private         IEnergyStorage           energyStorage;
 
     public PocketGeneratorScreen(PocketGeneratorContainer container, Inventory inv, Component name) {
         super(container, inv, name);
-        this.container = container;
+        this.container       = container;
         this.pocketGenerator = container.playerEntity.getMainHandItem();
-        this.energyStorage = pocketGenerator.getCapability(Capabilities.EnergyStorage.ITEM);
+        this.energyStorage   = pocketGenerator.getCapability(Capabilities.EnergyStorage.ITEM);
+    }
+
+    private static MutableComponent getTrans(String key, Object... args) {
+        return Component.translatable(JustDireThings.MODID + "." + key, args);
+    }
+
+    @Override
+    public void init() {
+        super.init();
     }
 
     @Override
@@ -52,7 +60,7 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
             if (pocketGenerator.getItem() instanceof PocketGenerator pocketGeneratorItem) {
                 feBurnPerTick = pocketGeneratorItem.getFePerFuelTick() * pocketGeneratorItem.getBurnSpeedMultiplier(pocketGenerator);
             }
-            if (hasShiftDown())
+            if (hasShiftDown()) {
                 guiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                         Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(energyStorage.getEnergyStored()), MagicHelpers.withSuffix(energyStorage.getMaxEnergyStored())),
                         counter <= 0 ?
@@ -62,16 +70,17 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
                                 Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(feBurnPerTick)) :
                                 Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0))
                 )), mouseX, mouseY);
-            else
-            guiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                    Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(energyStorage.getEnergyStored()), MagicHelpers.withSuffix(energyStorage.getMaxEnergyStored())),
-                    counter <= 0 ?
-                            Component.translatable("justdirethings.screen.no_fuel") :
-                            Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(counter)),
-                    counter > 0 ?
-                            Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(feBurnPerTick)) :
-                            Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0))
-            )), mouseX, mouseY);
+            } else {
+                guiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
+                        Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(energyStorage.getEnergyStored()), MagicHelpers.withSuffix(energyStorage.getMaxEnergyStored())),
+                        counter <= 0 ?
+                                Component.translatable("justdirethings.screen.no_fuel") :
+                                Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(counter)),
+                        counter > 0 ?
+                                Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(feBurnPerTick)) :
+                                Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0))
+                )), mouseX, mouseY);
+            }
         }
     }
 
@@ -99,16 +108,6 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
     }
 
     @Override
-    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
-        super.renderSlot(pGuiGraphics, pSlot);
-    }
-
-    @Override
-    public void init() {
-        super.init();
-    }
-
-    @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         //super.renderLabels(guiGraphics, mouseX, mouseY);
     }
@@ -121,11 +120,13 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
         guiGraphics.blit(GUI, relX, relY, 0, 0, this.imageWidth, this.imageHeight);
 
         this.pocketGenerator = container.playerEntity.getMainHandItem();
-        if (pocketGenerator.isEmpty() || !(pocketGenerator.getItem() instanceof PocketGenerator))
+        if (pocketGenerator.isEmpty() || !(pocketGenerator.getItem() instanceof PocketGenerator)) {
             return;
+        }
         this.energyStorage = pocketGenerator.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (energyStorage == null)
+        if (energyStorage == null) {
             return;
+        }
         int maxBurn = pocketGenerator.getOrDefault(JustDireDataComponents.POCKETGEN_MAXBURN, 0);
         int counter = pocketGenerator.getOrDefault(JustDireDataComponents.POCKETGEN_COUNTER, 0);
         int maxHeight = 13;
@@ -143,13 +144,17 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
+    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
+        super.renderSlot(pGuiGraphics, pSlot);
     }
 
     @Override
-    public void onClose() {
-        super.onClose();
+    public boolean mouseClicked(double x, double y, int btn) {
+        return super.mouseClicked(x, y, btn);
+    }
+
+    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
+        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
     }
 
     @Override
@@ -165,21 +170,18 @@ public class PocketGeneratorScreen extends AbstractContainerScreen<PocketGenerat
     }
 
     @Override
-    public boolean mouseClicked(double x, double y, int btn) {
-        return super.mouseClicked(x, y, btn);
+    public boolean isPauseScreen() {
+        return false;
     }
 
-    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
-        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
+    @Override
+    public void onClose() {
+        super.onClose();
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double pScrollX, double pScrollY) {
         return super.mouseScrolled(mouseX, mouseY, pScrollX, pScrollY);
-    }
-
-    private static MutableComponent getTrans(String key, Object... args) {
-        return Component.translatable(JustDireThings.MODID + "." + key, args);
     }
 
 }

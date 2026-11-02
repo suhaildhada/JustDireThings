@@ -29,15 +29,15 @@ public class BlockPlacerT1 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof BlockPlacerT1BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new BlockPlacerT1Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
             buf.writeBlockPos(blockPos);
         }));
-    }
-
-    @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof BlockPlacerT1BE;
     }
 }

@@ -18,24 +18,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class FluidDropRecipe implements CraftingRecipe {
-    private final ResourceLocation id;
-    protected final BlockState input;
-    protected final BlockState output;
-    protected final Item catalyst;
-
+public record FluidDropRecipe(BlockState input, BlockState output, Item catalyst, ResourceLocation id) implements CraftingRecipe {
     public FluidDropRecipe(ResourceLocation id, BlockState input, BlockState output, Item catalyst) {
-        this.id = id;
-        this.input = input;
-        this.output = output;
-        this.catalyst = catalyst;
+        this(input, output, catalyst, id);
     }
 
     public FluidDropRecipe(ResourceLocation id, BlockState input, BlockState output, Holder<Item> catalyst) {
-        this.id = id;
-        this.input = input;
-        this.output = output;
-        this.catalyst = catalyst.value();
+        this(input, output, catalyst.value(), id);
     }
 
     @Override
@@ -43,44 +32,20 @@ public class FluidDropRecipe implements CraftingRecipe {
         return Registration.FLUID_DROP_RECIPE_TYPE.get();
     }
 
-    public boolean matches(BlockState blockState, ItemStack catalystStack) {
-        if (!catalystStack.is(catalyst)) return false;
-        return /*blockState.getBlock() instanceof LiquidBlock liquidBlock &&*/ blockState.getFluidState().is(input.getFluidState().getType()) && blockState.getFluidState().isSource();
-    }
-
-    public ResourceLocation getId() {
-        return id;
-    }
-
-    public BlockState getOutput() {
-        return output;
-    }
-
-    public BlockState getInput() {
-        return input;
-    }
-
-    public Item getCatalyst() {
-        return catalyst;
-    }
-
-    public Holder<Item> getCatalystHolder() {
-        return catalyst == null ? null : catalyst.builtInRegistryHolder();
-    }
-
     @Override
     public CraftingBookCategory category() {
         return CraftingBookCategory.MISC;
     }
 
-    @Override
-    public ItemStack getResultItem(HolderLookup.Provider provider) {
-        return ItemStack.EMPTY;
+    public boolean matches(BlockState blockState, ItemStack catalystStack) {
+        if (!catalystStack.is(catalyst)) {
+            return false;
+        }
+        return /*blockState.getBlock() instanceof LiquidBlock liquidBlock &&*/ blockState.getFluidState().is(input.getFluidState().getType()) && blockState.getFluidState().isSource();
     }
 
-    @Override
-    public boolean isSpecial() {
-        return true;
+    public Holder<Item> getCatalystHolder() {
+        return catalyst == null ? null : catalyst.builtInRegistryHolder();
     }
 
     @Override
@@ -102,14 +67,31 @@ public class FluidDropRecipe implements CraftingRecipe {
     }
 
     @Override
+    public ItemStack getResultItem(HolderLookup.Provider provider) {
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
+    @Override
     public RecipeSerializer<?> getSerializer() {
         return Registration.FLUID_DROP_RECIPE_SERIALIZER.get();
     }
 
 
     public static class Serializer implements RecipeSerializer<FluidDropRecipe> {
-        private static final ResourceLocation NAME = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "fluiddrop");
-        private static final MapCodec<FluidDropRecipe> CODEC = RecordCodecBuilder.mapCodec(
+        public static final  StreamCodec<RegistryFriendlyByteBuf, FluidDropRecipe> STREAM_CODEC = StreamCodec.composite(
+                ResourceLocation.STREAM_CODEC, FluidDropRecipe::id,
+                ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), FluidDropRecipe::input,
+                ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), FluidDropRecipe::output,
+                ByteBufCodecs.holderRegistry(Registries.ITEM), FluidDropRecipe::getCatalystHolder,
+                FluidDropRecipe::new
+        );
+        private static final ResourceLocation                                      NAME         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "fluiddrop");
+        private static final MapCodec<FluidDropRecipe>                             CODEC        = RecordCodecBuilder.mapCodec(
                 p_311734_ -> p_311734_.group(
                                 ResourceLocation.CODEC.fieldOf("id").forGetter(p_301134_ -> p_301134_.id),
                                 BlockState.CODEC.fieldOf("input").forGetter(p_301135_ -> p_301135_.input),
@@ -118,15 +100,6 @@ public class FluidDropRecipe implements CraftingRecipe {
                         )
                         .apply(p_311734_, FluidDropRecipe::new)
         );
-
-        public static final StreamCodec<RegistryFriendlyByteBuf, FluidDropRecipe> STREAM_CODEC = StreamCodec.composite(
-                ResourceLocation.STREAM_CODEC, FluidDropRecipe::getId,
-                ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), FluidDropRecipe::getInput,
-                ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), FluidDropRecipe::getOutput,
-                ByteBufCodecs.holderRegistry(Registries.ITEM), FluidDropRecipe::getCatalystHolder,
-                FluidDropRecipe::new
-        );
-
 
         @Override
         public MapCodec<FluidDropRecipe> codec() {

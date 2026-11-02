@@ -31,13 +31,19 @@ public class AlwaysVisibleParticle extends TextureSheetParticle {
             return "AlwaysOn";
         }
     };
+    public static ParticleProvider<AlwaysVisibleParticleData> FACTORY =
+            (data, level, x, y, z, xSpeed, ySpeed, zSpeed) -> {
+                AlwaysVisibleParticle alwaysVisibleParticle = new AlwaysVisibleParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, data.resourceLocation);
+                return alwaysVisibleParticle;
+            };
 
     public AlwaysVisibleParticle(ClientLevel pLevel, double pX, double pY, double pZ, double pXSpeed, double pYSpeed, double pZSpeed, ResourceLocation resourceLocation) {
         super(pLevel, pX, pY, pZ, pXSpeed, pYSpeed, pZSpeed);
         ParticleEngine particleEngine = Minecraft.getInstance().particleEngine;
         SpriteSet spriteSet = particleEngine.spriteSets.get(resourceLocation);
-        if (spriteSet == null)
+        if (spriteSet == null) {
             spriteSet = particleEngine.spriteSets.get(ResourceLocation.withDefaultNamespace("smoke"));
+        }
         this.pickSprite(spriteSet);
         this.xd = 0;
         this.yd = 0;
@@ -52,10 +58,4 @@ public class AlwaysVisibleParticle extends TextureSheetParticle {
     protected int getLightColor(float pPartialTick) {
         return 0xF00080;
     }
-
-    public static ParticleProvider<AlwaysVisibleParticleData> FACTORY =
-            (data, level, x, y, z, xSpeed, ySpeed, zSpeed) -> {
-                AlwaysVisibleParticle alwaysVisibleParticle = new AlwaysVisibleParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, data.resourceLocation);
-                return alwaysVisibleParticle;
-            };
 }

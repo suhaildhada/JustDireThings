@@ -11,14 +11,13 @@ public record RedstoneSettingPayload(
         int redstoneMode
 ) implements CustomPacketPayload {
     public static final Type<RedstoneSettingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "redstone_setting_packet"));
+    public static final StreamCodec<FriendlyByteBuf, RedstoneSettingPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, RedstoneSettingPayload::redstoneMode,
+            RedstoneSettingPayload::new
+    );
 
     @Override
     public Type<RedstoneSettingPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, RedstoneSettingPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, RedstoneSettingPayload::redstoneMode,
-            RedstoneSettingPayload::new
-    );
 }

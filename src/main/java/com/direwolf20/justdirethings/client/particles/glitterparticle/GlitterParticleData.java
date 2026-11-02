@@ -14,8 +14,9 @@ import net.minecraft.network.codec.StreamCodec;
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
-public class GlitterParticleData implements ParticleOptions {
-    public static final MapCodec<GlitterParticleData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
+public record GlitterParticleData(float size, float r, float g, float b, float a, float maxAgeMul, boolean depthTest, double targetX, double targetY, double targetZ,
+                                  String partType) implements ParticleOptions {
+    public static final MapCodec<GlitterParticleData>                     MAP_CODEC    = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     Codec.STRING.fieldOf("partType").forGetter(p -> p.partType),
                     Codec.DOUBLE.fieldOf("targetX").forGetter(p -> p.targetX),
@@ -31,29 +32,33 @@ public class GlitterParticleData implements ParticleOptions {
             ).apply(instance, GlitterParticleData::new));
     public static final StreamCodec<FriendlyByteBuf, GlitterParticleData> STREAM_CODEC = composite(
             ByteBufCodecs.STRING_UTF8,
-            GlitterParticleData::getPartType,
+            GlitterParticleData::partType,
             ByteBufCodecs.DOUBLE,
-            GlitterParticleData::getTargetX,
+            GlitterParticleData::targetX,
             ByteBufCodecs.DOUBLE,
-            GlitterParticleData::getTargetY,
+            GlitterParticleData::targetY,
             ByteBufCodecs.DOUBLE,
-            GlitterParticleData::getTargetZ,
+            GlitterParticleData::targetZ,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getSize,
+            GlitterParticleData::size,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getR,
+            GlitterParticleData::r,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getG,
+            GlitterParticleData::g,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getB,
+            GlitterParticleData::b,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getA,
+            GlitterParticleData::a,
             ByteBufCodecs.FLOAT,
-            GlitterParticleData::getMaxAgeMul,
+            GlitterParticleData::maxAgeMul,
             ByteBufCodecs.BOOL,
-            GlitterParticleData::isDepthTest,
+            GlitterParticleData::depthTest,
             GlitterParticleData::new
     );
+
+    private GlitterParticleData(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b, float a, float maxAgeMul, boolean depthTest) {
+        this(size, r, g, b, a, maxAgeMul, depthTest, targetX, targetY, targetZ, type);
+    }
 
     public static <B, C, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> StreamCodec<B, C> composite(
             final StreamCodec<? super B, T1> codec1,
@@ -113,15 +118,6 @@ public class GlitterParticleData implements ParticleOptions {
         };
     }
 
-    public final float size;
-    public final float r, g, b, a;
-    public final float maxAgeMul;
-    public final boolean depthTest;
-    public final double targetX;
-    public final double targetY;
-    public final double targetZ;
-    public final String partType;
-
     public static GlitterParticleData playerparticle(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b) {
         return playerparticle(type, targetX, targetY, targetZ, size, r, g, b, 1);
     }
@@ -130,76 +126,17 @@ public class GlitterParticleData implements ParticleOptions {
         return playerparticle(type, targetX, targetY, targetZ, size, r, g, b, 1f, maxAgeMul, true);
     }
 
-    public static GlitterParticleData playerparticle(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b, boolean depth) {
-        return playerparticle(type, targetX, targetY, targetZ, size, r, g, b, 1f, 1, depth);
-    }
-
     public static GlitterParticleData playerparticle(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b, float a, float maxAgeMul, boolean depthTest) {
         return new GlitterParticleData(type, targetX, targetY, targetZ, size, r, g, b, a, maxAgeMul, depthTest);
     }
 
-    private GlitterParticleData(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b, float a, float maxAgeMul, boolean depthTest) {
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.targetZ = targetZ;
-        this.size = size;
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-        this.maxAgeMul = maxAgeMul;
-        this.depthTest = depthTest;
-        this.partType = type;
+    public static GlitterParticleData playerparticle(String type, double targetX, double targetY, double targetZ, float size, float r, float g, float b, boolean depth) {
+        return playerparticle(type, targetX, targetY, targetZ, size, r, g, b, 1f, 1, depth);
     }
-
 
     @Nonnull
     @Override
     public ParticleType<GlitterParticleData> getType() {
         return ModParticles.GLITTERPARTICLE.get();
-    }
-
-    public float getSize() {
-        return size;
-    }
-
-    public float getR() {
-        return r;
-    }
-
-    public float getG() {
-        return g;
-    }
-
-    public float getB() {
-        return b;
-    }
-
-    public float getA() {
-        return a;
-    }
-
-    public float getMaxAgeMul() {
-        return maxAgeMul;
-    }
-
-    public boolean isDepthTest() {
-        return depthTest;
-    }
-
-    public double getTargetX() {
-        return targetX;
-    }
-
-    public double getTargetY() {
-        return targetY;
-    }
-
-    public double getTargetZ() {
-        return targetZ;
-    }
-
-    public String getPartType() {
-        return partType;
     }
 }

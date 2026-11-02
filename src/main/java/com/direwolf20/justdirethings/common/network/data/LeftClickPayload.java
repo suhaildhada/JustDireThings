@@ -19,12 +19,6 @@ public record LeftClickPayload(
         boolean isMouse
 ) implements CustomPacketPayload {
     public static final Type<LeftClickPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "left_click_packet"));
-
-    @Override
-    public Type<LeftClickPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, LeftClickPayload> STREAM_CODEC = NeoForgeStreamCodecs.composite(
             ByteBufCodecs.INT, LeftClickPayload::clickType,
             ByteBufCodecs.BOOL, LeftClickPayload::mainHand,
@@ -35,4 +29,9 @@ public record LeftClickPayload(
             ByteBufCodecs.BOOL, LeftClickPayload::isMouse,
             LeftClickPayload::new
     );
+
+    @Override
+    public Type<LeftClickPayload> type() {
+        return TYPE;
+    }
 }

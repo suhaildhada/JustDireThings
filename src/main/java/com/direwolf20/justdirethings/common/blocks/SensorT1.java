@@ -32,6 +32,11 @@ public class SensorT1 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof SensorT1BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new SensorT1Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
@@ -40,15 +45,8 @@ public class SensorT1 extends BaseMachineBlock {
     }
 
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof SensorT1BE;
-    }
-
-    @Override
     public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @javax.annotation.Nullable Direction direction) {
-        if (direction == (state.getValue(BlockStateProperties.FACING).getOpposite()))
-            return false; //Don't emit on facing side
-        return true;
+        return direction != (state.getValue(BlockStateProperties.FACING).getOpposite()); //Don't emit on facing side
     }
 
     @Override
@@ -58,8 +56,9 @@ public class SensorT1 extends BaseMachineBlock {
 
     @Override
     public int getSignal(BlockState blockState, BlockGetter blockAccess, BlockPos pos, Direction side) {
-        if (side == (blockState.getValue(BlockStateProperties.FACING).getOpposite()))
+        if (side == (blockState.getValue(BlockStateProperties.FACING).getOpposite())) {
             return 0; //Don't emit on facing side
+        }
         BlockEntity blockEntity = blockAccess.getBlockEntity(pos);
         if (blockEntity instanceof SensorT1BE sensorT1BE) {
             return sensorT1BE.emitRedstone ? 15 : 0; // Emit full power if true, no power if false
@@ -69,8 +68,9 @@ public class SensorT1 extends BaseMachineBlock {
 
     @Override
     public int getDirectSignal(BlockState blockState, BlockGetter blockAccess, BlockPos pos, Direction side) {
-        if (side == (blockState.getValue(BlockStateProperties.FACING).getOpposite()))
+        if (side == (blockState.getValue(BlockStateProperties.FACING).getOpposite())) {
             return 0; //Don't emit on facing side
+        }
         BlockEntity blockEntity = blockAccess.getBlockEntity(pos);
         if (blockEntity instanceof SensorT1BE sensorT1BE && sensorT1BE.strongSignal) {
             return getSignal(blockState, blockAccess, pos, side);

@@ -21,8 +21,9 @@ public class BlazegoldBoots extends BaseBoots {
 
     @Override
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
-        if (canUseAbility(stack, Ability.LAVAREPAIR))
+        if (canUseAbility(stack, Ability.LAVAREPAIR)) {
             return Helpers.doLavaRepair(stack, entity);
+        }
         return false;
     }
 }

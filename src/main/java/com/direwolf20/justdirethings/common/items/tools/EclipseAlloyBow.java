@@ -34,8 +34,9 @@ public class EclipseAlloyBow extends BaseBow implements PoweredTool {
     @Override
     public int getBarColor(ItemStack stack) {
         int color = getPowerBarColor(stack);
-        if (color == -1)
+        if (color == -1) {
             return super.getBarColor(stack);
+        }
         return color;
     }
 

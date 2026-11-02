@@ -24,9 +24,10 @@ public class PolymorphicCatalyst extends Item {
         if (level == null) {
             return;
         }
-        if (Screen.hasShiftDown())
+        if (Screen.hasShiftDown()) {
             tooltip.add(Component.translatable("justdirethings.hint.dropinwater").withStyle(ChatFormatting.LIGHT_PURPLE));
-        else
+        } else {
             appendShiftForInfo(stack, tooltip);
+        }
     }
 }

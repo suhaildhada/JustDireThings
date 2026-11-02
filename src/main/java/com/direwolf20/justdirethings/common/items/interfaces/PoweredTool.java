@@ -11,8 +11,9 @@ public interface PoweredTool extends PoweredItem {
             return originalModifiers;
         } else {
             for (ItemAttributeModifiers.Entry entry : originalModifiers.modifiers()) {
-                if (!entry.attribute().equals(Attributes.ATTACK_DAMAGE))
+                if (!entry.attribute().equals(Attributes.ATTACK_DAMAGE)) {
                     modifiers.withModifierAdded(entry.attribute(), entry.modifier(), entry.slot());
+                }
             }
         }
         return modifiers;

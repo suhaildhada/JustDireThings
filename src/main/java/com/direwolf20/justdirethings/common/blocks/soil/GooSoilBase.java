@@ -35,57 +35,11 @@ public class GooSoilBase extends FarmBlock {
         );
     }
 
-    @Override
-    public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
-        BlockState blockstate = pLevel.getBlockState(pPos.above());
-        if (blockstate.is(Blocks.BAMBOO) || blockstate.is(Blocks.CACTUS) || blockstate.is(Blocks.BAMBOO_SAPLING))
-            return true;
-        return !blockstate.isSolid() || blockstate.getBlock() instanceof FenceGateBlock || blockstate.getBlock() instanceof MovingPistonBlock;
-    }
-
-    @Override
-    public TriState canSustainPlant(BlockState state, BlockGetter level, BlockPos soilPosition, Direction facing, BlockState plant) {
-        if (facing != Direction.UP) return TriState.FALSE;
-        if (plant.getBlock() instanceof CactusBlock)
-            return TriState.TRUE;
-
-        if (plant.getBlock() instanceof SugarCaneBlock)
-            return TriState.TRUE;
-
-        if (plant.getBlock() == Blocks.BAMBOO || plant.getBlock() == Blocks.BAMBOO_SAPLING)
-            return TriState.TRUE;
-
-        if (plant.getBlock() == Blocks.NETHER_WART)
-            return TriState.TRUE;
-
-        if (plant.getBlock() instanceof BushBlock)
-            return TriState.TRUE;
-
-        return TriState.DEFAULT;
-    }
-
-    @Override
-    public void fallOn(Level pLevel, BlockState pState, BlockPos pPos, Entity pEntity, float pFallDistance) {
-        pEntity.causeFallDamage(pFallDistance, 1.0F, pEntity.damageSources().fall());
-    }
-
-    @Override
-    public void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
-        super.tick(pState, pLevel, pPos, pRandom);
-    }
-
-    /**
-     * Performs a random tick on a block.
-     */
-    @Override
-    public void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
-        super.randomTick(pState, pLevel, pPos, pRandom);
-    }
-
     public static void bonemealMe(ServerLevel pLevel, BlockPos pPos) {
         BlockState soilState = pLevel.getBlockState(pPos);
-        if (!(soilState.getBlock() instanceof GooSoilBase) || soilState.getValue(MOISTURE) < 7)
+        if (!(soilState.getBlock() instanceof GooSoilBase) || soilState.getValue(MOISTURE) < 7) {
             return;
+        }
         BlockPos cropPos = pPos.above();
         BlockState crop = pLevel.getBlockState(cropPos);
         BlockState crop1 = null;
@@ -120,6 +74,38 @@ public class GooSoilBase extends FarmBlock {
         }
     }
 
+    public static void autoHarvest(ServerLevel pLevel, BlockPos pPos) {
+        BlockPos cropPos = pPos.above();
+        BlockState crop = pLevel.getBlockState(cropPos);
+        if (crop.getBlock() instanceof BushBlock) {
+            if (crop.getBlock() instanceof AttachedStemBlock) {
+                List<ItemStack> drops = harvestStemCrop(pLevel, cropPos, crop);
+                if (!drops.isEmpty()) {
+                    teleportDrops(pLevel, pPos, drops, cropPos);
+                    dropDrops(pLevel, drops, cropPos);
+                }
+            } else if (crop.getBlock() instanceof StemBlock) {
+                //No-Op - Stem Blocks are fully grown without an attached fruit, so ignore them
+            } else {
+                List<ItemStack> drops = harvestCrop(pLevel, cropPos, crop);
+                if (!drops.isEmpty()) {
+                    teleportDrops(pLevel, pPos, drops, cropPos);
+                    dropDrops(pLevel, drops, cropPos);
+                }
+            }
+        } else if (crop.getBlock() instanceof SugarCaneBlock || crop.getBlock() instanceof CactusBlock || crop.is(Blocks.BAMBOO)) {
+            BlockPos secondPos = cropPos.above();
+            BlockState secondState = pLevel.getBlockState(secondPos);
+            if (secondState.is(crop.getBlock())) {
+                List<ItemStack> drops = harvest2TallCrop(pLevel, secondPos, secondState);
+                if (!drops.isEmpty()) {
+                    teleportDrops(pLevel, pPos, drops, secondPos);
+                    dropDrops(pLevel, drops, secondPos);
+                }
+            }
+        }
+    }
+
     public static List<ItemStack> harvestStemCrop(ServerLevel pLevel, BlockPos cropPos, BlockState crop) {
         List<ItemStack> drops = new ArrayList<>();
         if (crop.getBlock() instanceof AttachedStemBlock attachedStemBlock) {
@@ -136,25 +122,26 @@ public class GooSoilBase extends FarmBlock {
         return drops;
     }
 
-    public static List<ItemStack> harvest2TallCrop(ServerLevel pLevel, BlockPos cropPos, BlockState crop) {
-        List<ItemStack> drops = new ArrayList<>();
-        if (crop.getBlock() instanceof SugarCaneBlock || crop.getBlock() instanceof CactusBlock || crop.is(Blocks.BAMBOO)) {
-            List<BlockPos> posToCheck = new ArrayList<>();
-            for (int i = 0; i < 10; i++) { //In case it grew a lot since last check
-                BlockPos pos = cropPos.above(i);
-                if (pLevel.getBlockState(pos).is(crop.getBlock()))
-                    posToCheck.add(pos);
-                else
-                    break;
-            }
-            for (int i = posToCheck.size() - 1; i >= 0; i--) {
-                BlockPos clearPos = posToCheck.get(i);
-                BlockEntity blockEntity = pLevel.getBlockEntity(clearPos);
-                drops.addAll(Block.getDrops(pLevel.getBlockState(clearPos), pLevel, clearPos, blockEntity));
-                pLevel.destroyBlock(clearPos, false);
+    public static void teleportDrops(ServerLevel pLevel, BlockPos pPos, List<ItemStack> drops, BlockPos cropPos) {
+        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+        if (blockEntity != null && blockEntity instanceof GooSoilBE gooSoilBE) {
+            IItemHandler handler = gooSoilBE.getAttachedInventory(pLevel);
+            if (handler != null) {
+                Helpers.teleportDrops(drops, handler);
+                if (drops.isEmpty()) //Only spawn particles if we teleported everything - granted this isn't perfect, but way better than exhaustive testing
+                {
+                    ToggleableTool.teleportParticles(pLevel, cropPos, 5);
+                }
             }
         }
-        return drops;
+    }
+
+    public static void dropDrops(ServerLevel pLevel, List<ItemStack> drops, BlockPos cropPos) {
+        for (ItemStack drop : drops) {
+            ItemEntity itemEntity = new ItemEntity(pLevel, cropPos.getX(), cropPos.getY(), cropPos.getZ(), drop);
+            itemEntity.lifespan = 40;
+            pLevel.addFreshEntity(itemEntity);
+        }
     }
 
     public static List<ItemStack> harvestCrop(ServerLevel pLevel, BlockPos cropPos, BlockState crop) {
@@ -162,8 +149,9 @@ public class GooSoilBase extends FarmBlock {
         if (crop.getBlock() instanceof BushBlock) {
             BlockEntity blockEntity = pLevel.getBlockEntity(cropPos);
             List<ItemStack> potentialDrops = Block.getDrops(crop, pLevel, cropPos, blockEntity);
-            if (potentialDrops.isEmpty())
+            if (potentialDrops.isEmpty()) {
                 return drops;
+            }
             if (potentialDrops.size() > 1 || potentialDrops.get(0).getCount() > 1) {
                 BlockState placeState = Blocks.AIR.defaultBlockState();
                 drops.addAll(potentialDrops);
@@ -226,55 +214,80 @@ public class GooSoilBase extends FarmBlock {
         return drops;
     }
 
-    public static void teleportDrops(ServerLevel pLevel, BlockPos pPos, List<ItemStack> drops, BlockPos cropPos) {
-        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-        if (blockEntity != null && blockEntity instanceof GooSoilBE gooSoilBE) {
-            IItemHandler handler = gooSoilBE.getAttachedInventory(pLevel);
-            if (handler != null) {
-                Helpers.teleportDrops(drops, handler);
-                if (drops.isEmpty()) //Only spawn particles if we teleported everything - granted this isn't perfect, but way better than exhaustive testing
-                    ToggleableTool.teleportParticles(pLevel, cropPos, 5);
+    public static List<ItemStack> harvest2TallCrop(ServerLevel pLevel, BlockPos cropPos, BlockState crop) {
+        List<ItemStack> drops = new ArrayList<>();
+        if (crop.getBlock() instanceof SugarCaneBlock || crop.getBlock() instanceof CactusBlock || crop.is(Blocks.BAMBOO)) {
+            List<BlockPos> posToCheck = new ArrayList<>();
+            for (int i = 0; i < 10; i++) { //In case it grew a lot since last check
+                BlockPos pos = cropPos.above(i);
+                if (pLevel.getBlockState(pos).is(crop.getBlock())) {
+                    posToCheck.add(pos);
+                } else {
+                    break;
+                }
+            }
+            for (int i = posToCheck.size() - 1; i >= 0; i--) {
+                BlockPos clearPos = posToCheck.get(i);
+                BlockEntity blockEntity = pLevel.getBlockEntity(clearPos);
+                drops.addAll(Block.getDrops(pLevel.getBlockState(clearPos), pLevel, clearPos, blockEntity));
+                pLevel.destroyBlock(clearPos, false);
             }
         }
+        return drops;
     }
 
-    public static void dropDrops(ServerLevel pLevel, List<ItemStack> drops, BlockPos cropPos) {
-        for (ItemStack drop : drops) {
-            ItemEntity itemEntity = new ItemEntity(pLevel, cropPos.getX(), cropPos.getY(), cropPos.getZ(), drop);
-            itemEntity.lifespan = 40;
-            pLevel.addFreshEntity(itemEntity);
+    @Override
+    public boolean canSurvive(BlockState pState, LevelReader pLevel, BlockPos pPos) {
+        BlockState blockstate = pLevel.getBlockState(pPos.above());
+        if (blockstate.is(Blocks.BAMBOO) || blockstate.is(Blocks.CACTUS) || blockstate.is(Blocks.BAMBOO_SAPLING)) {
+            return true;
         }
+        return !blockstate.isSolid() || blockstate.getBlock() instanceof FenceGateBlock || blockstate.getBlock() instanceof MovingPistonBlock;
     }
 
-    public static void autoHarvest(ServerLevel pLevel, BlockPos pPos) {
-        BlockPos cropPos = pPos.above();
-        BlockState crop = pLevel.getBlockState(cropPos);
-        if (crop.getBlock() instanceof BushBlock) {
-            if (crop.getBlock() instanceof AttachedStemBlock) {
-                List<ItemStack> drops = harvestStemCrop(pLevel, cropPos, crop);
-                if (!drops.isEmpty()) {
-                    teleportDrops(pLevel, pPos, drops, cropPos);
-                    dropDrops(pLevel, drops, cropPos);
-                }
-            } else if (crop.getBlock() instanceof StemBlock) {
-                //No-Op - Stem Blocks are fully grown without an attached fruit, so ignore them
-            } else {
-                List<ItemStack> drops = harvestCrop(pLevel, cropPos, crop);
-                if (!drops.isEmpty()) {
-                    teleportDrops(pLevel, pPos, drops, cropPos);
-                    dropDrops(pLevel, drops, cropPos);
-                }
-            }
-        } else if (crop.getBlock() instanceof SugarCaneBlock || crop.getBlock() instanceof CactusBlock || crop.is(Blocks.BAMBOO)) {
-            BlockPos secondPos = cropPos.above();
-            BlockState secondState = pLevel.getBlockState(secondPos);
-            if (secondState.is(crop.getBlock())) {
-                List<ItemStack> drops = harvest2TallCrop(pLevel, secondPos, secondState);
-                if (!drops.isEmpty()) {
-                    teleportDrops(pLevel, pPos, drops, secondPos);
-                    dropDrops(pLevel, drops, secondPos);
-                }
-            }
+    @Override
+    public void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
+        super.tick(pState, pLevel, pPos, pRandom);
+    }
+
+    /**
+     * Performs a random tick on a block.
+     */
+    @Override
+    public void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
+        super.randomTick(pState, pLevel, pPos, pRandom);
+    }
+
+    @Override
+    public void fallOn(Level pLevel, BlockState pState, BlockPos pPos, Entity pEntity, float pFallDistance) {
+        pEntity.causeFallDamage(pFallDistance, 1.0F, pEntity.damageSources().fall());
+    }
+
+    @Override
+    public TriState canSustainPlant(BlockState state, BlockGetter level, BlockPos soilPosition, Direction facing, BlockState plant) {
+        if (facing != Direction.UP) {
+            return TriState.FALSE;
         }
+        if (plant.getBlock() instanceof CactusBlock) {
+            return TriState.TRUE;
+        }
+
+        if (plant.getBlock() instanceof SugarCaneBlock) {
+            return TriState.TRUE;
+        }
+
+        if (plant.getBlock() == Blocks.BAMBOO || plant.getBlock() == Blocks.BAMBOO_SAPLING) {
+            return TriState.TRUE;
+        }
+
+        if (plant.getBlock() == Blocks.NETHER_WART) {
+            return TriState.TRUE;
+        }
+
+        if (plant.getBlock() instanceof BushBlock) {
+            return TriState.TRUE;
+        }
+
+        return TriState.DEFAULT;
     }
 }

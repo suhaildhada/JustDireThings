@@ -12,12 +12,6 @@ public record CopyMachineSettingsPayload(
         boolean filter, boolean redstone
 ) implements CustomPacketPayload {
     public static final Type<CopyMachineSettingsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "copy_machine_settings_packet"));
-
-    @Override
-    public Type<CopyMachineSettingsPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, CopyMachineSettingsPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, CopyMachineSettingsPayload::area,
             ByteBufCodecs.BOOL, CopyMachineSettingsPayload::offset,
@@ -25,4 +19,9 @@ public record CopyMachineSettingsPayload(
             ByteBufCodecs.BOOL, CopyMachineSettingsPayload::redstone,
             CopyMachineSettingsPayload::new
     );
+
+    @Override
+    public Type<CopyMachineSettingsPayload> type() {
+        return TYPE;
+    }
 }

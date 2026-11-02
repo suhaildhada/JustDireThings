@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import static com.direwolf20.justdirethings.util.TooltipHelpers.*;
 
 public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClickableTool {
-    protected final EnumSet<Ability> abilities = EnumSet.noneOf(Ability.class);
+    protected final EnumSet<Ability>            abilities     = EnumSet.noneOf(Ability.class);
     protected final Map<Ability, AbilityParams> abilityParams = new EnumMap<>(Ability.class);
 
 
@@ -44,10 +44,20 @@ public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClic
 
     @Override
     public InteractionResult useOn(UseOnContext pContext) {
-        if (pContext.getPlayer().isShiftKeyDown() && bindDrops(pContext))
+        if (pContext.getPlayer().isShiftKeyDown() && bindDrops(pContext)) {
             return InteractionResult.SUCCESS;
+        }
         useOnAbility(pContext);
         return super.useOn(pContext);
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        if (!level.isClientSide && player.isShiftKeyDown()) {
+            openSettings(player);
+        }
+        useAbility(level, player, hand);
+        return super.use(level, player, hand);
     }
 
     @Override
@@ -56,8 +66,8 @@ public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClic
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack pStack, LivingEntity pTarget, LivingEntity pAttacker) {
-        return hurtEnemyAbility(pStack, pTarget, pAttacker);
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
     }
 
     @Override
@@ -80,8 +90,18 @@ public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClic
     }
 
     @Override
+    public boolean hurtEnemy(ItemStack pStack, LivingEntity pTarget, LivingEntity pAttacker) {
+        return hurtEnemyAbility(pStack, pTarget, pAttacker);
+    }
+
+    @Override
     public EnumSet<Ability> getAllAbilities() {
         return abilities;
+    }
+
+    @Override
+    public Map<Ability, AbilityParams> getAbilityParamsMap() {
+        return abilityParams;
     }
 
     @Override
@@ -92,23 +112,36 @@ public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClic
     }
 
     @Override
-    public Map<Ability, AbilityParams> getAbilityParamsMap() {
-        return abilityParams;
+    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
+        if (stack.getItem() instanceof PoweredTool) {
+            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
+        }
+        return super.isPrimaryItemFor(stack, enchantment);
+    }
+
+    private boolean canAcceptEnchantments(Holder<Enchantment> enchantment) {
+        return !enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (!level.isClientSide && player.isShiftKeyDown())
-            openSettings(player);
-        useAbility(level, player, hand);
-        return super.use(level, player, hand);
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return false;
+    }
+
+    public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
+        if (oldStack.is(newStack.getItem())) {
+            return false;
+        }
+        return super.shouldCauseBlockBreakReset(oldStack, newStack);
     }
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
         if (stack.getItem() instanceof PoweredTool poweredTool) {
             IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-            if (energyStorage == null) return amount;
+            if (energyStorage == null) {
+                return amount;
+            }
             double reductionFactor = 0;
             if (entity != null) {
                 HolderLookup.RegistryLookup<Enchantment> registrylookup = entity.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
@@ -120,31 +153,5 @@ public class BasePickaxe extends PickaxeItem implements ToggleableTool, LeftClic
             return 0;
         }
         return amount;
-    }
-
-    @Override
-    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
-        if (stack.getItem() instanceof PoweredTool)
-            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
-        return super.isPrimaryItemFor(stack, enchantment);
-    }
-
-    private boolean canAcceptEnchantments(Holder<Enchantment> enchantment) {
-        return !enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP);
-    }
-
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.NONE;
-    }
-
-    @Override
-    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
-        return false;
-    }
-
-    public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
-        if (oldStack.is(newStack.getItem())) return false;
-        return super.shouldCauseBlockBreakReset(oldStack, newStack);
     }
 }

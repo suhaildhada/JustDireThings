@@ -29,8 +29,8 @@ import java.util.Set;
 
 @EventBusSubscriber(modid = JustDireThings.MODID)
 public class PlayerEvents {
-    private static BlockPos destroyPos = BlockPos.ZERO;
-    private static int gameTicksMining = 0;
+    private static BlockPos destroyPos      = BlockPos.ZERO;
+    private static int      gameTicksMining = 0;
 
     @SubscribeEvent
     public static void LeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
@@ -38,79 +38,9 @@ public class PlayerEvents {
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && itemStack.getItem() instanceof LeftClickableTool) {
             activateAbilities(itemStack, toggleableTool, event.getEntity(), event.getHand(), true, BlockPos.ZERO, Direction.DOWN);
         }
-        if (itemStack.getItem() instanceof PortalGun)
+        if (itemStack.getItem() instanceof PortalGun) {
             PacketDistributor.sendToServer(new PortalGunLeftClickPayload());
-    }
-
-    @SubscribeEvent
-    public static void LeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-        ItemStack itemStack = event.getItemStack();
-        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && itemStack.getItem() instanceof LeftClickableTool && event.getFace() != null) {
-            if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) { //Only start has the 'proper' direction - this also runs both client AND server side!
-                activateAbilities(itemStack, toggleableTool, event.getEntity(), event.getHand(), false, event.getPos(), event.getFace());
-            }
         }
-        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && !(itemStack.getItem() instanceof BaseHoe) && (toggleableTool.hasAbility(Ability.HAMMER) || toggleableTool.hasAbility(Ability.OREMINER)) && event.getFace() != null) {
-            doExtraCrumblings(event, itemStack, toggleableTool);
-        }
-        if (event.getEntity().level().isClientSide() && itemStack.getItem() instanceof PortalGun && event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START))
-            PacketDistributor.sendToServer(new PortalGunLeftClickPayload());
-    }
-
-    private static void doExtraCrumblings(PlayerInteractEvent.LeftClickBlock event, ItemStack itemStack, ToggleableTool toggleableTool) {
-        Player player = event.getEntity();
-        Level level = player.level();
-        BlockPos blockPos = event.getPos();
-        BlockState blockState = level.getBlockState(blockPos);
-        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) { //Client and Server
-            if (level.isClientSide) {
-                gameTicksMining = 0;
-                destroyPos = blockPos;
-            }
-        }
-        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.STOP || event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.ABORT) { //Server Only
-            cancelBreaks(level, blockState, blockPos, player, toggleableTool, itemStack);
-        }
-        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.CLIENT_HOLD) { //Client Only
-            if (blockPos.equals(destroyPos)) {
-                gameTicksMining++;
-            } else {
-                gameTicksMining = 0;
-                destroyPos = blockPos;
-            }
-            incrementDestroyProgress(level, blockState, blockPos, player, toggleableTool, itemStack);
-        }
-    }
-
-    private static float incrementDestroyProgress(Level level, BlockState pState, BlockPos pPos, Player player, ToggleableTool toggleableTool, ItemStack toggleableToolStack) {
-        Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(toggleableToolStack, level, pPos, player, pState);
-        int i = gameTicksMining;
-        float f = pState.getDestroyProgress(player, player.level(), pPos) * (float) (i + 1);
-        int j = (int) (f * 10.0F);
-        for (BlockPos blockPos : breakBlockPositions) {
-            if (blockPos.equals(pPos)) continue; //Let the vanilla mechanics handle the block we're hitting
-            if (level.isClientSide)
-                level.destroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, j);
-            else
-                sendDestroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, -1, (ServerPlayer) player);
-        }
-        return f;
-    }
-
-    private static void cancelBreaks(Level level, BlockState pState, BlockPos pPos, Player player, ToggleableTool toggleableTool, ItemStack toggleableToolStack) {
-        Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(toggleableToolStack, level, pPos, player, pState);
-        for (BlockPos blockPos : breakBlockPositions) {
-            if (blockPos.equals(pPos)) continue; //Let the vanilla mechanics handle the block we're hitting
-            player.level().destroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, -1);
-        }
-    }
-
-    public static int generatePosHash(BlockPos blockPos) {
-        return (31 * 31 * blockPos.getX()) + (31 * blockPos.getY()) + blockPos.getZ(); //For now this is probably good enough, will add more randomness if needed
-    }
-
-    public static void sendDestroyBlockProgress(int pBreakerId, BlockPos pPos, int pProgress, ServerPlayer serverPlayer) {
-        serverPlayer.connection.send(new ClientboundBlockDestructionPacket(pBreakerId, pPos, pProgress));
     }
 
     private static void activateAbilities(ItemStack itemStack, ToggleableTool toggleableTool, Player player, InteractionHand hand, boolean air, BlockPos blockPos, Direction direction) {
@@ -128,5 +58,82 @@ public class PlayerEvents {
             }
 
         }
+    }
+
+    @SubscribeEvent
+    public static void LeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        ItemStack itemStack = event.getItemStack();
+        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && itemStack.getItem() instanceof LeftClickableTool && event.getFace() != null) {
+            if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) { //Only start has the 'proper' direction - this also runs both client AND server side!
+                activateAbilities(itemStack, toggleableTool, event.getEntity(), event.getHand(), false, event.getPos(), event.getFace());
+            }
+        }
+        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && !(itemStack.getItem() instanceof BaseHoe) && (toggleableTool.hasAbility(Ability.HAMMER) || toggleableTool.hasAbility(Ability.OREMINER)) && event.getFace() != null) {
+            doExtraCrumblings(event, itemStack, toggleableTool);
+        }
+        if (event.getEntity().level().isClientSide() && itemStack.getItem() instanceof PortalGun && event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START)) {
+            PacketDistributor.sendToServer(new PortalGunLeftClickPayload());
+        }
+    }
+
+    private static void doExtraCrumblings(PlayerInteractEvent.LeftClickBlock event, ItemStack itemStack, ToggleableTool toggleableTool) {
+        Player player = event.getEntity();
+        Level level = player.level();
+        BlockPos blockPos = event.getPos();
+        BlockState blockState = level.getBlockState(blockPos);
+        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START) { //Client and Server
+            if (level.isClientSide) {
+                gameTicksMining = 0;
+                destroyPos      = blockPos;
+            }
+        }
+        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.STOP || event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.ABORT) { //Server Only
+            cancelBreaks(level, blockState, blockPos, player, toggleableTool, itemStack);
+        }
+        if (event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.CLIENT_HOLD) { //Client Only
+            if (blockPos.equals(destroyPos)) {
+                gameTicksMining++;
+            } else {
+                gameTicksMining = 0;
+                destroyPos      = blockPos;
+            }
+            incrementDestroyProgress(level, blockState, blockPos, player, toggleableTool, itemStack);
+        }
+    }
+
+    private static void cancelBreaks(Level level, BlockState pState, BlockPos pPos, Player player, ToggleableTool toggleableTool, ItemStack toggleableToolStack) {
+        Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(toggleableToolStack, level, pPos, player, pState);
+        for (BlockPos blockPos : breakBlockPositions) {
+            if (blockPos.equals(pPos)) {
+                continue; //Let the vanilla mechanics handle the block we're hitting
+            }
+            player.level().destroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, -1);
+        }
+    }
+
+    private static float incrementDestroyProgress(Level level, BlockState pState, BlockPos pPos, Player player, ToggleableTool toggleableTool, ItemStack toggleableToolStack) {
+        Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(toggleableToolStack, level, pPos, player, pState);
+        int i = gameTicksMining;
+        float f = pState.getDestroyProgress(player, player.level(), pPos) * (float) (i + 1);
+        int j = (int) (f * 10.0F);
+        for (BlockPos blockPos : breakBlockPositions) {
+            if (blockPos.equals(pPos)) {
+                continue; //Let the vanilla mechanics handle the block we're hitting
+            }
+            if (level.isClientSide) {
+                level.destroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, j);
+            } else {
+                sendDestroyBlockProgress(player.getId() + generatePosHash(blockPos), blockPos, -1, (ServerPlayer) player);
+            }
+        }
+        return f;
+    }
+
+    public static int generatePosHash(BlockPos blockPos) {
+        return (31 * 31 * blockPos.getX()) + (31 * blockPos.getY()) + blockPos.getZ(); //For now this is probably good enough, will add more randomness if needed
+    }
+
+    public static void sendDestroyBlockProgress(int pBreakerId, BlockPos pPos, int pProgress, ServerPlayer serverPlayer) {
+        serverPlayer.connection.send(new ClientboundBlockDestructionPacket(pBreakerId, pPos, pProgress));
     }
 }

@@ -56,7 +56,9 @@ public class LivingEntityEvents {
             }
             if (chestplate.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.hasAbility(Ability.INVULNERABILITY)) {
                 int activeCooldown = ToggleableTool.getCooldown(chestplate, Ability.INVULNERABILITY, true);
-                if (activeCooldown == -1) return;
+                if (activeCooldown == -1) {
+                    return;
+                }
                 player.playNotifySound(SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0F, 1.0F);
                 e.setInvulnerable(true);
             }
@@ -77,15 +79,17 @@ public class LivingEntityEvents {
                     double defaultRange = source.getAttributes().hasAttribute(Attributes.FOLLOW_RANGE) ? source.getAttribute(Attributes.FOLLOW_RANGE).getValue() : 16;
                     int denominator = 2;
                     if (helmet.getItem() instanceof ArmorItem armorItem) {
-                        if (armorItem.getMaterial().equals(ArmorTiers.BLAZEGOLD))
+                        if (armorItem.getMaterial().equals(ArmorTiers.BLAZEGOLD)) {
                             denominator = 3;
-                        else if (armorItem.getMaterial().equals(ArmorTiers.CELESTIGEM))
+                        } else if (armorItem.getMaterial().equals(ArmorTiers.CELESTIGEM)) {
                             denominator = 4;
-                        else if (armorItem.getMaterial().equals(ArmorTiers.ECLIPSEALLOY))
+                        } else if (armorItem.getMaterial().equals(ArmorTiers.ECLIPSEALLOY)) {
                             denominator = 5;
+                        }
                     }
-                    if (distance > (defaultRange / denominator))
+                    if (distance > (defaultRange / denominator)) {
                         e.setCanceled(true);
+                    }
                 }
             }
         }
@@ -95,15 +99,17 @@ public class LivingEntityEvents {
     public static void jumpEvent(LivingEvent.LivingJumpEvent e) {
         if (e.getEntity() instanceof Player player) {
             ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
-            if (boots.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(boots, Ability.JUMPBOOST))
+            if (boots.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(boots, Ability.JUMPBOOST)) {
                 Ability.JUMPBOOST.action.execute(player.level(), player, boots);
+            }
         }
     }
 
     @SubscribeEvent
     public static void blockJoin(EntityJoinLevelEvent e) {
-        if (e.getEntity() instanceof UsefulFakePlayer)
+        if (e.getEntity() instanceof UsefulFakePlayer) {
             e.setCanceled(true);
+        }
     }
 
     @SubscribeEvent
@@ -136,7 +142,6 @@ public class LivingEntityEvents {
                 if (toggleableTool.canUseAbilityAndDurability(heldItem, Ability.JUMPBOOST)) {
                     int jumpBoost = ToggleableTool.getToolValue(heldItem, Ability.JUMPBOOST.getName());
                     event.setDistance(event.getDistance() - jumpBoost);
-                    return;
                 }
             }
         }
@@ -191,10 +196,14 @@ public class LivingEntityEvents {
 
     @SubscribeEvent
     public static void onArmorDamage(ArmorHurtEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player)) {
+            return;
+        }
         Map<EquipmentSlot, ArmorHurtEvent.ArmorEntry> armorEntries = event.getArmorMap();
         for (Map.Entry<EquipmentSlot, ArmorHurtEvent.ArmorEntry> entry : armorEntries.entrySet()) {
-            if (entry.getKey() == EquipmentSlot.MAINHAND || entry.getKey() == EquipmentSlot.OFFHAND) continue;
+            if (entry.getKey() == EquipmentSlot.MAINHAND || entry.getKey() == EquipmentSlot.OFFHAND) {
+                continue;
+            }
             ItemStack armorItemStack = entry.getValue().armorItemStack;
             if (armorItemStack.getItem() instanceof PoweredItem) {
                 entry.getValue().newDamage = entry.getValue().originalDamage * 100;
@@ -254,7 +263,9 @@ public class LivingEntityEvents {
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
         ServerPlayer oldPlayer = (ServerPlayer) event.getOriginal();
-        if (oldPlayer.level().isClientSide || !event.isWasDeath()) return;
+        if (oldPlayer.level().isClientSide || !event.isWasDeath()) {
+            return;
+        }
         ServerPlayer newPlayer = (ServerPlayer) event.getEntity();
         CompoundTag deathData = oldPlayer.getData(Registration.DEATH_DATA);
 

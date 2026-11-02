@@ -37,7 +37,7 @@ public class GlitterParticleType extends ParticleType<GlitterParticleData> {
 
         @Override
         public Particle createParticle(GlitterParticleData data, ClientLevel world, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            return new GlitterParticle(world, x, y, z, data.targetX, data.targetY, data.targetZ, xSpeed, ySpeed, zSpeed, data.size, data.r, data.g, data.b, data.a, data.depthTest, data.maxAgeMul, data.partType, this.sprites);
+            return new GlitterParticle(world, x, y, z, data.targetX(), data.targetY(), data.targetZ(), xSpeed, ySpeed, zSpeed, data.size(), data.r(), data.g(), data.b(), data.a(), data.depthTest(), data.maxAgeMul(), data.partType(), this.sprites);
         }
     }
 }

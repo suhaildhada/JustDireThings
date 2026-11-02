@@ -13,15 +13,14 @@ public record ParadoxSyncPayload(
         int runtime
 ) implements CustomPacketPayload {
     public static final Type<ParadoxSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "paradox_sync"));
-
-    @Override
-    public Type<ParadoxSyncPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ParadoxSyncPayload> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, ParadoxSyncPayload::blockPos,
             ByteBufCodecs.INT, ParadoxSyncPayload::runtime,
             ParadoxSyncPayload::new
     );
+
+    @Override
+    public Type<ParadoxSyncPayload> type() {
+        return TYPE;
+    }
 }

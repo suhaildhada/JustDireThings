@@ -145,25 +145,33 @@ public class JustDireItemModels extends ItemModelProvider {
                 .fluid(Registration.POLYMORPHIC_FLUID_BUCKET.get().content);*/
     }
 
-    public void buckets() {
-        for (var bucket : Registration.BUCKET_ITEMS.getEntries()) {
-            withExistingParent(bucket.getId().getPath(), ResourceLocation.fromNamespaceAndPath(NeoForgeVersion.MOD_ID, "item/bucket"))
-                    .customLoader(DynamicFluidContainerModelBuilder::begin)
-                    .fluid(((BucketItem) bucket.get()).content);
+    private void registerBowModels() {
+        for (var bow : Registration.BOWS.getEntries()) {
+            String bowName = bow.getId().getPath();
 
+            // Base bow model
+            forBows(singleTexture(bowName, mcLoc("item/generated"), "layer0", modLoc("item/bows/" + bowName)));
+
+            // Pulling models with consistent transformations
+            for (int i = 0; i < 3; i++) {
+                forBows(
+                        getBuilder(bowName + "_pulling_" + i)
+                                .parent(getExistingFile(mcLoc("item/generated")))
+                                .texture("layer0", modLoc("item/bows/" + bowName + "_pulling_" + i))
+                );
+            }
+
+            // Overrides for pulling states
+            getBuilder(bowName)
+                    .override().predicate(modLoc("pulling"), 1).model(getExistingFile(modLoc("item/" + bowName + "_pulling_0"))).end()
+                    .override().predicate(modLoc("pulling"), 1).predicate(modLoc("pull"), 0.45f).model(getExistingFile(modLoc("item/" + bowName + "_pulling_1"))).end()
+                    .override().predicate(modLoc("pulling"), 1).predicate(modLoc("pull"), 0.9f).model(getExistingFile(modLoc("item/" + bowName + "_pulling_2"))).end();
         }
     }
 
     public void registerTools() {
         for (var tool : Registration.TOOLS.getEntries()) {
             registerEnabledTextureItem(tool.getId().getPath());
-        }
-    }
-
-    public void registerUpgrades() {
-        for (var upgrade : Registration.UPGRADES.getEntries()) {
-            String name = upgrade.getId().getPath().substring(upgrade.getId().getPath().indexOf("_") + 1);
-            singleTexture(upgrade.getId().getPath(), mcLoc("item/generated"), "layer0", modLoc("item/abilityupgrades/" + name));
         }
     }
 
@@ -174,22 +182,20 @@ public class JustDireItemModels extends ItemModelProvider {
         }
     }
 
-    protected ItemModelBuilder generated(ItemLike itemLike, ResourceLocation texture) {
-        return withExistingParent(BuiltInRegistries.ITEM.getKey(itemLike.asItem()).getPath(), "item/generated").texture("layer0", texture);
+    public void buckets() {
+        for (var bucket : Registration.BUCKET_ITEMS.getEntries()) {
+            withExistingParent(bucket.getId().getPath(), ResourceLocation.fromNamespaceAndPath(NeoForgeVersion.MOD_ID, "item/bucket"))
+                    .customLoader(DynamicFluidContainerModelBuilder::begin)
+                    .fluid(((BucketItem) bucket.get()).content);
+
+        }
     }
 
-    protected ItemModelBuilder armorWithTrim(ArmorItem armorItem, ResourceLocation texture) {
-        ItemModelBuilder builder = generated(armorItem, texture);
-        for (ItemModelGenerators.TrimModelData trimModelData : ItemModelGenerators.GENERATED_TRIM_MODELS) {
-            String trimId = trimModelData.name(armorItem.getMaterial());
-            ItemModelBuilder override = withExistingParent(builder.getLocation().withSuffix("_" + trimId + "_trim").getPath(), "item/generated")
-                    .texture("layer0", texture)
-                    .texture("layer1", ResourceLocation.withDefaultNamespace("trims/items/" + armorItem.getType().getName() + "_trim_" + trimId));
-            builder.override()
-                    .predicate(ItemModelGenerators.TRIM_TYPE_PREDICATE_ID, trimModelData.itemModelIndex())
-                    .model(override);
+    public void registerUpgrades() {
+        for (var upgrade : Registration.UPGRADES.getEntries()) {
+            String name = upgrade.getId().getPath().substring(upgrade.getId().getPath().indexOf("_") + 1);
+            singleTexture(upgrade.getId().getPath(), mcLoc("item/generated"), "layer0", modLoc("item/abilityupgrades/" + name));
         }
-        return builder;
     }
 
     public void registerEnabledTextureItem(String path) {
@@ -232,28 +238,22 @@ public class JustDireItemModels extends ItemModelProvider {
                 .end();
     }
 
-    private void registerBowModels() {
-        for (var bow : Registration.BOWS.getEntries()) {
-            String bowName = bow.getId().getPath();
-
-            // Base bow model
-            forBows(singleTexture(bowName, mcLoc("item/generated"), "layer0", modLoc("item/bows/" + bowName)));
-
-            // Pulling models with consistent transformations
-            for (int i = 0; i < 3; i++) {
-                forBows(
-                        getBuilder(bowName + "_pulling_" + i)
-                                .parent(getExistingFile(mcLoc("item/generated")))
-                                .texture("layer0", modLoc("item/bows/" + bowName + "_pulling_" + i))
-                );
-            }
-
-            // Overrides for pulling states
-            getBuilder(bowName)
-                    .override().predicate(modLoc("pulling"), 1).model(getExistingFile(modLoc("item/" + bowName + "_pulling_0"))).end()
-                    .override().predicate(modLoc("pulling"), 1).predicate(modLoc("pull"), 0.45f).model(getExistingFile(modLoc("item/" + bowName + "_pulling_1"))).end()
-                    .override().predicate(modLoc("pulling"), 1).predicate(modLoc("pull"), 0.9f).model(getExistingFile(modLoc("item/" + bowName + "_pulling_2"))).end();
+    protected ItemModelBuilder armorWithTrim(ArmorItem armorItem, ResourceLocation texture) {
+        ItemModelBuilder builder = generated(armorItem, texture);
+        for (ItemModelGenerators.TrimModelData trimModelData : ItemModelGenerators.GENERATED_TRIM_MODELS) {
+            String trimId = trimModelData.name(armorItem.getMaterial());
+            ItemModelBuilder override = withExistingParent(builder.getLocation().withSuffix("_" + trimId + "_trim").getPath(), "item/generated")
+                    .texture("layer0", texture)
+                    .texture("layer1", ResourceLocation.withDefaultNamespace("trims/items/" + armorItem.getType().getName() + "_trim_" + trimId));
+            builder.override()
+                    .predicate(ItemModelGenerators.TRIM_TYPE_PREDICATE_ID, trimModelData.itemModelIndex())
+                    .model(override);
         }
+        return builder;
+    }
+
+    protected ItemModelBuilder generated(ItemLike itemLike, ResourceLocation texture) {
+        return withExistingParent(BuiltInRegistries.ITEM.getKey(itemLike.asItem()).getPath(), "item/generated").texture("layer0", texture);
     }
 
 }

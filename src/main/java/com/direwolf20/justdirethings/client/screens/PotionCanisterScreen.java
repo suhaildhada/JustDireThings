@@ -29,18 +29,25 @@ import java.util.List;
 import java.util.Optional;
 
 public class PotionCanisterScreen extends AbstractContainerScreen<PotionCanisterContainer> {
-    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fuelcanister.png");
     protected final ResourceLocation FLUIDBAR = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fluidbar.png");
-    ResourceLocation potionOverlay = ResourceLocation.fromNamespaceAndPath("minecraft", "item/potion_overlay");
-
-
     protected final PotionCanisterContainer container;
-    private ItemStack potionCanister;
+    private final   ResourceLocation GUI      = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fuelcanister.png");
+    ResourceLocation potionOverlay = ResourceLocation.fromNamespaceAndPath("minecraft", "item/potion_overlay");
+    private final ItemStack potionCanister;
 
     public PotionCanisterScreen(PotionCanisterContainer container, Inventory inv, Component name) {
         super(container, inv, name);
-        this.container = container;
+        this.container      = container;
         this.potionCanister = container.potionCanister;
+    }
+
+    private static MutableComponent getTrans(String key, Object... args) {
+        return Component.translatable(JustDireThings.MODID + "." + key, args);
+    }
+
+    @Override
+    public void init() {
+        super.init();
     }
 
     @Override
@@ -53,16 +60,6 @@ public class PotionCanisterScreen extends AbstractContainerScreen<PotionCanister
     protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
         fluidBarTooltip(pGuiGraphics, pX, pY);
-    }
-
-    @Override
-    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
-        super.renderSlot(pGuiGraphics, pSlot);
-    }
-
-    @Override
-    public void init() {
-        super.init();
     }
 
     @Override
@@ -87,9 +84,47 @@ public class PotionCanisterScreen extends AbstractContainerScreen<PotionCanister
         guiGraphics.blit(FLUIDBAR, getGuiLeft() + offset, getGuiTop() + 5, 18, 0, 18, 72, 36, 72);
     }
 
+    @Override
+    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
+        super.renderSlot(pGuiGraphics, pSlot);
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int btn) {
+        return super.mouseClicked(x, y, btn);
+    }
+
+    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
+        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
+    }
+
+    @Override
+    public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
+        InputConstants.Key mouseKey = InputConstants.getKey(p_keyPressed_1_, p_keyPressed_2_);
+        if (p_keyPressed_1_ == 256 || minecraft.options.keyInventory.isActiveAndMatches(mouseKey)) {
+            onClose();
+
+            return true;
+        }
+
+        return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+    }
+
     public void renderFluid(GuiGraphics guiGraphics, int startX, int startY, int width, int height, ItemStack potionCanister) {
         PotionContents potionContents = PotionCanister.getPotionContents(potionCanister);
-        if (potionContents.equals(PotionContents.EMPTY) || PotionCanister.getPotionAmount(potionCanister) <= 0) return;
+        if (potionContents.equals(PotionContents.EMPTY) || PotionCanister.getPotionAmount(potionCanister) <= 0) {
+            return;
+        }
         ResourceLocation fluidStill = IClientFluidTypeExtensions.of(Fluids.WATER).getStillTexture();
         TextureAtlasSprite fluidStillSprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluidStill);
         int fluidColor = potionContents.getColor();
@@ -147,7 +182,9 @@ public class PotionCanisterScreen extends AbstractContainerScreen<PotionCanister
     public void fluidBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         PotionContents potionContents = PotionCanister.getPotionContents(potionCanister);
         int potionAmt = PotionCanister.getPotionAmount(potionCanister);
-        if (potionAmt == 0 || potionContents.equals(PotionContents.EMPTY)) return;
+        if (potionAmt == 0 || potionContents.equals(PotionContents.EMPTY)) {
+            return;
+        }
         if (MiscTools.inBounds(getGuiLeft() + 5, getGuiTop() + 5, 18, 72, pX, pY)) {
             List<Component> components = new ArrayList<>();
             components.add(Component.literal(MagicHelpers.formatted(potionAmt) + "/" + MagicHelpers.formatted(PotionCanister.getMaxMB())));
@@ -157,43 +194,8 @@ public class PotionCanisterScreen extends AbstractContainerScreen<PotionCanister
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void onClose() {
-        super.onClose();
-    }
-
-    @Override
-    public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
-        InputConstants.Key mouseKey = InputConstants.getKey(p_keyPressed_1_, p_keyPressed_2_);
-        if (p_keyPressed_1_ == 256 || minecraft.options.keyInventory.isActiveAndMatches(mouseKey)) {
-            onClose();
-
-            return true;
-        }
-
-        return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
-    }
-
-    @Override
-    public boolean mouseClicked(double x, double y, int btn) {
-        return super.mouseClicked(x, y, btn);
-    }
-
-    public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
-        return super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_);
-    }
-
-    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double pScrollX, double pScrollY) {
         return super.mouseScrolled(mouseX, mouseY, pScrollX, pScrollY);
-    }
-
-    private static MutableComponent getTrans(String key, Object... args) {
-        return Component.translatable(JustDireThings.MODID + "." + key, args);
     }
 
 }

@@ -14,12 +14,6 @@ public record ExperienceHolderSettingsPayload(
         boolean showParticles
 ) implements CustomPacketPayload {
     public static final Type<ExperienceHolderSettingsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "experience_holder_settings"));
-
-    @Override
-    public Type<ExperienceHolderSettingsPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ExperienceHolderSettingsPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, ExperienceHolderSettingsPayload::targetExp,
             ByteBufCodecs.BOOL, ExperienceHolderSettingsPayload::ownerOnly,
@@ -27,4 +21,9 @@ public record ExperienceHolderSettingsPayload(
             ByteBufCodecs.BOOL, ExperienceHolderSettingsPayload::showParticles,
             ExperienceHolderSettingsPayload::new
     );
+
+    @Override
+    public Type<ExperienceHolderSettingsPayload> type() {
+        return TYPE;
+    }
 }

@@ -12,15 +12,14 @@ public record DropperSettingPayload(
         int pickupDelay
 ) implements CustomPacketPayload {
     public static final Type<DropperSettingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "dropper_setting_packet"));
-
-    @Override
-    public Type<DropperSettingPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, DropperSettingPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, DropperSettingPayload::dropCount,
             ByteBufCodecs.INT, DropperSettingPayload::pickupDelay,
             DropperSettingPayload::new
     );
+
+    @Override
+    public Type<DropperSettingPayload> type() {
+        return TYPE;
+    }
 }

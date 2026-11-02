@@ -12,15 +12,14 @@ public record PortalGunFavoritePayload(
         boolean staysOpen
 ) implements CustomPacketPayload {
     public static final Type<PortalGunFavoritePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_gun_favorite"));
-
-    @Override
-    public Type<PortalGunFavoritePayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, PortalGunFavoritePayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, PortalGunFavoritePayload::favorite,
             ByteBufCodecs.BOOL, PortalGunFavoritePayload::staysOpen,
             PortalGunFavoritePayload::new
     );
+
+    @Override
+    public Type<PortalGunFavoritePayload> type() {
+        return TYPE;
+    }
 }

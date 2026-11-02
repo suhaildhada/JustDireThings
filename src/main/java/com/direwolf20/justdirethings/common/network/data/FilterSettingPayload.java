@@ -13,16 +13,15 @@ public record FilterSettingPayload(
         int blockItemFilter
 ) implements CustomPacketPayload {
     public static final Type<FilterSettingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "filter_setting_packet"));
-
-    @Override
-    public Type<FilterSettingPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, FilterSettingPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, FilterSettingPayload::allowList,
             ByteBufCodecs.BOOL, FilterSettingPayload::compareNBT,
             ByteBufCodecs.INT, FilterSettingPayload::blockItemFilter,
             FilterSettingPayload::new
     );
+
+    @Override
+    public Type<FilterSettingPayload> type() {
+        return TYPE;
+    }
 }

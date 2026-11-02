@@ -18,7 +18,7 @@ import java.util.Arrays;
 
 public class GeneratorFluidT1Screen extends BaseMachineScreen<GeneratorFluidT1Container> {
     protected GeneratorFluidT1Container container;
-    protected GeneratorFluidT1BE generatorBE;
+    protected GeneratorFluidT1BE        generatorBE;
 
     public GeneratorFluidT1Screen(GeneratorFluidT1Container container, Inventory inv, Component name) {
         super(container, inv, name);
@@ -29,14 +29,14 @@ public class GeneratorFluidT1Screen extends BaseMachineScreen<GeneratorFluidT1Co
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 0;
     }
 
     @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 0;
+    public void init() {
+        super.init();
     }
 
     @Override
@@ -56,16 +56,17 @@ public class GeneratorFluidT1Screen extends BaseMachineScreen<GeneratorFluidT1Co
     public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         if (baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
             if (MiscTools.inBounds(topSectionLeft + 5, topSectionTop + 5, 18, 72, pX, pY)) {
-                if (hasShiftDown())
+                if (hasShiftDown()) {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy())),
                             Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.getFePerFuelTick()))
                     )), pX, pY);
-                else
+                } else {
                     pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
                             Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy())),
                             Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.getFePerFuelTick()))
                     )), pX, pY);
+                }
             }
         }
     }

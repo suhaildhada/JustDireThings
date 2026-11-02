@@ -12,14 +12,14 @@ public class FluidCollectorT1Screen extends BaseMachineScreen<FluidCollectorT1Co
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 0;
     }
 
     @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 0;
+    public void init() {
+        super.init();
     }
 
     @Override

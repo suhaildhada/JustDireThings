@@ -23,8 +23,9 @@ public class ItemCollectorRenderer extends AreaAffectingBER {
         super.render(blockentity, partialTicks, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn);
         long gameTime = blockentity.getLevel().getGameTime();
         Matrix4f matrix4f = matrixStackIn.last().pose();
-        if (blockentity instanceof ItemCollectorBE itemCollectorBE)
+        if (blockentity instanceof ItemCollectorBE itemCollectorBE) {
             this.renderCube(itemCollectorBE, matrix4f, bufferIn.getBuffer(this.renderType()), gameTime, partialTicks);
+        }
     }
 
     private void renderCube(ItemCollectorBE blockEntity, Matrix4f matrixStack, VertexConsumer vertexConsumer, long gameTime, float partialTicks) {
@@ -100,15 +101,15 @@ public class ItemCollectorRenderer extends AreaAffectingBER {
         }
     }
 
+    protected RenderType renderType() {
+        return RenderType.endPortal();
+    }
+
     private void renderFace(Matrix4f matrixStack, VertexConsumer vertexConsumer, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4) {
         vertexConsumer.addVertex(matrixStack, x1, y1, z1);
         vertexConsumer.addVertex(matrixStack, x2, y1, z2);
         vertexConsumer.addVertex(matrixStack, x2, y2, z3);
         vertexConsumer.addVertex(matrixStack, x1, y2, z4);
-    }
-
-    protected RenderType renderType() {
-        return RenderType.endPortal();
     }
 
 }

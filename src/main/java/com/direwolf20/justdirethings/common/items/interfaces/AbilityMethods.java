@@ -60,8 +60,9 @@ import static com.direwolf20.justdirethings.common.items.interfaces.ToggleableTo
 
 public class AbilityMethods {
     public static boolean glowing(Level level, Player player, ItemStack itemStack) {
-        if (testUseTool(itemStack, Ability.GLOWING) < 0)
+        if (testUseTool(itemStack, Ability.GLOWING) < 0) {
             return false;
+        }
         BlockPos playerPos = player.getOnPos();
         int radius = 20;
         // Define the search area
@@ -79,40 +80,45 @@ public class AbilityMethods {
     }
 
     public static boolean scanForMobScanner(Level level, Player player, ItemStack itemStack) {
-        if (testUseTool(itemStack, Ability.MOBSCANNER) < 0)
+        if (testUseTool(itemStack, Ability.MOBSCANNER) < 0) {
             return false;
+        }
         return scanFor(level, player, itemStack, Ability.MOBSCANNER);
-    }
-
-    public static boolean scanForOreScanner(Level level, Player player, ItemStack itemStack) {
-        if (testUseTool(itemStack, Ability.ORESCANNER) < 0)
-            return false;
-        return scanFor(level, player, itemStack, Ability.ORESCANNER);
-    }
-
-    public static boolean scanForOreXRAY(Level level, Player player, ItemStack itemStack) {
-        if (testUseTool(itemStack, Ability.OREXRAY) < 0)
-            return false;
-        return scanFor(level, player, itemStack, Ability.OREXRAY);
     }
 
     public static boolean scanFor(Level level, Player player, ItemStack itemStack, Ability toolAbility) {
         if (level.isClientSide) {
             ThingFinder.discover(player, toolAbility, itemStack);
-            if (toolAbility.equals(Ability.OREXRAY))
+            if (toolAbility.equals(Ability.OREXRAY)) {
                 player.playNotifySound(SoundEvents.SCULK_CLICKING, SoundSource.PLAYERS, 1.0F, 1.0F);
-            else
+            } else {
                 player.playNotifySound(SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
         } else { //ServerSide
             damageTool(itemStack, player, toolAbility);
         }
         return false;
     }
 
+    public static boolean scanForOreScanner(Level level, Player player, ItemStack itemStack) {
+        if (testUseTool(itemStack, Ability.ORESCANNER) < 0) {
+            return false;
+        }
+        return scanFor(level, player, itemStack, Ability.ORESCANNER);
+    }
+
+    public static boolean scanForOreXRAY(Level level, Player player, ItemStack itemStack) {
+        if (testUseTool(itemStack, Ability.OREXRAY) < 0) {
+            return false;
+        }
+        return scanFor(level, player, itemStack, Ability.OREXRAY);
+    }
+
     public static boolean leafbreaker(UseOnContext pContext) {
         ItemStack pStack = pContext.getItemInHand();
-        if (testUseTool(pStack, Ability.LEAFBREAKER) < 0)
+        if (testUseTool(pStack, Ability.LEAFBREAKER) < 0) {
             return false;
+        }
         Level pLevel = pContext.getLevel();
         BlockPos pPos = pContext.getClickedPos();
         BlockState pState = pLevel.getBlockState(pPos);
@@ -121,23 +127,27 @@ public class AbilityMethods {
         if (pState.getTags().anyMatch(tag -> tag.equals(BlockTags.LEAVES))) {
             int maxBreak = 64;
             if (pStack.getItem() instanceof TieredItem tieredItem) {
-                if (tieredItem.getTier().equals(GooTier.BLAZEGOLD))
+                if (tieredItem.getTier().equals(GooTier.BLAZEGOLD)) {
                     maxBreak = 128;
-                else if (tieredItem.getTier().equals(GooTier.CELESTIGEM))
+                } else if (tieredItem.getTier().equals(GooTier.CELESTIGEM)) {
                     maxBreak = 192;
-                else if (tieredItem.getTier().equals(GooTier.ECLIPSEALLOY))
+                } else if (tieredItem.getTier().equals(GooTier.ECLIPSEALLOY)) {
                     maxBreak = 256;
+                }
             }
             Set<BlockPos> alsoBreakSet = findLikeBlocks(pLevel, pState, pPos, maxBreak, 2);
             BlockEvents.alreadyBreaking = true;
             BlockEvents.spawnDropsAtPos = pPos;
             for (BlockPos breakPos : alsoBreakSet) {
-                if (testUseTool(pStack, Ability.LEAFBREAKER) < 0)
+                if (testUseTool(pStack, Ability.LEAFBREAKER) < 0) {
                     break;
+                }
                 breakBlocksNew(pLevel, breakPos, pEntityLiving, pStack, false, false);
                 pLevel.sendBlockUpdated(breakPos, pState, pLevel.getBlockState(breakPos), 3); // I have NO IDEA why this is necessary
                 if (Math.random() < 0.1) //10% chance to damage tool
+                {
                     damageTool(pStack, pEntityLiving, Ability.LEAFBREAKER);
+                }
             }
             BlockEvents.alreadyBreaking = false;
             BlockEvents.spawnDropsAtPos = BlockPos.ZERO;
@@ -149,16 +159,21 @@ public class AbilityMethods {
     public static boolean eclipseGate(UseOnContext pContext) {
         ItemStack pStack = pContext.getItemInHand();
         Level level = pContext.getLevel();
-        if (level.isClientSide) return true;
+        if (level.isClientSide) {
+            return true;
+        }
         int distance = ToggleableTool.getToolValue(pStack, Ability.ECLIPSEGATE.getName());
         Set<BlockPos> posList = getEclipseGateBlocks(pContext, distance);
         boolean anyWorked = false;
         for (BlockPos blockPos : posList) {
-            if (testUseTool(pStack, Ability.ECLIPSEGATE) < 0)
+            if (testUseTool(pStack, Ability.ECLIPSEGATE) < 0) {
                 break;
+            }
             BlockState blockState = level.getBlockState(blockPos);
             boolean placed = level.setBlockAndUpdate(blockPos, Registration.EclipseGateBlock.get().defaultBlockState());
-            if (!placed) continue;
+            if (!placed) {
+                continue;
+            }
             level.sendBlockUpdated(blockPos, blockState, Registration.EclipseGateBlock.get().defaultBlockState(), 3);
             BlockEntity be = level.getBlockEntity(blockPos);
             if (be instanceof EclipseGateBE eclipseGateBE) {
@@ -198,18 +213,29 @@ public class AbilityMethods {
     }
 
     public static boolean isValidGateBlock(ServerLevel serverLevel, BlockPos blockPos, Player player) {
-        if (serverLevel.getBlockEntity(blockPos) != null) return false;
+        if (serverLevel.getBlockEntity(blockPos) != null) {
+            return false;
+        }
         BlockState blockState = serverLevel.getBlockState(blockPos);
-        if (blockState.is(Registration.EclipseGateBlock.get())) return false;
-        if (blockState.isAir()) return false;
-        if (blockState.getDestroySpeed(serverLevel, blockPos) < 0) return false;
-        if (blockState.is(JustDireBlockTags.ECLISEGATEDENY)) return false;
-        if (blockState.is(Tags.Blocks.RELOCATION_NOT_SUPPORTED)) return false;
-        return true;
+        if (blockState.is(Registration.EclipseGateBlock.get())) {
+            return false;
+        }
+        if (blockState.isAir()) {
+            return false;
+        }
+        if (blockState.getDestroySpeed(serverLevel, blockPos) < 0) {
+            return false;
+        }
+        if (blockState.is(JustDireBlockTags.ECLISEGATEDENY)) {
+            return false;
+        }
+        return !blockState.is(Tags.Blocks.RELOCATION_NOT_SUPPORTED);
     }
 
     public static boolean voidShift(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         Vec3 shiftPosition = getShiftPosition(level, player, itemStack);
         if (!shiftPosition.equals(Vec3.ZERO)) {
             WorldBorder worldBorder = level.getWorldBorder();
@@ -218,8 +244,9 @@ public class AbilityMethods {
                 return false;
             }
             int distanceTraveled = (int) player.position().distanceTo(shiftPosition);
-            if (testUseTool(itemStack, Ability.VOIDSHIFT, distanceTraveled) < 0)
+            if (testUseTool(itemStack, Ability.VOIDSHIFT, distanceTraveled) < 0) {
                 return false;
+            }
             if (player.isPassenger()) {
                 player.dismountTo(shiftPosition.x, shiftPosition.y, shiftPosition.z);
             } else {
@@ -245,30 +272,33 @@ public class AbilityMethods {
         return returnVec;
     }
 
-    public static Vec3 getShapeAdjustedPosition(Level level, Player player, BlockHitResult result) {
-        BlockPos landingPos = result.getBlockPos().below().relative(result.getDirection());
-        BlockState blockState = level.getBlockState(landingPos);
-        VoxelShape voxelShape = blockState.getCollisionShape(level, landingPos, CollisionContext.of(player));
-        if (voxelShape.isEmpty())
-            return Vec3.atBottomCenterOf(landingPos);
-        else
-            return Vec3.atBottomCenterOf(landingPos).add(0, voxelShape.max(Direction.Axis.Y), 0);
-    }
-
     public static Vec3 getShapeAdjustedPosition(Level level, Player player, BlockHitResult result, Direction dir) {
         BlockPos landingPos = result.getBlockPos().below().relative(result.getDirection()).relative(dir);
         BlockState blockState = level.getBlockState(landingPos);
         VoxelShape voxelShape = blockState.getCollisionShape(level, landingPos, CollisionContext.of(player));
-        if (voxelShape.isEmpty())
+        if (voxelShape.isEmpty()) {
             return Vec3.atBottomCenterOf(landingPos);
-        else
+        } else {
             return Vec3.atBottomCenterOf(landingPos).add(0, voxelShape.max(Direction.Axis.Y), 0);
+        }
+    }
+
+    public static Vec3 getShapeAdjustedPosition(Level level, Player player, BlockHitResult result) {
+        BlockPos landingPos = result.getBlockPos().below().relative(result.getDirection());
+        BlockState blockState = level.getBlockState(landingPos);
+        VoxelShape voxelShape = blockState.getCollisionShape(level, landingPos, CollisionContext.of(player));
+        if (voxelShape.isEmpty()) {
+            return Vec3.atBottomCenterOf(landingPos);
+        } else {
+            return Vec3.atBottomCenterOf(landingPos).add(0, voxelShape.max(Direction.Axis.Y), 0);
+        }
     }
 
     public static boolean airBurst(Level level, Player player, ItemStack itemStack) {
         int multiplier = ToggleableTool.getToolValue(itemStack, Ability.AIRBURST.getName());
-        if (testUseTool(itemStack, Ability.AIRBURST, multiplier) < 0)
+        if (testUseTool(itemStack, Ability.AIRBURST, multiplier) < 0) {
             return false;
+        }
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             // Get the player's looking direction as a vector
             Vec3 lookDirection = player.getViewVector(1.0F);
@@ -282,7 +312,7 @@ public class AbilityMethods {
             player.resetFallDistance();
             // Optionally, you could add some effects or sounds here
             damageTool(itemStack, player, Ability.AIRBURST, multiplier);
-            PacketDistributor.sendToPlayer((ServerPlayer) player, new ClientSoundPayload(SoundEvents.FIRECHARGE_USE.getLocation(), 0.5f, 0.125f));
+            PacketDistributor.sendToPlayer(serverPlayer, new ClientSoundPayload(SoundEvents.FIRECHARGE_USE.getLocation(), 0.5f, 0.125f));
             level.playSound(player, player.getOnPos(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.5f, 0.125f);
             return true;
         }
@@ -290,12 +320,17 @@ public class AbilityMethods {
     }
 
     public static boolean cauterizeWounds(Level level, Player player, ItemStack itemStack) {
-        if (testUseTool(itemStack, Ability.CAUTERIZEWOUNDS) < 0)
+        if (testUseTool(itemStack, Ability.CAUTERIZEWOUNDS) < 0) {
             return false;
-        if (player.getHealth() >= player.getMaxHealth()) return false;
+        }
+        if (player.getHealth() >= player.getMaxHealth()) {
+            return false;
+        }
         if (!level.isClientSide) {
             int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.CAUTERIZEWOUNDS);
-            if (currentCooldown != -1) return false;
+            if (currentCooldown != -1) {
+                return false;
+            }
             if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.CAUTERIZEWOUNDS)) {
                 AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.CAUTERIZEWOUNDS);
                 ToggleableTool.addCooldown(itemStack, Ability.CAUTERIZEWOUNDS, abilityParams.cooldown, false);
@@ -323,17 +358,21 @@ public class AbilityMethods {
             Set<BlockPos> breakBlocks = findTaggedBlocks(level, tags, player.getOnPos(), 64, 5);
             List<ItemStack> drops = new ArrayList<>();
             for (BlockPos breakPos : breakBlocks) {
-                if (testUseTool(itemStack, Ability.LAWNMOWER) < 0)
+                if (testUseTool(itemStack, Ability.LAWNMOWER) < 0) {
                     break;
+                }
                 BlockState state = level.getBlockState(breakPos);
                 BlockEntity blockEntity = level.getBlockEntity(breakPos);
                 if (level instanceof ServerLevel serverLevel) {
                     boolean removed = level.destroyBlock(breakPos, false);
-                    if (removed)
+                    if (removed) {
                         drops.addAll(Block.getDrops(state, serverLevel, breakPos, blockEntity, player, itemStack)); //This isn't perfect, but should be 'good enough' for lawnmowerables
+                    }
                 }
                 if (Math.random() < 0.1) //10% chance to damage tool
+                {
                     damageTool(itemStack, player, Ability.LAWNMOWER);
+                }
             }
             if (!breakBlocks.isEmpty()) {
                 BlockPos firstPos = breakBlocks.iterator().next();
@@ -345,41 +384,46 @@ public class AbilityMethods {
         return false;
     }
 
-    public static void handleDrops(ItemStack pStack, ServerLevel serverLevel, BlockPos pPos, LivingEntity pEntityLiving, BlockPos breakBlockPosition, List<ItemStack> drops, BlockState pState, int totalExp) {
-        Set<BlockPos> positions = new HashSet<>();
-        positions.add(breakBlockPosition);
-        handleDrops(pStack, serverLevel, pPos, pEntityLiving, positions, drops, pState, totalExp);
-    }
-
-
     public static void handleDrops(ItemStack pStack, ServerLevel serverLevel, BlockPos pPos, LivingEntity pEntityLiving, Set<BlockPos> breakBlockPositions, List<ItemStack> drops, BlockState pState, int totalExp) {
         if (pStack.getItem() instanceof ToggleableTool toggleableTool) {
             if (toggleableTool.canUseAbility(pStack, Ability.SMELTER) && pStack.getDamageValue() < pStack.getMaxDamage()) {
                 boolean[] smeltedItemsFlag = new boolean[1]; // Array to hold the smelting flag
                 drops = smeltDrops(serverLevel, drops, pStack, pEntityLiving, smeltedItemsFlag);
-                if (smeltedItemsFlag[0])
+                if (smeltedItemsFlag[0]) {
                     smelterParticles(serverLevel, breakBlockPositions);
+                }
             }
             if (!drops.isEmpty() && toggleableTool.canUseAbility(pStack, Ability.DROPTELEPORT)) {
                 IItemHandler handler = getBoundHandler(serverLevel, pStack);
                 if (handler != null && pEntityLiving instanceof Player player) {
                     teleportDrops(drops, handler, pStack, player);
                     if (drops.isEmpty()) //Only spawn particles if we teleported everything - granted this isn't perfect, but way better than exhaustive testing
+                    {
                         teleportParticles(serverLevel, breakBlockPositions);
+                    }
                 }
             }
-            if (!drops.isEmpty())
+            if (!drops.isEmpty()) {
                 Helpers.dropDrops(drops, serverLevel, pPos);
-            if (totalExp > 0)
+            }
+            if (totalExp > 0) {
                 pState.getBlock().popExperience(serverLevel, pPos, totalExp);
+            }
         }
+    }
+
+    public static void handleDrops(ItemStack pStack, ServerLevel serverLevel, BlockPos pPos, LivingEntity pEntityLiving, BlockPos breakBlockPosition, List<ItemStack> drops, BlockState pState, int totalExp) {
+        Set<BlockPos> positions = new HashSet<>();
+        positions.add(breakBlockPosition);
+        handleDrops(pStack, serverLevel, pPos, pEntityLiving, positions, drops, pState, totalExp);
     }
 
     public static boolean runSpeed(Level level, Player player, ItemStack itemStack) {
         if (player.isSprinting() && !player.isFallFlying() && player.zza > 0F && !player.isInWaterOrBubble()) {
             float speed = (float) ToggleableTool.getToolValue(itemStack, Ability.RUNSPEED.getName()) / 25;
-            if (!player.onGround())
+            if (!player.onGround()) {
                 speed = speed / 4;
+            }
             player.moveRelative(speed, new Vec3(0, 0, 1));
         }
         return false;
@@ -392,8 +436,9 @@ public class AbilityMethods {
         boolean shouldBoostFlight = canBoostElytra || isNotFlying;
         if (!player.isSprinting() && shouldBoostFlight && player.zza > 0F && !player.isInWaterOrBubble()) {
             float speed = (float) ToggleableTool.getToolValue(itemStack, Ability.WALKSPEED.getName()) / 25;
-            if (!player.onGround())
+            if (!player.onGround()) {
                 speed = speed / 4;
+            }
             player.moveRelative(speed, new Vec3(0, 0, 1));
         }
         return false;
@@ -425,10 +470,14 @@ public class AbilityMethods {
     }
 
     public static boolean extinguish(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         if (player.isOnFire() && ((ServerPlayer) player).gameMode.isSurvival()) {
             int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.EXTINGUISH);
-            if (currentCooldown != -1) return false;
+            if (currentCooldown != -1) {
+                return false;
+            }
             if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.EXTINGUISH)) {
                 AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.EXTINGUISH);
                 ToggleableTool.addCooldown(itemStack, Ability.EXTINGUISH, abilityParams.cooldown, false);
@@ -442,9 +491,13 @@ public class AbilityMethods {
     }
 
     public static boolean invulnerability(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.INVULNERABILITY);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.INVULNERABILITY)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.INVULNERABILITY);
             ToggleableTool.addCooldown(itemStack, Ability.INVULNERABILITY, abilityParams.activeCooldown, true);
@@ -455,9 +508,13 @@ public class AbilityMethods {
     }
 
     public static boolean stupefy(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.STUPEFY);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.STUPEFY)) {
             Entity entity = MiscTools.getEntityLookedAt(player, 32);
             if (entity instanceof Mob mob) {
@@ -473,14 +530,29 @@ public class AbilityMethods {
         return false;
     }
 
+    public static void addStupefyTarget(ItemStack itemStack, String entityUUID) {
+        List<String> stupefyTargets = new ArrayList<>(getStupefyTargets(itemStack));
+        stupefyTargets.add(entityUUID);
+        itemStack.set(JustDireDataComponents.STUPEFY_TARGETS, stupefyTargets);
+    }
+
+    public static List<String> getStupefyTargets(ItemStack itemStack) {
+        return itemStack.getOrDefault(JustDireDataComponents.STUPEFY_TARGETS.get(), new ArrayList<>());
+    }
+
     public static boolean polymorphRandom(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.POLYMORPH_RANDOM)) {
             int fuelAmt = Config.RANDOM_POLYMORPH_COST.get();
-            if (!FluidContainingItem.hasEnoughFluid(itemStack, fuelAmt))
+            if (!FluidContainingItem.hasEnoughFluid(itemStack, fuelAmt)) {
                 return false;
+            }
             Entity entity = MiscTools.getEntityLookedAt(player, 4);
-            if (entity == null) return false;
+            if (entity == null) {
+                return false;
+            }
             boolean peaceful = entity.getType().is(JustDireEntityTags.POLYMORPHIC_PEACEFUL);
             if (!peaceful && !entity.getType().is(JustDireEntityTags.POLYMORPHIC_HOSTILE)) {
                 player.displayClientMessage(Component.translatable("justdirethings.invalidpolymorphentity"), true);
@@ -498,8 +570,9 @@ public class AbilityMethods {
                         newMob.setHealth(newMob.getMaxHealth()); // Reset health to maximum
                         ((ServerLevel) level).addFreshEntityWithPassengers(newMob);
 
-                        if (!newMob.isAddedToLevel())
+                        if (!newMob.isAddedToLevel()) {
                             return false; //If it failed to add for some reason?
+                        }
 
                         // Play effects
                         player.playNotifySound(SoundEvents.ILLUSIONER_CAST_SPELL, SoundSource.PLAYERS, 0.5F, 0.75F);
@@ -520,20 +593,37 @@ public class AbilityMethods {
         return false;
     }
 
+    private static EntityType<?> getRandomMobTypeByCategory(Level level, boolean peaceful) {
+        List<EntityType<?>> mobTypes = BuiltInRegistries.ENTITY_TYPE.stream()
+                .filter(type -> peaceful ? type.is(JustDireEntityTags.POLYMORPHIC_PEACEFUL) : type.is(JustDireEntityTags.POLYMORPHIC_HOSTILE))
+                .toList();
+
+        return mobTypes.isEmpty() ? null : mobTypes.get(level.random.nextInt(mobTypes.size()));
+    }
+
     public static boolean polymorphTarget(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.POLYMORPH_TARGET)) {
             Entity entity = MiscTools.getEntityLookedAt(player, 4);
-            if (entity == null) return false;
+            if (entity == null) {
+                return false;
+            }
 
             int fuelAmt = Config.TARGET_POLYMORPH_COST.get();
-            if (!FluidContainingItem.hasEnoughFluid(itemStack, fuelAmt))
+            if (!FluidContainingItem.hasEnoughFluid(itemStack, fuelAmt)) {
                 return false;
+            }
 
             if (entity instanceof Mob mob) {
-                if (!itemStack.has(ENTITIYTYPE)) return false;
+                if (!itemStack.has(ENTITIYTYPE)) {
+                    return false;
+                }
                 EntityType<?> newType = EntityType.byString(itemStack.get(ENTITIYTYPE)).orElse(null);
-                if (newType == null) return false;
+                if (newType == null) {
+                    return false;
+                }
 
                 // Spawn new mob at the same location
                 Mob newMob = (Mob) newType.create(level);
@@ -542,10 +632,11 @@ public class AbilityMethods {
 
                     newMob.moveTo(mob.getX(), mob.getY(), mob.getZ(), mob.getYRot(), mob.getXRot());
                     newMob.setHealth(newMob.getMaxHealth()); // Reset health to maximum
-                    ((ServerLevel) level).addFreshEntity(newMob);
+                    level.addFreshEntity(newMob);
 
-                    if (!newMob.isAddedToLevel())
+                    if (!newMob.isAddedToLevel()) {
                         return false; //If it failed to add for some reason?
+                    }
 
                     // Play effects
                     player.playNotifySound(SoundEvents.ILLUSIONER_CAST_SPELL, SoundSource.PLAYERS, 0.5F, 0.75F);
@@ -566,9 +657,13 @@ public class AbilityMethods {
     }
 
     public static boolean groundstomp(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.GROUNDSTOMP);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.GROUNDSTOMP)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.GROUNDSTOMP);
             ToggleableTool.addCooldown(itemStack, Ability.GROUNDSTOMP, abilityParams.cooldown, false);
@@ -598,10 +693,21 @@ public class AbilityMethods {
         return false;
     }
 
+    public static boolean isValidStompEntity(Entity entity) {
+        if (entity.isMultipartEntity()) {
+            return false;
+        }
+        return !(entity instanceof PartEntity<?>);
+    }
+
     public static boolean decoy(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.DECOY);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.DECOY)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.DECOY);
             DecoyEntity decoy = new DecoyEntity(level);
@@ -618,17 +724,22 @@ public class AbilityMethods {
     }
 
     public static boolean debuffRemover(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.DEBUFFREMOVER);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.DEBUFFREMOVER)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.DEBUFFREMOVER);
             ToggleableTool.addCooldown(itemStack, Ability.DEBUFFREMOVER, abilityParams.cooldown, false);
             player.playNotifySound(SoundEvents.WANDERING_TRADER_DRINK_MILK, SoundSource.PLAYERS, 1.0F, 1.0F);
             List<Holder<MobEffect>> negativeEffects = new ArrayList<>();
             for (Holder<MobEffect> mobEffect : player.getActiveEffectsMap().keySet()) {
-                if (mobEffect.value().getCategory() == MobEffectCategory.HARMFUL)
+                if (mobEffect.value().getCategory() == MobEffectCategory.HARMFUL) {
                     negativeEffects.add(mobEffect);
+                }
             }
             for (Holder<MobEffect> mobEffectHolder : negativeEffects) {
                 if (toggleableTool.canUseAbilityAndDurability(itemStack, Ability.DEBUFFREMOVER)) {
@@ -641,9 +752,13 @@ public class AbilityMethods {
     }
 
     public static boolean earthquake(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.EARTHQUAKE);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.EARTHQUAKE)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.EARTHQUAKE);
             ToggleableTool.addCooldown(itemStack, Ability.EARTHQUAKE, abilityParams.activeCooldown, true);
@@ -666,10 +781,27 @@ public class AbilityMethods {
         return false;
     }
 
+    public static boolean isValidEarthquake(Entity entity) {
+        if (!entity.onGround()) {
+            return false;
+        }
+        if (entity.isMultipartEntity()) {
+            return false;
+        }
+        if (entity instanceof PartEntity<?>) {
+            return false;
+        }
+        return !entity.getType().is(JustDireEntityTags.NO_EARTHQUAKE);
+    }
+
     public static boolean noAI(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.NOAI);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.NOAI)) {
             AbilityParams abilityParams = toggleableTool.getAbilityParams(Ability.NOAI);
             ToggleableTool.addCooldown(itemStack, Ability.NOAI, abilityParams.cooldown, false);
@@ -693,10 +825,24 @@ public class AbilityMethods {
         return false;
     }
 
+    public static boolean isValidNOAIEntity(Entity entity) {
+        if (entity.isMultipartEntity()) {
+            return false;
+        }
+        if (entity instanceof PartEntity<?>) {
+            return false;
+        }
+        return !entity.getType().is(JustDireEntityTags.NO_AI_DENY);
+    }
+
     public static boolean epicArrow(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         int currentCooldown = ToggleableTool.getAnyCooldown(itemStack, Ability.EPICARROW);
-        if (currentCooldown != -1) return false;
+        if (currentCooldown != -1) {
+            return false;
+        }
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(itemStack, Ability.EPICARROW) && !itemStack.getOrDefault(JustDireDataComponents.EPIC_ARROW, false)) {
             itemStack.set(JustDireDataComponents.EPIC_ARROW, true);
             player.playNotifySound(SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.PLAYERS, 1F, 0.5F);
@@ -706,62 +852,17 @@ public class AbilityMethods {
     }
 
     public static boolean flight(Level level, Player player, ItemStack itemStack) {
-        if (level.isClientSide) return false;
-        if (player.getAbilities().flying)
+        if (level.isClientSide) {
+            return false;
+        }
+        if (player.getAbilities().flying) {
             Helpers.damageTool(itemStack, player, Ability.FLIGHT);
+        }
         return false;
-    }
-
-    public static boolean isValidStompEntity(Entity entity) {
-        if (entity.isMultipartEntity())
-            return false;
-        if (entity instanceof PartEntity<?>)
-            return false;
-        return true;
-    }
-
-    public static boolean isValidNOAIEntity(Entity entity) {
-        if (entity.isMultipartEntity())
-            return false;
-        if (entity instanceof PartEntity<?>)
-            return false;
-        if (entity.getType().is(JustDireEntityTags.NO_AI_DENY))
-            return false;
-        return true;
-    }
-
-    public static boolean isValidEarthquake(Entity entity) {
-        if (!entity.onGround())
-            return false;
-        if (entity.isMultipartEntity())
-            return false;
-        if (entity instanceof PartEntity<?>)
-            return false;
-        if (entity.getType().is(JustDireEntityTags.NO_EARTHQUAKE))
-            return false;
-        return true;
-    }
-
-    public static List<String> getStupefyTargets(ItemStack itemStack) {
-        return itemStack.getOrDefault(JustDireDataComponents.STUPEFY_TARGETS.get(), new ArrayList<>());
-    }
-
-    public static void addStupefyTarget(ItemStack itemStack, String entityUUID) {
-        List<String> stupefyTargets = new ArrayList<>(getStupefyTargets(itemStack));
-        stupefyTargets.add(entityUUID);
-        itemStack.set(JustDireDataComponents.STUPEFY_TARGETS, stupefyTargets);
     }
 
     public static void clearStupefyTargets(ItemStack itemStack) {
         itemStack.set(JustDireDataComponents.STUPEFY_TARGETS, new ArrayList<>());
-    }
-
-    private static EntityType<?> getRandomMobTypeByCategory(Level level, boolean peaceful) {
-        List<EntityType<?>> mobTypes = BuiltInRegistries.ENTITY_TYPE.stream()
-                .filter(type -> peaceful ? type.is(JustDireEntityTags.POLYMORPHIC_PEACEFUL) : type.is(JustDireEntityTags.POLYMORPHIC_HOSTILE))
-                .toList();
-
-        return mobTypes.isEmpty() ? null : mobTypes.get(level.random.nextInt(mobTypes.size()));
     }
 
 }

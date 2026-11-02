@@ -16,7 +16,11 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public interface FilterableBE {
-    FilterBasicHandler getFilterHandler();
+    default void saveFilterSettings(CompoundTag tag) {
+        tag.putBoolean("allowlist", getFilterData().allowlist);
+        tag.putBoolean("compareNBT", getFilterData().compareNBT);
+        tag.putInt("blockitemfilter", getFilterData().blockItemFilter);
+    }
 
     FilterData getFilterData();
 
@@ -25,39 +29,38 @@ public interface FilterableBE {
         existingData = filterData;
     }
 
-    BlockEntity getBlockEntity();
-
-
-    default void saveFilterSettings(CompoundTag tag) {
-        tag.putBoolean("allowlist", getFilterData().allowlist);
-        tag.putBoolean("compareNBT", getFilterData().compareNBT);
-        tag.putInt("blockitemfilter", getFilterData().blockItemFilter);
-    }
-
     default void loadFilterSettings(CompoundTag tag) {
-        getFilterData().allowlist = tag.getBoolean("allowlist");
+        getFilterData().allowlist  = tag.getBoolean("allowlist");
         getFilterData().compareNBT = tag.getBoolean("compareNBT");
         int blockItemFilter = tag.getInt("blockitemfilter");
-        if (blockItemFilter != -1 && getFilterData().blockItemFilter != -1)
+        if (blockItemFilter != -1 && getFilterData().blockItemFilter != -1) {
             getFilterData().blockItemFilter = blockItemFilter;
+        }
     }
 
     default void setFilterSettings(FilterData filterData) {
-        getFilterData().allowlist = filterData.allowlist;
-        getFilterData().compareNBT = filterData.compareNBT;
+        getFilterData().allowlist       = filterData.allowlist;
+        getFilterData().compareNBT      = filterData.compareNBT;
         getFilterData().blockItemFilter = filterData.blockItemFilter;
-        if (getBlockEntity() instanceof BaseMachineBE baseMachineBE)
+        if (getBlockEntity() instanceof BaseMachineBE baseMachineBE) {
             baseMachineBE.markDirtyClient();
+        }
     }
+
+    BlockEntity getBlockEntity();
 
     default boolean isStackValidFilter(ItemStack testStack) {
         ItemStackKey key = new ItemStackKey(testStack, getFilterData().compareNBT);
-        if (getFilterData().filterCache.containsKey(key)) return getFilterData().filterCache.get(key);
+        if (getFilterData().filterCache.containsKey(key)) {
+            return getFilterData().filterCache.get(key);
+        }
 
         FilterBasicHandler filteredItems = getFilterHandler();
         for (int i = 0; i < filteredItems.getSlots(); i++) {
             ItemStack stack = filteredItems.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack.isEmpty()) {
+                continue;
+            }
             if (key.equals(new ItemStackKey(stack, getFilterData().compareNBT))) {
                 getFilterData().filterCache.put(key, getFilterData().allowlist);
                 return getFilterData().allowlist;
@@ -67,24 +70,33 @@ public interface FilterableBE {
         return !getFilterData().allowlist;
     }
 
+    FilterBasicHandler getFilterHandler();
+
     default boolean isEntityValidFilter(Entity entity, Level level) {
-        if (getFilterData().entityCache.containsKey(entity)) return getFilterData().entityCache.get(entity);
+        if (getFilterData().entityCache.containsKey(entity)) {
+            return getFilterData().entityCache.get(entity);
+        }
 
         FilterBasicHandler filteredItems = getFilterHandler();
         for (int i = 0; i < filteredItems.getSlots(); i++) {
             ItemStack stack = filteredItems.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack.isEmpty()) {
+                continue;
+            }
             if (stack.getItem() instanceof SpawnEggItem) {
                 Item entityEgg = SpawnEggItem.byId(entity.getType());
-                if (entityEgg == null) continue;
+                if (entityEgg == null) {
+                    continue;
+                }
                 if (stack.is(entityEgg)) {
                     getFilterData().entityCache.put(entity, getFilterData().allowlist);
                     return getFilterData().allowlist;
                 }
             } else if (stack.getItem() instanceof CreatureCatcher creatureCatcher) {
                 Mob mob = CreatureCatcherEntity.getEntityFromItemStack(stack, level);
-                if (mob == null)
+                if (mob == null) {
                     continue;
+                }
                 if (entity.getType().equals(mob.getType())) {
                     if (getFilterData().compareNBT) {
                         CompoundTag filterTag = getNormalizedTag(mob);
@@ -165,12 +177,16 @@ public interface FilterableBE {
     default boolean isStackValidFilter(LiquidBlock liquidBlock) {
         ItemStack testStack = new ItemStack(liquidBlock.fluid.getBucket());
         ItemStackKey key = new ItemStackKey(testStack, getFilterData().compareNBT);
-        if (getFilterData().filterCache.containsKey(key)) return getFilterData().filterCache.get(key);
+        if (getFilterData().filterCache.containsKey(key)) {
+            return getFilterData().filterCache.get(key);
+        }
 
         FilterBasicHandler filteredItems = getFilterHandler();
         for (int i = 0; i < filteredItems.getSlots(); i++) {
             ItemStack stack = filteredItems.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack.isEmpty()) {
+                continue;
+            }
             if (key.equals(new ItemStackKey(stack, getFilterData().compareNBT))) {
                 getFilterData().filterCache.put(key, getFilterData().allowlist);
                 return getFilterData().allowlist;
@@ -179,4 +195,6 @@ public interface FilterableBE {
         getFilterData().filterCache.put(key, !getFilterData().allowlist);
         return !getFilterData().allowlist;
     }
+
+
 }

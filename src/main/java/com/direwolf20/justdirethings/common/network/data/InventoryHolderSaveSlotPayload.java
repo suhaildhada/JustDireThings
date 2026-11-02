@@ -11,14 +11,13 @@ public record InventoryHolderSaveSlotPayload(
         int slot
 ) implements CustomPacketPayload {
     public static final Type<InventoryHolderSaveSlotPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "inventory_holder_save_slot"));
+    public static final StreamCodec<FriendlyByteBuf, InventoryHolderSaveSlotPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, InventoryHolderSaveSlotPayload::slot,
+            InventoryHolderSaveSlotPayload::new
+    );
 
     @Override
     public Type<InventoryHolderSaveSlotPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, InventoryHolderSaveSlotPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, InventoryHolderSaveSlotPayload::slot,
-            InventoryHolderSaveSlotPayload::new
-    );
 }

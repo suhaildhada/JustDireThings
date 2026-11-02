@@ -30,13 +30,13 @@ public abstract class UnrefinedT3Fuel extends BaseFlowingFluid {
     }
 
     @Override
-    public Item getBucket() {
-        return Registration.UNREFINED_T3_FLUID_BUCKET.get();
+    protected boolean canConvertToSource(Level pLevel) {
+        return false;
     }
 
     @Override
-    protected boolean canConvertToSource(Level pLevel) {
-        return false;
+    public Item getBucket() {
+        return Registration.UNREFINED_T3_FLUID_BUCKET.get();
     }
 
     public static class Flowing extends UnrefinedT3Fuel {

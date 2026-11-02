@@ -26,10 +26,13 @@ public class RenderHighlight {
     static void renderBlockHighlight(RenderHighlightEvent.Block evt) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
-        if (mc.player == null)
+        if (mc.player == null) {
             return;
+        }
         ItemStack toggleableToolStack = player.getMainHandItem();
-        if (!(toggleableToolStack.getItem() instanceof ToggleableTool toggleableTool)) return;
+        if (!(toggleableToolStack.getItem() instanceof ToggleableTool toggleableTool)) {
+            return;
+        }
         Level level = player.level();
         BlockPos targetPos = evt.getTarget().getBlockPos();
         Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(toggleableToolStack, level, targetPos, player, level.getBlockState(targetPos));
@@ -38,7 +41,9 @@ public class RenderHighlight {
         double d1 = vec3.y();
         double d2 = vec3.z();
         for (BlockPos blockPos : breakBlockPositions) {
-            if (blockPos.equals(targetPos)) continue; //Let the original event draw this one!
+            if (blockPos.equals(targetPos)) {
+                continue; //Let the original event draw this one!
+            }
             VertexConsumer vertexconsumer2 = evt.getMultiBufferSource().getBuffer(RenderType.lines());
             renderHitOutline(evt.getPoseStack(), vertexconsumer2, player, d0, d1, d2, level, blockPos, level.getBlockState(blockPos));
         }

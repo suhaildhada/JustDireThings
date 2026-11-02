@@ -26,22 +26,21 @@ import java.util.Map;
 
 
 public class GooSpreadRecipeTagBuilder implements RecipeBuilder {
+    protected final BlockTagIngredient        input;
+    protected final BlockState                output;
+    protected final int                       tierRequirement;
+    protected final int                       craftingDuration;
+    private final   ResourceLocation          id;
+    private final   NonNullList<Ingredient>   ingredients = NonNullList.create();
+    private final   Map<String, Criterion<?>> criteria    = new LinkedHashMap<>();
     @Nullable
-    private String group;
-
-    private final ResourceLocation id;
-    protected final BlockTagIngredient input;
-    protected final BlockState output;
-    protected final int tierRequirement;
-    protected final int craftingDuration;
-    private final NonNullList<Ingredient> ingredients = NonNullList.create();
-    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
+    private         String                    group;
 
     public GooSpreadRecipeTagBuilder(ResourceLocation id, BlockTagIngredient input, BlockState output, int tierRequirement, int craftingDuration) {
-        this.id = id;
-        this.input = input;
-        this.output = output;
-        this.tierRequirement = tierRequirement;
+        this.id               = id;
+        this.input            = input;
+        this.output           = output;
+        this.tierRequirement  = tierRequirement;
         this.craftingDuration = craftingDuration;
     }
 
@@ -53,18 +52,6 @@ public class GooSpreadRecipeTagBuilder implements RecipeBuilder {
         return this.requires(Ingredient.of(pTag));
     }
 
-    public GooSpreadRecipeTagBuilder requires(ItemLike pItem) {
-        return this.requires(pItem, 1);
-    }
-
-    public GooSpreadRecipeTagBuilder requires(ItemLike pItem, int pQuantity) {
-        for (int i = 0; i < pQuantity; ++i) {
-            this.requires(Ingredient.of(pItem));
-        }
-
-        return this;
-    }
-
     public GooSpreadRecipeTagBuilder requires(Ingredient pIngredient) {
         return this.requires(pIngredient, 1);
     }
@@ -72,6 +59,18 @@ public class GooSpreadRecipeTagBuilder implements RecipeBuilder {
     public GooSpreadRecipeTagBuilder requires(Ingredient pIngredient, int pQuantity) {
         for (int i = 0; i < pQuantity; ++i) {
             this.ingredients.add(pIngredient);
+        }
+
+        return this;
+    }
+
+    public GooSpreadRecipeTagBuilder requires(ItemLike pItem) {
+        return this.requires(pItem, 1);
+    }
+
+    public GooSpreadRecipeTagBuilder requires(ItemLike pItem, int pQuantity) {
+        for (int i = 0; i < pQuantity; ++i) {
+            this.requires(Ingredient.of(pItem));
         }
 
         return this;
@@ -92,10 +91,6 @@ public class GooSpreadRecipeTagBuilder implements RecipeBuilder {
         return ItemStack.EMPTY.getItem();
     }
 
-    public void save(RecipeOutput pRecipeOutput) {
-        this.save(pRecipeOutput, ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, BuiltInRegistries.BLOCK.getKey(this.output.getBlock()).getPath() + "-goospread_tag"));
-    }
-
     @Override
     public void save(RecipeOutput pRecipeOutput, ResourceLocation pId) {
         this.ensureValid(pId);
@@ -112,6 +107,10 @@ public class GooSpreadRecipeTagBuilder implements RecipeBuilder {
                 this.craftingDuration
         );
         pRecipeOutput.accept(pId, shapelessrecipe, advancement$builder.build(pId.withPrefix("recipes/" + RecipeCategory.MISC.getFolderName() + "/")));
+    }
+
+    public void save(RecipeOutput pRecipeOutput) {
+        this.save(pRecipeOutput, ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, BuiltInRegistries.BLOCK.getKey(this.output.getBlock()).getPath() + "-goospread_tag"));
     }
 
     private void ensureValid(ResourceLocation pId) {

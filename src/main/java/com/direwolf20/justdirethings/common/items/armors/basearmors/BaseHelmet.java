@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static com.direwolf20.justdirethings.util.TooltipHelpers.*;
 
 public class BaseHelmet extends ArmorItem implements ToggleableTool, LeftClickableTool {
-    protected final EnumSet<Ability> abilities = EnumSet.noneOf(Ability.class);
+    protected final EnumSet<Ability>            abilities     = EnumSet.noneOf(Ability.class);
     protected final Map<Ability, AbilityParams> abilityParams = new EnumMap<>(Ability.class);
 
     public BaseHelmet(Holder<ArmorMaterial> pMaterial, Properties pProperties) {
@@ -57,6 +57,13 @@ public class BaseHelmet extends ArmorItem implements ToggleableTool, LeftClickab
     }
 
     @Override
+    public void inventoryTick(@NotNull ItemStack itemStack, @NotNull Level level, @NotNull Entity entity, int itemSlot, boolean isSelected) {
+        if (itemSlot == Inventory.INVENTORY_SIZE + EquipmentSlot.HEAD.getIndex() && (!getPassiveTickAbilities(itemStack).isEmpty() || !getCooldownAbilities().isEmpty()) && entity instanceof Player player) {
+            armorTick(level, player, itemStack);
+        }
+    }
+
+    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, context, tooltip, flagIn);
         Level level = context.level();
@@ -76,17 +83,20 @@ public class BaseHelmet extends ArmorItem implements ToggleableTool, LeftClickab
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack itemStack, @NotNull Level level, @NotNull Entity entity, int itemSlot, boolean isSelected) {
-        if (itemSlot == Inventory.INVENTORY_SIZE + EquipmentSlot.HEAD.getIndex() && (!getPassiveTickAbilities(itemStack).isEmpty() || !getCooldownAbilities().isEmpty()) && entity instanceof Player player) {
-            armorTick(level, player, itemStack);
+    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
+        if (stack.getItem() instanceof PoweredTool) {
+            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
         }
+        return super.isPrimaryItemFor(stack, enchantment);
     }
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
         if (stack.getItem() instanceof PoweredTool poweredTool) {
             IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-            if (energyStorage == null) return amount;
+            if (energyStorage == null) {
+                return amount;
+            }
             double reductionFactor = 0;
             if (entity != null) {
                 HolderLookup.RegistryLookup<Enchantment> registrylookup = entity.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
@@ -98,13 +108,6 @@ public class BaseHelmet extends ArmorItem implements ToggleableTool, LeftClickab
             return 0;
         }
         return amount;
-    }
-
-    @Override
-    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
-        if (stack.getItem() instanceof PoweredTool)
-            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
-        return super.isPrimaryItemFor(stack, enchantment);
     }
 
     private boolean canAcceptEnchantments(Holder<Enchantment> enchantment) {

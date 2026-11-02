@@ -33,35 +33,24 @@ import java.util.List;
 import static net.minecraft.world.entity.projectile.ThrownPotion.WATER_SENSITIVE_OR_ON_FIRE;
 
 public class JustDireArrow extends AbstractArrow {
-    private static final EntityDataAccessor<Integer> ID_EFFECT_COLOR = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> IS_POTIONARROW = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_SPLASH = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_LINGERING = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_HOMING = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> HOSTILE_ONLY = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> ARROW_STATE = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> ID_EFFECT_COLOR    = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_POTIONARROW     = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_SPLASH          = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_LINGERING       = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_HOMING          = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> HOSTILE_ONLY       = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> ARROW_STATE        = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STATE_TICK_COUNTER = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Float> ORIGINAL_VELOCITY = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Boolean> IS_EPIC_ARROW = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_PHASE = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_TARGET_ANGRY = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
-
-    private enum ArrowState {
-        NORMAL,
-        SLOWING_DOWN,
-        STOPPED_AND_ROTATING,
-        RESUMING_FLIGHT
-    }
-
-    private static final int SLOW_DOWN_DURATION = 4; // 1 second at 20 ticks per second
-    private static final int STOP_DURATION = 10; // 1 second stop duration
-    private static final int MAX_TARGETS = 10;
-
-    private static final byte EVENT_POTION_PUFF = 0;
-
-    private boolean canHitMobs = true;
-
-    private LivingEntity targetEntity;
+    private static final EntityDataAccessor<Float>   ORIGINAL_VELOCITY  = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> IS_EPIC_ARROW      = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_PHASE           = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_TARGET_ANGRY    = SynchedEntityData.defineId(JustDireArrow.class, EntityDataSerializers.BOOLEAN);
+    private static final int                         SLOW_DOWN_DURATION = 4; // 1 second at 20 ticks per second
+    private static final int                         STOP_DURATION      = 10; // 1 second stop duration
+    private static final int                         MAX_TARGETS        = 10;
+    private static final byte                        EVENT_POTION_PUFF  = 0;
+    private              boolean                     canHitMobs         = true;
+    private              LivingEntity                targetEntity;
 
     public JustDireArrow(EntityType<? extends AbstractArrow> p_36858_, Level p_36859_) {
         super(p_36858_, p_36859_);
@@ -72,9 +61,9 @@ public class JustDireArrow extends AbstractArrow {
         this.updateColor();
     }
 
-    public JustDireArrow(Level level, LivingEntity owner, ItemStack pickupItemStack, @Nullable ItemStack itemStack) {
-        super(Registration.JustDireArrow.get(), owner, level, pickupItemStack, itemStack);
-        this.updateColor();
+    private void updateColor() {
+        PotionContents potioncontents = this.getPotionContents();
+        this.entityData.set(ID_EFFECT_COLOR, potioncontents.equals(PotionContents.EMPTY) ? -1 : potioncontents.getColor());
     }
 
     public PotionContents getPotionContents() {
@@ -86,19 +75,9 @@ public class JustDireArrow extends AbstractArrow {
         this.updateColor();
     }
 
-    protected ItemStack getPickupItem() {
-        return new ItemStack(Items.ARROW);
-    }
-
-    @Override
-    protected void setPickupItemStack(ItemStack p_331667_) {
-        super.setPickupItemStack(p_331667_);
+    public JustDireArrow(Level level, LivingEntity owner, ItemStack pickupItemStack, @Nullable ItemStack itemStack) {
+        super(Registration.JustDireArrow.get(), owner, level, pickupItemStack, itemStack);
         this.updateColor();
-    }
-
-    private void updateColor() {
-        PotionContents potioncontents = this.getPotionContents();
-        this.entityData.set(ID_EFFECT_COLOR, potioncontents.equals(PotionContents.EMPTY) ? -1 : potioncontents.getColor());
     }
 
     public void addEffect(MobEffectInstance effectInstance) {
@@ -121,18 +100,6 @@ public class JustDireArrow extends AbstractArrow {
         this.entityData.set(IS_HOMING, homing);
     }
 
-    public void setPhase(boolean phase) {
-        this.entityData.set(IS_PHASE, phase);
-    }
-
-    public void setTargetAngry(boolean angry) {
-        this.entityData.set(IS_TARGET_ANGRY, angry);
-    }
-
-    public boolean isPhase() {
-        return this.entityData.get(IS_PHASE);
-    }
-
     public float getOriginalVelocity() {
         return this.entityData.get(ORIGINAL_VELOCITY);
     }
@@ -142,20 +109,20 @@ public class JustDireArrow extends AbstractArrow {
         this.setPierceLevel((byte) 5);
     }
 
-    public boolean isEpic() {
-        return this.entityData.get(IS_EPIC_ARROW);
+    public boolean getHostileOnly() {
+        return this.entityData.get(HOSTILE_ONLY);
     }
 
     public void setHostileOnly(boolean hostileOnly) {
         this.entityData.set(HOSTILE_ONLY, hostileOnly);
     }
 
-    public boolean getHostileOnly() {
-        return this.entityData.get(HOSTILE_ONLY);
-    }
-
     public boolean getTargetAngry() {
         return this.entityData.get(IS_TARGET_ANGRY);
+    }
+
+    public void setTargetAngry(boolean angry) {
+        this.entityData.set(IS_TARGET_ANGRY, angry);
     }
 
     @Override
@@ -175,59 +142,9 @@ public class JustDireArrow extends AbstractArrow {
         p_326324_.define(IS_TARGET_ANGRY, false);
     }
 
-    public boolean isHostileEntity(LivingEntity entity) {
-        if (getTargetAngry())
-            return true;
-        if (entity instanceof NeutralMob) {
-            if (((NeutralMob) entity).isAngry()) {
-                setTargetAngry(true);
-                return true;
-            }
-            return false;
-        }
-        if (entity instanceof Enemy) {
-            return true;
-        }
-        return false;
-    }
-
-    public void setData(EntityDataAccessor<Integer> entityDataAccessor, int value) {
-        if (!this.level().isClientSide)
-            this.entityData.set(entityDataAccessor, value);
-    }
-
-    public void setData(EntityDataAccessor<Boolean> entityDataAccessor, boolean value) {
-        if (!this.level().isClientSide)
-            this.entityData.set(entityDataAccessor, value);
-    }
-
-    public double searchRadius() {
-        return isEpic() ? 20 : 10;
-    }
-
-    @Override
-    public void setDeltaMovement(Vec3 deltaMovement) {
-        super.setDeltaMovement(deltaMovement);
-    }
-
-    @Override
-    protected EntityHitResult findHitEntity(Vec3 startVec, Vec3 endVec) {
-        if (!canHitMobs)
-            return null;
-        return super.findHitEntity(startVec, endVec);
-    }
-
-    public void setTargetEntity(LivingEntity targetEntity) {
-        this.targetEntity = targetEntity;
-    }
-
     @Override
     public void tick() {
-        if (isPhase()) {
-            this.noPhysics = true;
-        } else {
-            this.noPhysics = false;
-        }
+        this.noPhysics = isPhase();
         if (this.isPhase() && !level().isClientSide) {
             if (tickCount >= 200) {
                 this.discard();
@@ -248,8 +165,9 @@ public class JustDireArrow extends AbstractArrow {
         if (isEpic() && targetEntity != null && wasAlreadyHit(targetEntity)) {
             targetEntity = this.findNearestEntity();
         }
-        if (!level().isClientSide && getOriginalVelocity() == 0f)
+        if (!level().isClientSide && getOriginalVelocity() == 0f) {
             this.entityData.set(ORIGINAL_VELOCITY, (float) this.getDeltaMovement().length());
+        }
         if (this.targetEntity != null && !this.targetEntity.isAlive()) {
             if (!isEpic()) {
                 this.discard();
@@ -304,9 +222,156 @@ public class JustDireArrow extends AbstractArrow {
     }
 
     @Override
+    protected void onHitEntity(EntityHitResult result) {
+        super.onHitEntity(result);
+        if (isEpic()) {
+            setData(ARROW_STATE, ArrowState.STOPPED_AND_ROTATING.ordinal());
+            setData(STATE_TICK_COUNTER, 0);
+        }
+    }
+
+    public boolean isEpic() {
+        return this.entityData.get(IS_EPIC_ARROW);
+    }
+
+    public void setData(EntityDataAccessor<Integer> entityDataAccessor, int value) {
+        if (!this.level().isClientSide) {
+            this.entityData.set(entityDataAccessor, value);
+        }
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult result) {
+        super.onHitBlock(result);
+    }
+
+    @Override
+    protected void doPostHurtEffects(LivingEntity living) {
+        super.doPostHurtEffects(living);
+        if (!this.entityData.get(IS_POTIONARROW)) {
+            return;
+        }
+        Entity entity = this.getEffectSource();
+        PotionContents potioncontents = this.getPotionContents();
+        if (potioncontents.potion().isPresent()) {
+            for (MobEffectInstance mobeffectinstance : potioncontents.potion().get().value().getEffects()) {
+                if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && living.is(getOwner())) {
+                    continue;
+                }
+                if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !living.is(getOwner())) {
+                    continue;
+                }
+                living.addEffect(
+                        new MobEffectInstance(
+                                mobeffectinstance.getEffect(),
+                                Math.max(mobeffectinstance.mapDuration(p_268168_ -> p_268168_ / 2), 1),
+                                mobeffectinstance.getAmplifier(),
+                                mobeffectinstance.isAmbient(),
+                                mobeffectinstance.isVisible()
+                        ),
+                        entity
+                );
+            }
+        }
+
+        for (MobEffectInstance mobeffectinstance1 : potioncontents.customEffects()) {
+            living.addEffect(mobeffectinstance1, entity);
+        }
+    }
+
+    @Override
+    protected EntityHitResult findHitEntity(Vec3 startVec, Vec3 endVec) {
+        if (!canHitMobs) {
+            return null;
+        }
+        return super.findHitEntity(startVec, endVec);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putBoolean("is_potionarrow", this.entityData.get(IS_POTIONARROW));
+        pCompound.putBoolean("is_splash", this.entityData.get(IS_SPLASH));
+        pCompound.putBoolean("is_lingering", this.entityData.get(IS_LINGERING));
+        pCompound.putBoolean("is_homing", this.entityData.get(IS_HOMING));
+        pCompound.putInt("arrow_state", this.entityData.get(ARROW_STATE));
+        pCompound.putInt("state_tick_counter", this.entityData.get(STATE_TICK_COUNTER));
+        pCompound.putFloat("original_velocity", this.entityData.get(ORIGINAL_VELOCITY));
+        pCompound.putBoolean("is_epic_arrow", this.entityData.get(IS_EPIC_ARROW));
+        pCompound.putBoolean("is_phase", this.entityData.get(IS_PHASE));
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        this.entityData.set(IS_POTIONARROW, pCompound.getBoolean("is_potionarrow"));
+        this.entityData.set(IS_SPLASH, pCompound.getBoolean("is_splash"));
+        this.entityData.set(IS_LINGERING, pCompound.getBoolean("is_lingering"));
+        this.entityData.set(IS_HOMING, pCompound.getBoolean("is_homing"));
+        this.entityData.set(ARROW_STATE, pCompound.getInt("arrow_state"));
+        this.entityData.set(STATE_TICK_COUNTER, pCompound.getInt("state_tick_counter"));
+        this.entityData.set(ORIGINAL_VELOCITY, pCompound.getFloat("original_velocity"));
+        this.entityData.set(IS_EPIC_ARROW, pCompound.getBoolean("is_epic_arrow"));
+        this.entityData.set(IS_PHASE, pCompound.getBoolean("is_phase"));
+    }
+
+    protected ItemStack getPickupItem() {
+        return new ItemStack(Items.ARROW);
+    }
+
+    @Override
+    protected ItemStack getDefaultPickupItem() {
+        return new ItemStack(Items.ARROW);
+    }
+
+    @Override
+    protected void setPickupItemStack(ItemStack p_331667_) {
+        super.setPickupItemStack(p_331667_);
+        this.updateColor();
+    }
+
+    @Override
     protected float getWaterInertia() {
-        if (isPhase()) return 1.0f;
+        if (isPhase()) {
+            return 1.0f;
+        }
         return super.getWaterInertia();
+    }
+
+    public boolean isPhase() {
+        return this.entityData.get(IS_PHASE);
+    }
+
+    public void setPhase(boolean phase) {
+        this.entityData.set(IS_PHASE, phase);
+    }
+
+    public boolean isHostileEntity(LivingEntity entity) {
+        if (getTargetAngry()) {
+            return true;
+        }
+        if (entity instanceof NeutralMob) {
+            if (((NeutralMob) entity).isAngry()) {
+                setTargetAngry(true);
+                return true;
+            }
+            return false;
+        }
+        return entity instanceof Enemy;
+    }
+
+    public void setData(EntityDataAccessor<Boolean> entityDataAccessor, boolean value) {
+        if (!this.level().isClientSide) {
+            this.entityData.set(entityDataAccessor, value);
+        }
+    }
+
+    public double searchRadius() {
+        return isEpic() ? 20 : 10;
+    }
+
+    public void setTargetEntity(LivingEntity targetEntity) {
+        this.targetEntity = targetEntity;
     }
 
     private double calculateDotProduct(Vec3 vec1, Vec3 vec2) {
@@ -383,8 +448,9 @@ public class JustDireArrow extends AbstractArrow {
             setData(STATE_TICK_COUNTER, 0);
             if (targetEntity != null) {
                 this.adjustCourseTowards(targetEntity);
-                if (this.getOwner() instanceof Player player)
+                if (this.getOwner() instanceof Player player) {
                     this.level().playSound(player, this.getX(), this.getY(), this.getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.PLAYERS, 1.0F, 0.5F);
+                }
             }
             this.setDeltaMovement(this.getDeltaMovement().scale(0.25));
         }
@@ -400,23 +466,6 @@ public class JustDireArrow extends AbstractArrow {
         if (targetEntity != null) {
             this.adjustCourseTowards(targetEntity);
         }
-    }
-
-    @Override
-    public void setYRot(float yRot) {
-        if (yRot == 0f && getDeltaMovement().equals(Vec3.ZERO)) return;
-        if (isPhase()) {
-            Vec3 delta = getDeltaMovement();
-            if (yRot == (float) (Mth.atan2(-delta.x, -delta.z) * 180.0F / (float) Math.PI))
-                return;
-        }
-        super.setYRot(yRot);
-    }
-
-    @Override
-    public void setXRot(float xRot) {
-        if (xRot == 0f && getDeltaMovement().equals(Vec3.ZERO)) return;
-        super.setXRot(xRot);
     }
 
     private float wrapDegrees(float degrees) {
@@ -447,7 +496,7 @@ public class JustDireArrow extends AbstractArrow {
             }
             double distance = this.distanceToSqr(entity);
             if (distance < nearestDistance) {
-                nearestEntity = entity;
+                nearestEntity   = entity;
                 nearestDistance = distance;
             }
         }
@@ -456,10 +505,12 @@ public class JustDireArrow extends AbstractArrow {
     }
 
     private boolean wasAlreadyHit(LivingEntity target) {
-        if (!isEpic())
+        if (!isEpic()) {
             return false;
-        if (this.piercingIgnoreEntityIds == null)
+        }
+        if (this.piercingIgnoreEntityIds == null) {
             return false;
+        }
         return this.piercingIgnoreEntityIds.contains(target.getId());
     }
 
@@ -469,10 +520,11 @@ public class JustDireArrow extends AbstractArrow {
         Vec3 direction = targetCenterPosition.subtract(arrowPosition).normalize();
 
         // Update the arrow's motion
-        if (this.getDeltaMovement().equals(Vec3.ZERO))
+        if (this.getDeltaMovement().equals(Vec3.ZERO)) {
             this.setDeltaMovement(direction.scale(0.1f));
-        else
+        } else {
             this.setDeltaMovement(direction.scale(this.getDeltaMovement().length()));
+        }
 
         // Update the arrow's rotation to point towards the target
         double dx = direction.x;
@@ -505,15 +557,12 @@ public class JustDireArrow extends AbstractArrow {
         }
     }
 
-    public int getColor() {
-        return this.entityData.get(ID_EFFECT_COLOR);
-    }
-
     @Override
     protected void onHit(HitResult result) {
         HitResult.Type hitresult$type = result.getType();
-        if (isPhase() && hitresult$type == HitResult.Type.BLOCK)
+        if (isPhase() && hitresult$type == HitResult.Type.BLOCK) {
             return;
+        }
         super.onHit(result);
         PotionContents potioncontents = getPotionContents();
         if (potioncontents.is(Potions.WATER)) {
@@ -529,24 +578,6 @@ public class JustDireArrow extends AbstractArrow {
                 int i = potioncontents.potion().isPresent() && potioncontents.potion().get().value().hasInstantEffects() ? 2007 : 2002;
                 this.level().levelEvent(i, this.blockPosition(), potioncontents.getColor());
             }
-        }
-    }
-
-    @Override
-    protected void onHitBlock(BlockHitResult result) {
-        super.onHitBlock(result);
-    }
-
-    public boolean isCurrentlyGlowing() {
-        return isPhase();
-    }
-
-    @Override
-    protected void onHitEntity(EntityHitResult result) {
-        super.onHitEntity(result);
-        if (isEpic()) {
-            setData(ARROW_STATE, ArrowState.STOPPED_AND_ROTATING.ordinal());
-            setData(STATE_TICK_COUNTER, 0);
         }
     }
 
@@ -590,10 +621,12 @@ public class JustDireArrow extends AbstractArrow {
 
                         for (MobEffectInstance mobeffectinstance : p_330815_) {
                             Holder<MobEffect> holder = mobeffectinstance.getEffect();
-                            if (holder.value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && livingentity.is(getOwner()))
+                            if (holder.value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && livingentity.is(getOwner())) {
                                 continue;
-                            if (holder.value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !livingentity.is(getOwner()))
+                            }
+                            if (holder.value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !livingentity.is(getOwner())) {
                                 continue;
+                            }
                             if (holder.value().isInstantenous()) {
                                 holder.value().applyInstantenousEffect(this, this.getOwner(), livingentity, mobeffectinstance.getAmplifier(), d1);
                             } else {
@@ -626,42 +659,6 @@ public class JustDireArrow extends AbstractArrow {
         this.level().addFreshEntity(areaeffectcloud);
     }
 
-    @Override
-    protected void doPostHurtEffects(LivingEntity living) {
-        super.doPostHurtEffects(living);
-        if (!this.entityData.get(IS_POTIONARROW))
-            return;
-        Entity entity = this.getEffectSource();
-        PotionContents potioncontents = this.getPotionContents();
-        if (potioncontents.potion().isPresent()) {
-            for (MobEffectInstance mobeffectinstance : potioncontents.potion().get().value().getEffects()) {
-                if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL && getOwner() != null && living.is(getOwner()))
-                    continue;
-                if (mobeffectinstance.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL && getOwner() != null && !living.is(getOwner()))
-                    continue;
-                living.addEffect(
-                        new MobEffectInstance(
-                                mobeffectinstance.getEffect(),
-                                Math.max(mobeffectinstance.mapDuration(p_268168_ -> p_268168_ / 2), 1),
-                                mobeffectinstance.getAmplifier(),
-                                mobeffectinstance.isAmbient(),
-                                mobeffectinstance.isVisible()
-                        ),
-                        entity
-                );
-            }
-        }
-
-        for (MobEffectInstance mobeffectinstance1 : potioncontents.customEffects()) {
-            living.addEffect(mobeffectinstance1, entity);
-        }
-    }
-
-    @Override
-    protected ItemStack getDefaultPickupItem() {
-        return new ItemStack(Items.ARROW);
-    }
-
     /**
      * Handles an entity event received from a {@link net.minecraft.network.protocol.game.ClientboundEntityEventPacket}.
      */
@@ -692,31 +689,45 @@ public class JustDireArrow extends AbstractArrow {
         }
     }
 
-    @Override
-    public void addAdditionalSaveData(CompoundTag pCompound) {
-        super.addAdditionalSaveData(pCompound);
-        pCompound.putBoolean("is_potionarrow", this.entityData.get(IS_POTIONARROW));
-        pCompound.putBoolean("is_splash", this.entityData.get(IS_SPLASH));
-        pCompound.putBoolean("is_lingering", this.entityData.get(IS_LINGERING));
-        pCompound.putBoolean("is_homing", this.entityData.get(IS_HOMING));
-        pCompound.putInt("arrow_state", this.entityData.get(ARROW_STATE));
-        pCompound.putInt("state_tick_counter", this.entityData.get(STATE_TICK_COUNTER));
-        pCompound.putFloat("original_velocity", this.entityData.get(ORIGINAL_VELOCITY));
-        pCompound.putBoolean("is_epic_arrow", this.entityData.get(IS_EPIC_ARROW));
-        pCompound.putBoolean("is_phase", this.entityData.get(IS_PHASE));
+    public int getColor() {
+        return this.entityData.get(ID_EFFECT_COLOR);
+    }
+
+    public boolean isCurrentlyGlowing() {
+        return isPhase();
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag pCompound) {
-        super.readAdditionalSaveData(pCompound);
-        this.entityData.set(IS_POTIONARROW, pCompound.getBoolean("is_potionarrow"));
-        this.entityData.set(IS_SPLASH, pCompound.getBoolean("is_splash"));
-        this.entityData.set(IS_LINGERING, pCompound.getBoolean("is_lingering"));
-        this.entityData.set(IS_HOMING, pCompound.getBoolean("is_homing"));
-        this.entityData.set(ARROW_STATE, pCompound.getInt("arrow_state"));
-        this.entityData.set(STATE_TICK_COUNTER, pCompound.getInt("state_tick_counter"));
-        this.entityData.set(ORIGINAL_VELOCITY, pCompound.getFloat("original_velocity"));
-        this.entityData.set(IS_EPIC_ARROW, pCompound.getBoolean("is_epic_arrow"));
-        this.entityData.set(IS_PHASE, pCompound.getBoolean("is_phase"));
+    public void setDeltaMovement(Vec3 deltaMovement) {
+        super.setDeltaMovement(deltaMovement);
+    }
+
+    @Override
+    public void setYRot(float yRot) {
+        if (yRot == 0f && getDeltaMovement().equals(Vec3.ZERO)) {
+            return;
+        }
+        if (isPhase()) {
+            Vec3 delta = getDeltaMovement();
+            if (yRot == (float) (Mth.atan2(-delta.x, -delta.z) * 180.0F / (float) Math.PI)) {
+                return;
+            }
+        }
+        super.setYRot(yRot);
+    }
+
+    @Override
+    public void setXRot(float xRot) {
+        if (xRot == 0f && getDeltaMovement().equals(Vec3.ZERO)) {
+            return;
+        }
+        super.setXRot(xRot);
+    }
+
+    private enum ArrowState {
+        NORMAL,
+        SLOWING_DOWN,
+        STOPPED_AND_ROTATING,
+        RESUMING_FLIGHT
     }
 }

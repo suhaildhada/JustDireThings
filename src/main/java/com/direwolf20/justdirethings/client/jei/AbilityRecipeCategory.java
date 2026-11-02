@@ -18,20 +18,20 @@ public class AbilityRecipeCategory implements ISmithingCategoryExtension<Ability
     }
 
     @Override
+    public <T extends IIngredientAcceptor<T>> void setTemplate(AbilityRecipe recipe, T ingredientAcceptor) {
+        Ingredient ingredient = recipe.template();
+        ingredientAcceptor.addIngredients(ingredient);
+    }
+
+    @Override
     public <T extends IIngredientAcceptor<T>> void setBase(AbilityRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getBase();
+        Ingredient ingredient = recipe.base();
         ingredientAcceptor.addIngredients(ingredient);
     }
 
     @Override
     public <T extends IIngredientAcceptor<T>> void setAddition(AbilityRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getAddition();
-        ingredientAcceptor.addIngredients(ingredient);
-    }
-
-    @Override
-    public <T extends IIngredientAcceptor<T>> void setTemplate(AbilityRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getTemplate();
+        Ingredient ingredient = recipe.addition();
         ingredientAcceptor.addIngredients(ingredient);
     }
 
@@ -53,12 +53,12 @@ public class AbilityRecipeCategory implements ISmithingCategoryExtension<Ability
         RegistryAccess registryAccess = level.registryAccess();
 
         SmithingRecipeInput input = new SmithingRecipeInput(
-            templateSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
-            baseSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
-            additionSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY)
+                templateSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
+                baseSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
+                additionSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY)
         );
         ItemStack result = recipe.assemble(input, registryAccess);
         outputSlot.createDisplayOverrides()
-            .addItemStack(result);
+                .addItemStack(result);
     }
 }

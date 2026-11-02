@@ -24,18 +24,17 @@ import java.util.Map;
 
 
 public class AbilityRecipeBuilder implements RecipeBuilder {
+    private final Ingredient                template;
+    private final Ingredient                base;
+    private final Ingredient                addition;
+    private final NonNullList<Ingredient>   ingredients = NonNullList.create();
+    private final Map<String, Criterion<?>> criteria    = new LinkedHashMap<>();
     @Nullable
-    private String group;
-
-    private final Ingredient template;
-    private final Ingredient base;
-    private final Ingredient addition;
-    private final NonNullList<Ingredient> ingredients = NonNullList.create();
-    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
+    private       String                    group;
 
     public AbilityRecipeBuilder(Ingredient template, Ingredient base, Ingredient addition) {
         this.template = template;
-        this.base = base;
+        this.base     = base;
         this.addition = addition;
     }
 
@@ -47,18 +46,6 @@ public class AbilityRecipeBuilder implements RecipeBuilder {
         return this.requires(Ingredient.of(pTag));
     }
 
-    public AbilityRecipeBuilder requires(ItemLike pItem) {
-        return this.requires(pItem, 1);
-    }
-
-    public AbilityRecipeBuilder requires(ItemLike pItem, int pQuantity) {
-        for (int i = 0; i < pQuantity; ++i) {
-            this.requires(Ingredient.of(pItem));
-        }
-
-        return this;
-    }
-
     public AbilityRecipeBuilder requires(Ingredient pIngredient) {
         return this.requires(pIngredient, 1);
     }
@@ -66,6 +53,18 @@ public class AbilityRecipeBuilder implements RecipeBuilder {
     public AbilityRecipeBuilder requires(Ingredient pIngredient, int pQuantity) {
         for (int i = 0; i < pQuantity; ++i) {
             this.ingredients.add(pIngredient);
+        }
+
+        return this;
+    }
+
+    public AbilityRecipeBuilder requires(ItemLike pItem) {
+        return this.requires(pItem, 1);
+    }
+
+    public AbilityRecipeBuilder requires(ItemLike pItem, int pQuantity) {
+        for (int i = 0; i < pQuantity; ++i) {
+            this.requires(Ingredient.of(pItem));
         }
 
         return this;
@@ -86,13 +85,6 @@ public class AbilityRecipeBuilder implements RecipeBuilder {
         return ItemStack.EMPTY.getItem();
     }
 
-    public void save(RecipeOutput pRecipeOutput) {
-        String armorName = BuiltInRegistries.ITEM.getKey(this.base.getItems()[0].getItem()).getPath();
-        String abilityItemPath = BuiltInRegistries.ITEM.getKey(this.addition.getItems()[0].getItem()).getPath();
-        String abilityName = abilityItemPath.substring(abilityItemPath.indexOf("_") + 1);
-        this.save(pRecipeOutput, ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, armorName + "-" + abilityName));
-    }
-
     @Override
     public void save(RecipeOutput pRecipeOutput, ResourceLocation pId) {
         this.ensureValid(pId);
@@ -107,6 +99,13 @@ public class AbilityRecipeBuilder implements RecipeBuilder {
                 this.addition
         );
         pRecipeOutput.accept(pId, shapelessrecipe, advancement$builder.build(pId.withPrefix("recipes/" + RecipeCategory.MISC.getFolderName() + "/")));
+    }
+
+    public void save(RecipeOutput pRecipeOutput) {
+        String armorName = BuiltInRegistries.ITEM.getKey(this.base.getItems()[0].getItem()).getPath();
+        String abilityItemPath = BuiltInRegistries.ITEM.getKey(this.addition.getItems()[0].getItem()).getPath();
+        String abilityName = abilityItemPath.substring(abilityItemPath.indexOf("_") + 1);
+        this.save(pRecipeOutput, ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, armorName + "-" + abilityName));
     }
 
     private void ensureValid(ResourceLocation pId) {

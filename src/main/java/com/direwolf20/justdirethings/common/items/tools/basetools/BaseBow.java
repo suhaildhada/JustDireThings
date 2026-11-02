@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 import static com.direwolf20.justdirethings.util.TooltipHelpers.*;
 
 public class BaseBow extends BowItem implements ToggleableTool, LeftClickableTool {
-    protected final EnumSet<Ability> abilities = EnumSet.noneOf(Ability.class);
+    protected final EnumSet<Ability>            abilities     = EnumSet.noneOf(Ability.class);
     protected final Map<Ability, AbilityParams> abilityParams = new EnumMap<>(Ability.class);
 
     public BaseBow(Properties properties) {
@@ -59,13 +59,16 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) return InteractionResultHolder.pass(stack);
+        if (level.isClientSide) {
+            return InteractionResultHolder.pass(stack);
+        }
         if (player.isShiftKeyDown()) {
             openSettings(player);
             return InteractionResultHolder.success(player.getItemInHand(hand));
         }
-        if (stack.getItem() instanceof PoweredTool poweredTool && PoweredItem.getAvailableEnergy(stack) < poweredTool.getBlockBreakFECost())
+        if (stack.getItem() instanceof PoweredTool poweredTool && PoweredItem.getAvailableEnergy(stack) < poweredTool.getBlockBreakFECost()) {
             return InteractionResultHolder.pass(stack);
+        }
         return super.use(level, player, hand);
     }
 
@@ -74,6 +77,30 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
         if ((!getPassiveTickAbilities(itemStack).isEmpty() || !getCooldownAbilities().isEmpty()) && entity instanceof Player player) {
             ToggleableTool.tickCooldowns(level, itemStack, player);
         }
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, context, tooltip, flagIn);
+        Level level = context.level();
+        if (level == null) {
+            return;
+        }
+
+        boolean sneakPressed = Screen.hasShiftDown();
+        appendFEText(stack, tooltip);
+        if (sneakPressed) {
+            appendToolEnabled(stack, tooltip);
+            appendAbilityList(stack, tooltip);
+        } else {
+            appendToolEnabled(stack, tooltip);
+            appendShiftForInfo(stack, tooltip);
+        }
+    }
+
+    @Override
+    protected int getDurabilityUse(ItemStack itemStack) {
+        return this instanceof PoweredTool poweredTool ? poweredTool.getBlockBreakFECost() : 1;
     }
 
     protected Projectile createProjectile(Level level, LivingEntity livingEntity, ItemStack itemStack, ItemStack stack, boolean crit) {
@@ -92,8 +119,9 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
                 itemStack.set(JustDireDataComponents.EPIC_ARROW, false);
             }
 
-            if (!toggleableTool.getEnabled(itemStack))
+            if (!toggleableTool.getEnabled(itemStack)) {
                 return customArrow(justDireArrow, stack, itemStack);
+            }
 
             if (canUseAbilityAndDurability(itemStack, Ability.PHASE)) {
                 justDireArrow.setPhase(true);
@@ -105,13 +133,15 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
                 Helpers.damageTool(itemStack, livingEntity, Ability.HOMING);
                 boolean hostileOnly = ToggleableTool.getCustomSetting(itemStack, Ability.HOMING.getName()) == 0;
                 LivingEntity aimedAtEntity = findAimedAtEntity(livingEntity, hostileOnly, justDireArrow);
-                if (aimedAtEntity != null)
+                if (aimedAtEntity != null) {
                     justDireArrow.setTargetEntity(aimedAtEntity);
+                }
                 justDireArrow.setHostileOnly(hostileOnly);
             }
 
-            if (noPotionAbilitiesActive(itemStack))
+            if (noPotionAbilitiesActive(itemStack)) {
                 return customArrow(justDireArrow, stack, itemStack);
+            }
 
             IItemHandler itemHandler = itemStack.getCapability(Capabilities.ItemHandler.ITEM);
             if (itemHandler instanceof ComponentItemHandler componentItemHandler) {
@@ -123,15 +153,19 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
                         PotionContents slotPotionContents = PotionCanister.getPotionContents(potionCanister);
                         if (!slotPotionContents.equals(PotionContents.EMPTY)) {
                             int neededAmt = 0;
-                            if (canUseAbilityAndDurability(itemStack, Ability.POTIONARROW))
+                            if (canUseAbilityAndDurability(itemStack, Ability.POTIONARROW)) {
                                 neededAmt = neededAmt + 25;
-                            if (canUseAbilityAndDurability(itemStack, Ability.SPLASH))
+                            }
+                            if (canUseAbilityAndDurability(itemStack, Ability.SPLASH)) {
                                 neededAmt = neededAmt + 25;
-                            if (canUseAbilityAndDurability(itemStack, Ability.LINGERING))
+                            }
+                            if (canUseAbilityAndDurability(itemStack, Ability.LINGERING)) {
                                 neededAmt = neededAmt + 50;
+                            }
                             if (potionAmt >= neededAmt) {
-                                for (MobEffectInstance mobEffectInstance : slotPotionContents.getAllEffects())
+                                for (MobEffectInstance mobEffectInstance : slotPotionContents.getAllEffects()) {
                                     potionContents = potionContents.withEffectAdded(mobEffectInstance);
+                                }
                                 PotionCanister.setPotionAmount(potionCanister, potionAmt - neededAmt);
                                 componentItemHandler.setStackInSlot(slot, potionCanister);
                             }
@@ -189,14 +223,14 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
 
                 if (entityBoundingBox.contains(startVec)) {
                     if (closestDistance >= 0.0D) {
-                        closestEntity = livingEntity1;
+                        closestEntity   = livingEntity1;
                         closestDistance = 0.0D;
                     }
                 } else if (entityHitVec != null) {
                     double distanceToHit = startVec.distanceToSqr(entityHitVec);
 
                     if (distanceToHit < closestDistance) {
-                        closestEntity = livingEntity1;
+                        closestEntity   = livingEntity1;
                         closestDistance = distanceToHit;
                     }
                 }
@@ -206,24 +240,24 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
     }
 
     public boolean noPotionAbilitiesActive(ItemStack itemStack) {
-        if (canUseAbilityAndDurability(itemStack, Ability.POTIONARROW))
+        if (canUseAbilityAndDurability(itemStack, Ability.POTIONARROW)) {
             return false;
-        if (canUseAbilityAndDurability(itemStack, Ability.SPLASH))
+        }
+        if (canUseAbilityAndDurability(itemStack, Ability.SPLASH)) {
             return false;
-        if (canUseAbilityAndDurability(itemStack, Ability.LINGERING))
-            return false;
-        return true;
+        }
+        return !canUseAbilityAndDurability(itemStack, Ability.LINGERING);
 
-    }
-
-    @Override
-    protected int getDurabilityUse(ItemStack itemStack) {
-        return this instanceof PoweredTool poweredTool ? poweredTool.getBlockBreakFECost() : 1;
     }
 
     @Override
     public EnumSet<Ability> getAllAbilities() {
         return abilities;
+    }
+
+    @Override
+    public Map<Ability, AbilityParams> getAbilityParamsMap() {
+        return abilityParams;
     }
 
     @Override
@@ -234,34 +268,29 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
     }
 
     @Override
-    public Map<Ability, AbilityParams> getAbilityParamsMap() {
-        return abilityParams;
+    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
+        if (stack.getItem() instanceof PoweredTool) {
+            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
+        }
+        return super.isPrimaryItemFor(stack, enchantment);
+    }
+
+    private boolean canAcceptEnchantments(Holder<Enchantment> enchantment) {
+        return !enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
-        Level level = context.level();
-        if (level == null) {
-            return;
-        }
-
-        boolean sneakPressed = Screen.hasShiftDown();
-        appendFEText(stack, tooltip);
-        if (sneakPressed) {
-            appendToolEnabled(stack, tooltip);
-            appendAbilityList(stack, tooltip);
-        } else {
-            appendToolEnabled(stack, tooltip);
-            appendShiftForInfo(stack, tooltip);
-        }
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return false;
     }
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
         if (stack.getItem() instanceof PoweredTool poweredTool) {
             IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-            if (energyStorage == null) return amount;
+            if (energyStorage == null) {
+                return amount;
+            }
             double reductionFactor = 0;
             if (entity != null) {
                 HolderLookup.RegistryLookup<Enchantment> registrylookup = entity.level().getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
@@ -273,21 +302,5 @@ public class BaseBow extends BowItem implements ToggleableTool, LeftClickableToo
             return 0;
         }
         return amount;
-    }
-
-    @Override
-    public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
-        if (stack.getItem() instanceof PoweredTool)
-            return super.isPrimaryItemFor(stack, enchantment) && canAcceptEnchantments(enchantment);
-        return super.isPrimaryItemFor(stack, enchantment);
-    }
-
-    private boolean canAcceptEnchantments(Holder<Enchantment> enchantment) {
-        return !enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP);
-    }
-
-    @Override
-    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
-        return false;
     }
 }

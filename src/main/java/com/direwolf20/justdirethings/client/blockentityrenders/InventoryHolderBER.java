@@ -19,6 +19,7 @@ import java.util.UUID;
 
 public class InventoryHolderBER extends AreaAffectingBER {
     public static AbstractClientPlayer mockPlayer;
+
     public InventoryHolderBER(BlockEntityRendererProvider.Context context) {
 
     }
@@ -27,10 +28,13 @@ public class InventoryHolderBER extends AreaAffectingBER {
     public void render(BlockEntity blockentity, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedLightsIn, int combinedOverlayIn) {
         if (blockentity instanceof InventoryHolderBE inventoryHolderBE && inventoryHolderBE.renderPlayer) {
             // Create a fake player entity
-            if (mockPlayer == null || !mockPlayer.getUUID().equals(inventoryHolderBE.placedByUUID))
+            if (mockPlayer == null || !mockPlayer.getUUID().equals(inventoryHolderBE.placedByUUID)) {
                 mockPlayer = createMockPlayer(inventoryHolderBE);
-            if (mockPlayer == null) return;
-            mockPlayer.yHeadRot = 0;
+            }
+            if (mockPlayer == null) {
+                return;
+            }
+            mockPlayer.yHeadRot  = 0;
             mockPlayer.yHeadRotO = 0;
             // Equip the mock player with items
             equipMockPlayer(mockPlayer, inventoryHolderBE);
@@ -44,9 +48,13 @@ public class InventoryHolderBER extends AreaAffectingBER {
 
     public AbstractClientPlayer createMockPlayer(InventoryHolderBE blockEntity) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return null;
+        if (minecraft.level == null) {
+            return null;
+        }
         UUID placedByUUID = blockEntity.placedByUUID;
-        if (placedByUUID == null) return null;
+        if (placedByUUID == null) {
+            return null;
+        }
         // Create a mock AbstractClientPlayer using the current level and a GameProfile
         GameProfile gameProfile = new GameProfile(placedByUUID, "MockPlayer");
 
@@ -67,35 +75,27 @@ public class InventoryHolderBER extends AreaAffectingBER {
     public void equipMockPlayer(AbstractClientPlayer mockPlayer, InventoryHolderBE blockEntity) {
         ItemStackHandler itemStackHandler = blockEntity.getMachineHandler();
         // Equip the pickaxe in the main hand
-        if (!itemStackHandler.getStackInSlot(blockEntity.renderedSlot).isEmpty())
+        if (!itemStackHandler.getStackInSlot(blockEntity.renderedSlot).isEmpty()) {
             mockPlayer.setItemInHand(InteractionHand.MAIN_HAND, itemStackHandler.getStackInSlot(blockEntity.renderedSlot));
+        }
 
         // Equip the offhand
-        if (!itemStackHandler.getStackInSlot(40).isEmpty())
+        if (!itemStackHandler.getStackInSlot(40).isEmpty()) {
             mockPlayer.setItemInHand(InteractionHand.OFF_HAND, itemStackHandler.getStackInSlot(40));
+        }
 
-        if (!itemStackHandler.getStackInSlot(36).isEmpty())
+        if (!itemStackHandler.getStackInSlot(36).isEmpty()) {
             mockPlayer.setItemSlot(EquipmentSlot.HEAD, itemStackHandler.getStackInSlot(36));
-        if (!itemStackHandler.getStackInSlot(37).isEmpty())
+        }
+        if (!itemStackHandler.getStackInSlot(37).isEmpty()) {
             mockPlayer.setItemSlot(EquipmentSlot.CHEST, itemStackHandler.getStackInSlot(37));
-        if (!itemStackHandler.getStackInSlot(38).isEmpty())
+        }
+        if (!itemStackHandler.getStackInSlot(38).isEmpty()) {
             mockPlayer.setItemSlot(EquipmentSlot.LEGS, itemStackHandler.getStackInSlot(38));
-        if (!itemStackHandler.getStackInSlot(39).isEmpty())
+        }
+        if (!itemStackHandler.getStackInSlot(39).isEmpty()) {
             mockPlayer.setItemSlot(EquipmentSlot.FEET, itemStackHandler.getStackInSlot(39));
-    }
-
-    public void unEquipMockPlayer(AbstractClientPlayer mockPlayer, InventoryHolderBE blockEntity) {
-        ItemStackHandler itemStackHandler = blockEntity.getMachineHandler();
-        // Equip the pickaxe in the main hand
-        mockPlayer.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-
-        // Equip the offhand
-        mockPlayer.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-
-        mockPlayer.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-        mockPlayer.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
-        mockPlayer.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
-        mockPlayer.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+        }
     }
 
     public void renderMockPlayerEntity(PoseStack matrixStackIn, MultiBufferSource bufferIn, AbstractClientPlayer mockPlayer, int combinedLightsIn, float partialTicks) {
@@ -114,5 +114,19 @@ public class InventoryHolderBER extends AreaAffectingBER {
         Minecraft.getInstance().getEntityRenderDispatcher().render(mockPlayer, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks, matrixStackIn, bufferIn, 15728880);
 
         matrixStackIn.popPose();
+    }
+
+    public void unEquipMockPlayer(AbstractClientPlayer mockPlayer, InventoryHolderBE blockEntity) {
+        ItemStackHandler itemStackHandler = blockEntity.getMachineHandler();
+        // Equip the pickaxe in the main hand
+        mockPlayer.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+
+        // Equip the offhand
+        mockPlayer.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+
+        mockPlayer.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        mockPlayer.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        mockPlayer.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+        mockPlayer.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
     }
 }

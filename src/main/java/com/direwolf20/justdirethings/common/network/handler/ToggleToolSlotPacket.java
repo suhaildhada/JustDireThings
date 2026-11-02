@@ -21,13 +21,18 @@ public class ToggleToolSlotPacket {
             ItemStack stack = sender.getInventory().getItem(payload.slot());
             if (stack.getItem() instanceof ToggleableTool) {
                 if (payload.typeTool() == 0) //Toggle
+                {
                     ToggleableTool.toggleSetting(stack, payload.settingName());
-                else if (payload.typeTool() == 1) //Cycle
+                } else if (payload.typeTool() == 1) //Cycle
+                {
                     ToggleableTool.cycleSetting(stack, payload.settingName());
-                else if (payload.typeTool() == 2) //Slider
+                } else if (payload.typeTool() == 2) //Slider
+                {
                     ToggleableTool.setToolValue(stack, payload.settingName(), payload.value());
-                else if (payload.typeTool() == 3) //Render
+                } else if (payload.typeTool() == 3) //Render
+                {
                     ToggleableTool.setCustomSetting(stack, payload.settingName(), payload.value());
+                }
             }
         });
     }

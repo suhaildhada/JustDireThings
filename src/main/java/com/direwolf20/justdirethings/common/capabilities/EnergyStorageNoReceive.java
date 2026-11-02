@@ -16,8 +16,9 @@ public class EnergyStorageNoReceive extends MachineEnergyStorage {
      */
     public int forceReceiveEnergy(int maxReceive, boolean simulate) {
         int energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
-        if (!simulate)
+        if (!simulate) {
             energy += energyReceived;
+        }
         return energyReceived;
     }
 }

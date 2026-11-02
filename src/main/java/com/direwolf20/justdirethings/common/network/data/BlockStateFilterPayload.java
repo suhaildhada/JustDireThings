@@ -13,15 +13,14 @@ public record BlockStateFilterPayload(
         CompoundTag compoundTag
 ) implements CustomPacketPayload {
     public static final Type<BlockStateFilterPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "block_state_filter_packet"));
-
-    @Override
-    public Type<BlockStateFilterPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, BlockStateFilterPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, BlockStateFilterPayload::slot,
             ByteBufCodecs.COMPOUND_TAG, BlockStateFilterPayload::compoundTag,
             BlockStateFilterPayload::new
     );
+
+    @Override
+    public Type<BlockStateFilterPayload> type() {
+        return TYPE;
+    }
 }

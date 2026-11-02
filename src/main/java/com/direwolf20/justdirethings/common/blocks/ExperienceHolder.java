@@ -38,7 +38,8 @@ import javax.annotation.Nullable;
 import java.util.stream.Stream;
 
 public class ExperienceHolder extends BaseMachineBlock {
-    protected static final VoxelShape[] shapes = new VoxelShape[]{
+    public static final    DirectionProperty FACING = BlockStateProperties.FACING;
+    protected static final VoxelShape[]      shapes = new VoxelShape[]{
             Stream.of(
                     Block.box(4, 4, 6, 6, 10, 10),
                     Block.box(4, 0, 4, 12, 1, 12),
@@ -107,8 +108,6 @@ public class ExperienceHolder extends BaseMachineBlock {
             ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get() //WEST
     };
 
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
-
     public ExperienceHolder() {
         super(Properties.of()
                 .sound(SoundType.METAL)
@@ -126,20 +125,16 @@ public class ExperienceHolder extends BaseMachineBlock {
     }
 
     @Override
-    public void openMenu(Player player, BlockPos blockPos) {
-        player.openMenu(new SimpleMenuProvider(
-                (windowId, playerInventory, playerEntity) -> new ExperienceHolderContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
-            buf.writeBlockPos(blockPos);
-        }));
-    }
-
-    @Override
     protected ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
-        if (level.isClientSide) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (level.isClientSide) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         IFluidHandlerItem fluidHandlerItem = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         if (fluidHandlerItem != null) {
             IFluidHandler cap = level.getCapability(Capabilities.FluidHandler.BLOCK, blockPos, blockHitResult.getDirection());
-            if (cap == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (cap == null) {
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            }
             if (fluidHandlerItem.getFluidInTank(0).getAmount() < fluidHandlerItem.getTankCapacity(0) && !cap.getFluidInTank(0).isEmpty()) {
                 FluidStack testStack = cap.drain(fluidHandlerItem.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE);
                 if (testStack.getAmount() > 0) {
@@ -147,8 +142,9 @@ public class ExperienceHolder extends BaseMachineBlock {
                     if (amtFit > 0) {
                         FluidStack extractedStack = cap.drain(amtFit, IFluidHandler.FluidAction.EXECUTE);
                         fluidHandlerItem.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -160,8 +156,9 @@ public class ExperienceHolder extends BaseMachineBlock {
                     FluidStack extractedStack = fluidHandlerItem.drain(insertAmt, IFluidHandler.FluidAction.EXECUTE);
                     if (!extractedStack.isEmpty()) {
                         cap.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -171,9 +168,15 @@ public class ExperienceHolder extends BaseMachineBlock {
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof ExperienceHolderBE;
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter reader, BlockPos pos) {
+        return shapes[state.getValue(FACING).get3DDataValue()];
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState p_48731_, BlockGetter p_48732_, BlockPos p_48733_) {
+        return 1.0F;
     }
 
     @Override
@@ -181,10 +184,22 @@ public class ExperienceHolder extends BaseMachineBlock {
         return shapes[state.getValue(FACING).get3DDataValue()];
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter reader, BlockPos pos) {
-        return shapes[state.getValue(FACING).get3DDataValue()];
+    public boolean propagatesSkylightDown(BlockState p_48740_, BlockGetter p_48741_, BlockPos p_48742_) {
+        return true;
+    }
+
+    @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof ExperienceHolderBE;
+    }
+
+    @Override
+    public void openMenu(Player player, BlockPos blockPos) {
+        player.openMenu(new SimpleMenuProvider(
+                (windowId, playerInventory, playerEntity) -> new ExperienceHolderContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
+            buf.writeBlockPos(blockPos);
+        }));
     }
 
     @Override
@@ -195,15 +210,5 @@ public class ExperienceHolder extends BaseMachineBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(BlockStateProperties.FACING);
-    }
-
-    @Override
-    public float getShadeBrightness(BlockState p_48731_, BlockGetter p_48732_, BlockPos p_48733_) {
-        return 1.0F;
-    }
-
-    @Override
-    public boolean propagatesSkylightDown(BlockState p_48740_, BlockGetter p_48741_, BlockPos p_48742_) {
-        return true;
     }
 }

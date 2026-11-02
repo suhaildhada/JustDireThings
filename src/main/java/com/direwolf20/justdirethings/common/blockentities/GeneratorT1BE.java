@@ -32,18 +32,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE, PoweredMachineBE {
-    public RedstoneControlData redstoneControlData = new RedstoneControlData();
-    public final ContainerData poweredMachineData;
+    public final  ContainerData                                                   poweredMachineData;
+    private final Map<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyHandlers      = new HashMap<>();
+    public        RedstoneControlData                                             redstoneControlData = new RedstoneControlData();
     //private boolean isBurning = false;
-    public int maxBurn = 0;
-    public int burnRemaining = 0;
-    public int feRemaining = 0;
-    private final Map<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyHandlers = new HashMap<>();
+    public        int                                                             maxBurn             = 0;
+    public        int                                                             burnRemaining       = 0;
+    public        int                                                             feRemaining         = 0;
     int fuelBurnMultiplier = 1;
+
+    public GeneratorT1BE(BlockPos pPos, BlockState pBlockState) {
+        this(Registration.GeneratorT1BE.get(), pPos, pBlockState);
+    }
 
     public GeneratorT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
-        MACHINE_SLOTS = 1;
+        MACHINE_SLOTS      = 1;
         poweredMachineData = new ContainerData() {
             @Override
             public int get(int index) {
@@ -74,15 +78,6 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
         };
     }
 
-    public GeneratorT1BE(BlockPos pPos, BlockState pBlockState) {
-        this(Registration.GeneratorT1BE.get(), pPos, pBlockState);
-    }
-
-    @Override
-    public ItemStackHandler getMachineHandler() {
-        return getData(Registration.GENERATOR_ITEM_HANDLER);
-    }
-
     @Override
     public RedstoneControlData getRedstoneControlData() {
         return redstoneControlData;
@@ -91,21 +86,6 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
     @Override
     public BlockEntity getBlockEntity() {
         return this;
-    }
-
-    @Override
-    public ContainerData getContainerData() {
-        return poweredMachineData;
-    }
-
-    @Override
-    public MachineEnergyStorage getEnergyStorage() {
-        return getData(Registration.ENERGYSTORAGE_GENERATORS);
-    }
-
-    @Override
-    public int getStandardEnergyCost() {
-        return 0;
     }
 
     @Override
@@ -120,11 +100,52 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
     }
 
     @Override
-    public int insertEnergy(int power, boolean simulate) {
-        MachineEnergyStorage energyStorage = getEnergyStorage();
-        if (energyStorage instanceof EnergyStorageNoReceive energyStorageNoReceive)
-            return energyStorageNoReceive.forceReceiveEnergy(power, simulate);
-        return 0;
+    public void handleTicks() {
+        //NoOp
+    }
+
+    @Override
+    public boolean canRun() {
+        return true;
+    }
+
+    @Override
+    public ItemStackHandler getMachineHandler() {
+        return getData(Registration.GENERATOR_ITEM_HANDLER);
+    }
+
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        this.burnRemaining = tag.getInt("burnRemaining");
+        this.maxBurn       = tag.getInt("maxBurn");
+        this.feRemaining   = tag.getInt("feRemaining");
+        if (tag.contains("fuelBurnMultiplier")) {
+            this.fuelBurnMultiplier = tag.getInt("fuelBurnMultiplier");
+        }
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.putInt("burnRemaining", burnRemaining);
+        tag.putInt("maxBurn", maxBurn);
+        tag.putInt("feRemaining", feRemaining);
+        tag.putInt("fuelBurnMultiplier", fuelBurnMultiplier);
+    }
+
+    @Override
+    public boolean isDefaultSettings() {
+        if (!super.isDefaultSettings()) {
+            return false;
+        }
+        if (burnRemaining != 0) {
+            return false;
+        }
+        if (maxBurn != 0) {
+            return false;
+        }
+        return feRemaining == 0;
     }
 
     public IEnergyStorage getHandler(Direction direction) {
@@ -143,30 +164,43 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
     }
 
     public void providePowerAdjacent() {
-        if (getEnergyStorage().getEnergyStored() <= 0) return; //Don't bother if we're empty!
+        if (getEnergyStorage().getEnergyStored() <= 0) {
+            return; //Don't bother if we're empty!
+        }
         for (Direction direction : Direction.values()) {
             IEnergyStorage iEnergyStorage = getHandler(direction);
-            if (iEnergyStorage == null) continue;
+            if (iEnergyStorage == null) {
+                continue;
+            }
             int amtFit = iEnergyStorage.receiveEnergy(getFEPerTick() * 10, true);
-            if (amtFit <= 0) continue;
+            if (amtFit <= 0) {
+                continue;
+            }
             int extractAmt = extractEnergy(amtFit, false);
             iEnergyStorage.receiveEnergy(extractAmt, false);
         }
     }
 
     public void doBurn() {
-        if (feRemaining > 0) return; //Don't burn fuel if we're already burning
-        maxBurn = 0; //If not already burning, we must have finished burning something (or never did), so set maxBurn to 0
+        if (feRemaining > 0) {
+            return; //Don't burn fuel if we're already burning
+        }
+        maxBurn       = 0; //If not already burning, we must have finished burning something (or never did), so set maxBurn to 0
         burnRemaining = 0;
 
         boolean canInsertEnergy = insertEnergy(fePerTick(), true) > 0;
-        if (!canInsertEnergy) return; //Don't burn if the buffer is full
+        if (!canInsertEnergy) {
+            return; //Don't burn if the buffer is full
+        }
         ItemStack fuelStack = getMachineHandler().getStackInSlot(0);
-        if (fuelStack.isEmpty())
+        if (fuelStack.isEmpty()) {
             return; //Stop if we have no fuel! The slot only accepts burnables, so this should be a good enough check
+        }
         int oldMultiplier = this.fuelBurnMultiplier;
         int burnTime = fuelStack.getBurnTime(RecipeType.SMELTING);
-        if (burnTime <= 0) return; //Should be impossible, but lets be sure!
+        if (burnTime <= 0) {
+            return; //Should be impossible, but lets be sure!
+        }
         if (fuelStack.getItem() instanceof Coal_T1 direCoal) {
             this.fuelBurnMultiplier = direCoal.getBurnSpeedMultiplier();
         } else if (fuelStack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof CoalBlock_T1 coalBlock) {
@@ -176,22 +210,27 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
         } else {
             fuelBurnMultiplier = 1;
         }
-        if (this.fuelBurnMultiplier != oldMultiplier)
+        if (this.fuelBurnMultiplier != oldMultiplier) {
             markDirtyClient();
-        if (fuelStack.hasCraftingRemainingItem())
+        }
+        if (fuelStack.hasCraftingRemainingItem()) {
             getMachineHandler().setStackInSlot(0, fuelStack.getCraftingRemainingItem());
-        else
+        } else {
             fuelStack.shrink(1);
+        }
 
-        feRemaining = burnTime * getFePerFuelTick();
-        maxBurn = (int) (Math.floor(burnTime) / getBurnSpeedMultiplier());
+        feRemaining   = burnTime * getFePerFuelTick();
+        maxBurn       = (int) (Math.floor(burnTime) / getBurnSpeedMultiplier());
         burnRemaining = maxBurn + 1; //1 extra tick just in case we have a rounding error.  It'll get removed above
     }
 
     public void doGenerate() {
-        if (isActiveRedstone() && feRemaining == 0)
+        if (isActiveRedstone() && feRemaining == 0) {
             doBurn(); //Only burn if redstone is active and its not already burning
-        if (feRemaining == 0) return; //If we failed to burn anything
+        }
+        if (feRemaining == 0) {
+            return; //If we failed to burn anything
+        }
         int insertAmt = Math.min(fePerTick(), feRemaining);
         //System.out.println("insertAmt: " + insertAmt);
         insertEnergy(insertAmt, false); //Receive energy
@@ -211,23 +250,37 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
         setChanged(); // Mark Dirty Client?
     }
 
-    @Override
-    public void handleTicks() {
-        //NoOp
-    }
-
-    @Override
-    public boolean canRun() {
-        return true;
-    }
-
     public int fePerTick() {
-        return (int) (getFePerFuelTick() * getBurnSpeedMultiplier());
+        return getFePerFuelTick() * getBurnSpeedMultiplier();
     }
 
     @Override
     public int getMaxEnergy() {
         return Config.GENERATOR_T1_MAX_FE.get();
+    }
+
+    @Override
+    public ContainerData getContainerData() {
+        return poweredMachineData;
+    }
+
+    @Override
+    public MachineEnergyStorage getEnergyStorage() {
+        return getData(Registration.ENERGYSTORAGE_GENERATORS);
+    }
+
+    @Override
+    public int getStandardEnergyCost() {
+        return 0;
+    }
+
+    @Override
+    public int insertEnergy(int power, boolean simulate) {
+        MachineEnergyStorage energyStorage = getEnergyStorage();
+        if (energyStorage instanceof EnergyStorageNoReceive energyStorageNoReceive) {
+            return energyStorageNoReceive.forceReceiveEnergy(power, simulate);
+        }
+        return 0;
     }
 
     public int getFEPerTick() {
@@ -240,37 +293,5 @@ public class GeneratorT1BE extends BaseMachineBE implements RedstoneControlledBE
 
     public int getBurnSpeedMultiplier() {
         return Config.GENERATOR_T1_BURN_SPEED_MULTIPLIER.get() * fuelBurnMultiplier;
-    }
-
-    @Override
-    public boolean isDefaultSettings() {
-        if (!super.isDefaultSettings())
-            return false;
-        if (burnRemaining != 0)
-            return false;
-        if (maxBurn != 0)
-            return false;
-        if (feRemaining != 0)
-            return false;
-        return true;
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putInt("burnRemaining", burnRemaining);
-        tag.putInt("maxBurn", maxBurn);
-        tag.putInt("feRemaining", feRemaining);
-        tag.putInt("fuelBurnMultiplier", fuelBurnMultiplier);
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        this.burnRemaining = tag.getInt("burnRemaining");
-        this.maxBurn = tag.getInt("maxBurn");
-        this.feRemaining = tag.getInt("feRemaining");
-        if (tag.contains("fuelBurnMultiplier"))
-            this.fuelBurnMultiplier = tag.getInt("fuelBurnMultiplier");
     }
 }

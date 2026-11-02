@@ -26,7 +26,7 @@ import java.util.List;
 
 public class GeneratorT1Screen extends BaseMachineScreen<GeneratorT1Container> {
     protected GeneratorT1Container container;
-    protected GeneratorT1BE generatorBE;
+    protected GeneratorT1BE        generatorBE;
 
     public GeneratorT1Screen(GeneratorT1Container container, Inventory inv, Component name) {
         super(container, inv, name);
@@ -43,13 +43,8 @@ public class GeneratorT1Screen extends BaseMachineScreen<GeneratorT1Container> {
 
     @Override
     public void setTopSection() {
-        extraWidth = 0;
+        extraWidth  = 0;
         extraHeight = 0;
-    }
-
-    @Override
-    public void addTickSpeedButton() {
-        //No-Op
     }
 
     @Override
@@ -58,6 +53,11 @@ public class GeneratorT1Screen extends BaseMachineScreen<GeneratorT1Container> {
             redstoneMode = MiscHelpers.RedstoneMode.values()[((ToggleButton) b).getTexturePosition()];
             saveSettings();
         }));
+    }
+
+    @Override
+    public void addTickSpeedButton() {
+        //No-Op
     }
 
     @Override
@@ -70,35 +70,6 @@ public class GeneratorT1Screen extends BaseMachineScreen<GeneratorT1Container> {
         if (maxBurn > 0) {
             int remaining = (burnRemaining * maxHeight) / maxBurn;
             guiGraphics.blit(JUSTSLOT, getGuiLeft() + 79, getGuiTop() + 30 + 18 - remaining, 18, 36 - remaining, 18, remaining + 3);
-        }
-    }
-
-    @Override
-    public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
-            if (MiscTools.inBounds(topSectionLeft + 5, topSectionTop + 5, 18, 72, pX, pY)) {
-                int burnRemaining = this.container.getBurnRemaining();
-                if (hasShiftDown())
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy())),
-                            burnRemaining > 0 ?
-                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.fePerTick())) :
-                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0)),
-                            burnRemaining <= 0 ?
-                                    Component.translatable("justdirethings.screen.no_fuel") :
-                                    Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(burnRemaining))
-                    )), pX, pY);
-                else
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy())),
-                            burnRemaining > 0 ?
-                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.fePerTick())) :
-                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0)),
-                            burnRemaining <= 0 ?
-                                    Component.translatable("justdirethings.screen.no_fuel") :
-                                    Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(burnRemaining))
-                    )), pX, pY);
-            }
         }
     }
 
@@ -123,5 +94,35 @@ public class GeneratorT1Screen extends BaseMachineScreen<GeneratorT1Container> {
             }
         }
         super.renderTooltip(pGuiGraphics, pX, pY);
+    }
+
+    @Override
+    public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        if (baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
+            if (MiscTools.inBounds(topSectionLeft + 5, topSectionTop + 5, 18, 72, pX, pY)) {
+                int burnRemaining = this.container.getBurnRemaining();
+                if (hasShiftDown()) {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
+                            Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy())),
+                            burnRemaining > 0 ?
+                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.fePerTick())) :
+                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0)),
+                            burnRemaining <= 0 ?
+                                    Component.translatable("justdirethings.screen.no_fuel") :
+                                    Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(burnRemaining))
+                    )), pX, pY);
+                } else {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
+                            Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy())),
+                            burnRemaining > 0 ?
+                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(generatorBE.fePerTick())) :
+                                    Component.translatable("justdirethings.screen.fepertick", MagicHelpers.formatted(0)),
+                            burnRemaining <= 0 ?
+                                    Component.translatable("justdirethings.screen.no_fuel") :
+                                    Component.translatable("justdirethings.screen.burn_time", MagicHelpers.ticksInSeconds(burnRemaining))
+                    )), pX, pY);
+                }
+            }
+        }
     }
 }

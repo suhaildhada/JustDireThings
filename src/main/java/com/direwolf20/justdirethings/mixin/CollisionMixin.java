@@ -31,6 +31,10 @@ public interface CollisionMixin {
         }
     }
 
+    default boolean shouldPassThroughWalls(Player player) {
+        return player.getAttributeValue(Registration.PHASE) > 0;
+    }
+
     @Inject(method = "getBlockCollisions", at = @At("HEAD"), cancellable = true)
     private void onGetBlockCollisions(Entity entity, AABB collisionBox, CallbackInfoReturnable<Iterable<VoxelShape>> cir) {
         if (entity instanceof Player player && shouldPassThroughWalls(player)) {
@@ -46,23 +50,20 @@ public interface CollisionMixin {
 
     private Iterable<VoxelShape> getOriginalBlockCollisions(Entity entity, AABB collisionBox) {
         // This method should call the original implementation of getBlockCollisions
-        return () -> new BlockCollisions<>((CollisionGetter) (Object) this, entity, collisionBox, false, (p_286215_, p_286216_) -> p_286216_);
+        return () -> new BlockCollisions<>((CollisionGetter) this, entity, collisionBox, false, (p_286215_, p_286216_) -> p_286216_);
     }
 
     default boolean isVerticalCollision(VoxelShape shape, AABB collisionBox, Player player) {
         Level level = player.level();
         BlockPos blockPos = new BlockPos((int) shape.min(Direction.Axis.X), (int) shape.min(Direction.Axis.Y), (int) shape.min(Direction.Axis.Z));
         BlockState blockState = level.getBlockState(blockPos);
-        if (blockState.getDestroySpeed(level, blockPos) < 0 || blockState.is(JustDireBlockTags.PHASEDENY))
+        if (blockState.getDestroySpeed(level, blockPos) < 0 || blockState.is(JustDireBlockTags.PHASEDENY)) {
             return true;
+        }
         double maxY = shape.max(Direction.Axis.Y);
         double minY = collisionBox.minY;
 
         boolean isDifferenceLessThanPointTwo = Math.abs(maxY - minY) < 0.75;
         return isDifferenceLessThanPointTwo; // Ignore vertical collisions
-    }
-
-    default boolean shouldPassThroughWalls(Player player) {
-        return player.getAttributeValue(Registration.PHASE) > 0;
     }
 }

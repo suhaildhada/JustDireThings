@@ -12,12 +12,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ItemCollectorScreen extends BaseMachineScreen<ItemCollectorContainer> {
     public boolean respectPickupDelay = false;
-    public boolean showParticles = true;
+    public boolean showParticles      = true;
+
     public ItemCollectorScreen(ItemCollectorContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof ItemCollectorBE itemCollectorBE) {
             respectPickupDelay = itemCollectorBE.respectPickupDelay;
-            showParticles = itemCollectorBE.showParticles;
+            showParticles      = itemCollectorBE.showParticles;
         }
     }
 

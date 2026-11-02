@@ -11,14 +11,13 @@ public record DirectionSettingPayload(
         int direction
 ) implements CustomPacketPayload {
     public static final Type<DirectionSettingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "direction_setting_packet"));
+    public static final StreamCodec<FriendlyByteBuf, DirectionSettingPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, DirectionSettingPayload::direction,
+            DirectionSettingPayload::new
+    );
 
     @Override
     public Type<DirectionSettingPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, DirectionSettingPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, DirectionSettingPayload::direction,
-            DirectionSettingPayload::new
-    );
 }

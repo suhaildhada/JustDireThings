@@ -45,11 +45,84 @@ import java.util.UUID;
 
 public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidContainingItem {
     public static final int MAX_FAVORITES = 12;
-    public static final int maxMB = 8000;
+    public static final int maxMB         = 8000;
 
     public PortalGunV2() {
         super(new Properties()
                 .stacksTo(1));
+    }
+
+    public static NBTHelpers.PortalDestination getFavorite(ItemStack itemStack, int slot) {
+        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
+        if (favoritesList.isEmpty()) {
+            return null;
+        }
+        return favoritesList.get(slot);
+    }
+
+    public static void setFavoritePosition(ItemStack itemStack, int favorite) {
+        itemStack.set(JustDireDataComponents.PORTALGUN_FAVORITE, favorite);
+    }
+
+    public static void addFavorite(ItemStack itemStack, int position, NBTHelpers.PortalDestination portalDestination) {
+        if (!itemStack.has(JustDireDataComponents.PORTAL_GUN_FAVORITES)) {
+            List<NBTHelpers.PortalDestination> list = new ArrayList<>(MAX_FAVORITES);
+            for (int i = 0; i < MAX_FAVORITES; i++) {
+                list.add(NBTHelpers.PortalDestination.EMPTY); //Prefill List
+            }
+            setFavorites(itemStack, list);
+        }
+        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
+        favoritesList.set(position, portalDestination);
+        setFavorites(itemStack, favoritesList);
+    }
+
+    public static void setFavorites(ItemStack itemStack, List<NBTHelpers.PortalDestination> favorites) {
+        itemStack.set(JustDireDataComponents.PORTAL_GUN_FAVORITES, favorites);
+    }
+
+    public static void removeFavorite(ItemStack itemStack, int position) {
+        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
+        if (favoritesList.isEmpty()) {
+            return;
+        }
+        favoritesList.set(position, NBTHelpers.PortalDestination.EMPTY);
+        setFavorites(itemStack, favoritesList);
+    }
+
+    public static boolean getStayOpen(ItemStack itemStack) {
+        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_STAY_OPEN, false);
+    }
+
+    public static void setStayOpen(ItemStack itemStack, boolean stayOpen) {
+        itemStack.set(JustDireDataComponents.PORTAL_GUN_STAY_OPEN, stayOpen);
+    }
+
+    public static ItemStack getPortalGunv2(Player player) {
+        ItemStack mainHand = player.getMainHandItem();
+        if (mainHand.getItem() instanceof PortalGunV2) {
+            return mainHand;
+        }
+        ItemStack offHand = player.getOffhandItem();
+        if (offHand.getItem() instanceof PortalGunV2) {
+            return offHand;
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public static int getFullness(ItemStack itemStack) {
+        IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
+        if (fluidHandler != null && !fluidHandler.getFluidInTank(0).isEmpty()) {
+            float percentFull = ((float) fluidHandler.getFluidInTank(0).getAmount() / maxMB) * 100;
+            if (percentFull > 0 && percentFull <= 33) {
+                return 1;
+            } else if (percentFull > 33 && percentFull <= 66) {
+                return 2;
+            } else if (percentFull > 66) {
+                return 3;
+            }
+        }
+        return 0;
     }
 
     @Override
@@ -62,8 +135,9 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         ItemStack itemStack = player.getItemInHand(hand);
         BlockHitResult blockhitresult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.SOURCE_ONLY);
         if (blockhitresult.getType() == HitResult.Type.BLOCK) {
-            if (pickupFluid(level, player, itemStack, blockhitresult))
+            if (pickupFluid(level, player, itemStack, blockhitresult)) {
                 return InteractionResultHolder.fail(itemStack);
+            }
         }
         if (!level.isClientSide) {
             spawnProjectile(level, player, itemStack, true);
@@ -71,26 +145,14 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         return InteractionResultHolder.fail(itemStack);
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
-        Level level = context.level();
-        if (level == null) {
-            return;
-        }
-        IFluidHandlerItem fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
-        if (fluidHandler == null) {
-            return;
-        }
-        tooltip.add(Component.translatable("justdirethings.portalfluidamt", MagicHelpers.formatted(fluidHandler.getFluidInTank(0).getAmount()), MagicHelpers.formatted(maxMB)).withStyle(ChatFormatting.GREEN));
-    }
-
     public static boolean pickupFluid(Level level, Player player, ItemStack itemStack, BlockHitResult blockhitresult) {
         BlockPos blockpos = blockhitresult.getBlockPos();
         BlockState blockstate1 = level.getBlockState(blockpos);
         if (blockstate1.getBlock() instanceof PortalFluidBlock portalFluidBlock) {
             IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
-            if (fluidHandler == null) return true;
+            if (fluidHandler == null) {
+                return true;
+            }
             int filledAmt = fluidHandler.fill(new FluidStack(Registration.PORTAL_FLUID_SOURCE.get(), 1000), IFluidHandler.FluidAction.SIMULATE);
             if (filledAmt == 1000) {
                 ItemStack itemstack2 = portalFluidBlock.pickupBlock(player, level, blockpos, blockstate1);
@@ -107,7 +169,9 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
 
     public static void spawnProjectile(Level level, Player player, ItemStack itemStack, boolean isPrimaryType) {
         NBTHelpers.PortalDestination portalDestination = player.isShiftKeyDown() ? getPrevious(itemStack) : getSelectedFavorite(itemStack);
-        if (portalDestination == null || portalDestination.equals(NBTHelpers.PortalDestination.EMPTY)) return;
+        if (portalDestination == null || portalDestination.equals(NBTHelpers.PortalDestination.EMPTY)) {
+            return;
+        }
         int cost = calculateFluidCost((ServerLevel) level, player, portalDestination);
         if (!hasEnoughFluid(itemStack, cost)) {
             player.displayClientMessage(Component.translatable("justdirethings.lowportalfluid"), true);
@@ -126,8 +190,22 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         setPrevious(player, itemStack);
     }
 
+    public static NBTHelpers.PortalDestination getPrevious(ItemStack itemStack) {
+        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_PREVIOUS, NBTHelpers.PortalDestination.EMPTY);
+    }
+
+    public static NBTHelpers.PortalDestination getSelectedFavorite(ItemStack itemStack) {
+        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
+        if (favoritesList.isEmpty()) {
+            return null;
+        }
+        return favoritesList.get(getFavoritePosition(itemStack));
+    }
+
     public static int calculateFluidCost(ServerLevel sourceLevel, Player player, NBTHelpers.PortalDestination portalDestination) {
-        if (player.isCreative()) return 0;
+        if (player.isCreative()) {
+            return 0;
+        }
         ServerLevel targetLevel = sourceLevel.getServer().getLevel(portalDestination.globalVec3().dimension());
         if (!targetLevel.equals(sourceLevel)) {
             return 100;
@@ -146,6 +224,13 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         return fluidHandler.getFluidInTank(0).getAmount() >= amt;
     }
 
+    public static UUID getUUID(ItemStack itemStack) {
+        if (!itemStack.has(JustDireDataComponents.PORTALGUN_UUID)) {
+            return setUUID(itemStack);
+        }
+        return itemStack.get(JustDireDataComponents.PORTALGUN_UUID);
+    }
+
     public static void consumeFluid(ItemStack itemStack, int amt) {
         IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         if (fluidHandler == null) {
@@ -154,14 +239,23 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         fluidHandler.drain(amt, IFluidHandler.FluidAction.EXECUTE);
     }
 
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.NONE;
+    public static void setPrevious(Player player, ItemStack itemStack) {
+        Vec3 position = player.position();
+        Direction facing = MiscHelpers.getFacingDirection(player);
+        if (facing == Direction.DOWN) {
+            facing = Direction.NORTH; //Down is bad
+        }
+        ResourceKey<Level> dimension = player.level().dimension();
+        NBTHelpers.PortalDestination newDestination = new NBTHelpers.PortalDestination(new NBTHelpers.GlobalVec3(dimension, position), facing, "previous");
+        itemStack.set(JustDireDataComponents.PORTAL_GUN_PREVIOUS, newDestination);
     }
 
-    @Override
-    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
-        return false;
+    public static List<NBTHelpers.PortalDestination> getFavorites(ItemStack itemStack) {
+        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_FAVORITES, new ArrayList<>());
+    }
+
+    public static int getFavoritePosition(ItemStack itemStack) {
+        return itemStack.getOrDefault(JustDireDataComponents.PORTALGUN_FAVORITE, 0);
     }
 
     public static UUID setUUID(ItemStack itemStack) {
@@ -170,103 +264,27 @@ public class PortalGunV2 extends BasePoweredItem implements PoweredItem, FluidCo
         return uuid;
     }
 
-    public static UUID getUUID(ItemStack itemStack) {
-        if (!itemStack.has(JustDireDataComponents.PORTALGUN_UUID))
-            return setUUID(itemStack);
-        return itemStack.get(JustDireDataComponents.PORTALGUN_UUID);
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
     }
 
-    public static NBTHelpers.PortalDestination getSelectedFavorite(ItemStack itemStack) {
-        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
-        if (favoritesList.isEmpty()) return null;
-        return favoritesList.get(getFavoritePosition(itemStack));
-    }
-
-    public static NBTHelpers.PortalDestination getFavorite(ItemStack itemStack, int slot) {
-        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
-        if (favoritesList.isEmpty()) return null;
-        return favoritesList.get(slot);
-    }
-
-    public static int getFavoritePosition(ItemStack itemStack) {
-        return itemStack.getOrDefault(JustDireDataComponents.PORTALGUN_FAVORITE, 0);
-    }
-
-    public static void setFavoritePosition(ItemStack itemStack, int favorite) {
-        itemStack.set(JustDireDataComponents.PORTALGUN_FAVORITE, favorite);
-    }
-
-    public static List<NBTHelpers.PortalDestination> getFavorites(ItemStack itemStack) {
-        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_FAVORITES, new ArrayList<>());
-    }
-
-    public static void setFavorites(ItemStack itemStack, List<NBTHelpers.PortalDestination> favorites) {
-        itemStack.set(JustDireDataComponents.PORTAL_GUN_FAVORITES, favorites);
-    }
-
-    public static void setPrevious(Player player, ItemStack itemStack) {
-        Vec3 position = player.position();
-        Direction facing = MiscHelpers.getFacingDirection(player);
-        if (facing == Direction.DOWN) facing = Direction.NORTH; //Down is bad
-        ResourceKey<Level> dimension = player.level().dimension();
-        NBTHelpers.PortalDestination newDestination = new NBTHelpers.PortalDestination(new NBTHelpers.GlobalVec3(dimension, position), facing, "previous");
-        itemStack.set(JustDireDataComponents.PORTAL_GUN_PREVIOUS, newDestination);
-    }
-
-    public static NBTHelpers.PortalDestination getPrevious(ItemStack itemStack) {
-        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_PREVIOUS, NBTHelpers.PortalDestination.EMPTY);
-    }
-
-    public static void addFavorite(ItemStack itemStack, int position, NBTHelpers.PortalDestination portalDestination) {
-        if (!itemStack.has(JustDireDataComponents.PORTAL_GUN_FAVORITES)) {
-            List<NBTHelpers.PortalDestination> list = new ArrayList<>(MAX_FAVORITES);
-            for (int i = 0; i < MAX_FAVORITES; i++) {
-                list.add(NBTHelpers.PortalDestination.EMPTY); //Prefill List
-            }
-            setFavorites(itemStack, list);
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, context, tooltip, flagIn);
+        Level level = context.level();
+        if (level == null) {
+            return;
         }
-        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
-        favoritesList.set(position, portalDestination);
-        setFavorites(itemStack, favoritesList);
-    }
-
-    public static void removeFavorite(ItemStack itemStack, int position) {
-        List<NBTHelpers.PortalDestination> favoritesList = new ArrayList<>(getFavorites(itemStack));
-        if (favoritesList.isEmpty()) return;
-        favoritesList.set(position, NBTHelpers.PortalDestination.EMPTY);
-        setFavorites(itemStack, favoritesList);
-    }
-
-    public static boolean getStayOpen(ItemStack itemStack) {
-        return itemStack.getOrDefault(JustDireDataComponents.PORTAL_GUN_STAY_OPEN, false);
-    }
-
-    public static void setStayOpen(ItemStack itemStack, boolean stayOpen) {
-        itemStack.set(JustDireDataComponents.PORTAL_GUN_STAY_OPEN, stayOpen);
-    }
-
-    public static ItemStack getPortalGunv2(Player player) {
-        ItemStack mainHand = player.getMainHandItem();
-        if (mainHand.getItem() instanceof PortalGunV2)
-            return mainHand;
-        ItemStack offHand = player.getOffhandItem();
-        if (offHand.getItem() instanceof PortalGunV2)
-            return offHand;
-        return ItemStack.EMPTY;
-    }
-
-    public static int getFullness(ItemStack itemStack) {
-        IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
-        if (fluidHandler != null && !fluidHandler.getFluidInTank(0).isEmpty()) {
-            float percentFull = ((float) fluidHandler.getFluidInTank(0).getAmount() / maxMB) * 100;
-            if (percentFull > 0 && percentFull <= 33) {
-                return 1;
-            } else if (percentFull > 33 && percentFull <= 66) {
-                return 2;
-            } else if (percentFull > 66) {
-                return 3;
-            }
+        IFluidHandlerItem fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+        if (fluidHandler == null) {
+            return;
         }
-        return 0;
+        tooltip.add(Component.translatable("justdirethings.portalfluidamt", MagicHelpers.formatted(fluidHandler.getFluidInTank(0).getAmount()), MagicHelpers.formatted(maxMB)).withStyle(ChatFormatting.GREEN));
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return false;
     }
 }

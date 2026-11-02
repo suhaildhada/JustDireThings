@@ -11,14 +11,13 @@ public record EnergyTransmitterSettingPayload(
         boolean showParticles
 ) implements CustomPacketPayload {
     public static final Type<EnergyTransmitterSettingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "energy_transmitter_packet"));
+    public static final StreamCodec<FriendlyByteBuf, EnergyTransmitterSettingPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL, EnergyTransmitterSettingPayload::showParticles,
+            EnergyTransmitterSettingPayload::new
+    );
 
     @Override
     public Type<EnergyTransmitterSettingPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, EnergyTransmitterSettingPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL, EnergyTransmitterSettingPayload::showParticles,
-            EnergyTransmitterSettingPayload::new
-    );
 }

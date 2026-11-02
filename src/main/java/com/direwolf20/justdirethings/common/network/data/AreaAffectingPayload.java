@@ -14,12 +14,6 @@ public record AreaAffectingPayload(
         boolean renderArea
 ) implements CustomPacketPayload {
     public static final Type<AreaAffectingPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "area_affecting_packet"));
-
-    @Override
-    public Type<AreaAffectingPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, AreaAffectingPayload> STREAM_CODEC = NeoForgeStreamCodecs.composite(
             ByteBufCodecs.DOUBLE, AreaAffectingPayload::xRadius,
             ByteBufCodecs.DOUBLE, AreaAffectingPayload::yRadius,
@@ -30,4 +24,9 @@ public record AreaAffectingPayload(
             ByteBufCodecs.BOOL, AreaAffectingPayload::renderArea,
             AreaAffectingPayload::new
     );
+
+    @Override
+    public Type<AreaAffectingPayload> type() {
+        return TYPE;
+    }
 }

@@ -24,13 +24,11 @@ import net.minecraft.world.phys.AABB;
 import static net.minecraft.client.renderer.entity.ItemRenderer.getFoilBufferDirect;
 
 public class JustDireItemRenderer extends BlockEntityWithoutLevelRenderer {
+    private static final ModelResourceLocation CREATURE_CATCHER_BASE = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "item/creaturecatcher_base"));
+
     public JustDireItemRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
     }
-
-    private static final ModelResourceLocation CREATURE_CATCHER_BASE = ModelResourceLocation.standalone(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "item/creaturecatcher_base"));
-
-
 
     @Override
     public void renderByItem(ItemStack pStack, ItemDisplayContext pDisplayContext, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight, int pPackedOverlay) {
@@ -69,8 +67,9 @@ public class JustDireItemRenderer extends BlockEntityWithoutLevelRenderer {
             pPoseStack.popPose();
 
             Mob mob = CreatureCatcherEntity.getEntityFromItemStack(pStack, Minecraft.getInstance().level);
-            if (mob != null)
+            if (mob != null) {
                 renderEntityInInventory(pPoseStack, pDisplayContext, mob, pBuffer);
+            }
         }
     }
 
@@ -105,13 +104,16 @@ public class JustDireItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
 
         float rotation = -30;
-        if (type == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || type == ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+        if (type == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || type == ItemDisplayContext.THIRD_PERSON_LEFT_HAND) {
             rotation = 30;
-        if (type == ItemDisplayContext.FIXED) rotation = 180;
+        }
+        if (type == ItemDisplayContext.FIXED) {
+            rotation = 180;
+        }
         matrix.mulPose(Axis.YP.rotationDegrees(rotation));
         pLivingEntity.setYRot(0);
-        pLivingEntity.yBodyRot = pLivingEntity.getYRot();
-        pLivingEntity.yHeadRot = pLivingEntity.getYRot();
+        pLivingEntity.yBodyRot  = pLivingEntity.getYRot();
+        pLivingEntity.yHeadRot  = pLivingEntity.getYRot();
         pLivingEntity.yHeadRotO = pLivingEntity.getYRot();
         EntityRenderDispatcher entityrenderermanager = Minecraft.getInstance().getEntityRenderDispatcher();
         entityrenderermanager.setRenderShadow(false);

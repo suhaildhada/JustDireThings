@@ -19,18 +19,13 @@ import java.awt.*;
 import java.util.Random;
 
 public class ParadoxEntityRender extends EntityRenderer<ParadoxEntity> {
-    private static final Random random = new Random();  // Use entity's tickCount to seed the randomness
+    private static final Random           random  = new Random();  // Use entity's tickCount to seed the randomness
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/entity/vortex1.png");
 
     private float savedPulseScale = -1;
 
     public ParadoxEntityRender(EntityRendererProvider.Context pContext) {
         super(pContext);
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(ParadoxEntity pEntity) {
-        return TEXTURE;
     }
 
     @Override
@@ -48,16 +43,18 @@ public class ParadoxEntityRender extends EntityRenderer<ParadoxEntity> {
         // Use the phase to create a pulse effect that smoothly goes up and down
         float pulseScale = 0.25f + 0.025f * (1 - Math.abs(2 * pulsePhase - 1));
         if (paradoxEntity.getGrowthTicks() > 0) {
-            if (savedPulseScale == -1)
+            if (savedPulseScale == -1) {
                 savedPulseScale = pulseScale;
+            }
             // Properly interpolate between the current and target radius
             float growthProgress = (float) paradoxEntity.getGrowthTicks() / (float) paradoxEntity.growthDuration;
             currentRadius = Mth.lerp(growthProgress, currentRadius, targetRadius);
         } else {
             savedPulseScale = -1;
         }
-        if (savedPulseScale != -1)
+        if (savedPulseScale != -1) {
             pulseScale = savedPulseScale;
+        }
         // Calculate the scale for pulsing
         matrixStackIn.translate(0, 0.5, 0);
         float shrinkScale = paradoxEntity.getShrinkScale(); // Get the current shrink scale
@@ -89,12 +86,18 @@ public class ParadoxEntityRender extends EntityRenderer<ParadoxEntity> {
         matrixStackIn.popPose();*/
     }
 
+    @Override
+    public ResourceLocation getTextureLocation(ParadoxEntity pEntity) {
+        return TEXTURE;
+    }
+
     private void renderLightning(ParadoxEntity paradoxEntity, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn, Color color, float frequency, float maxLength, int duration, float thickness, int numBranches, float branchChance, int segments, boolean branchAnywhere) {
         Random random = new Random(paradoxEntity.tickCount);  // Use entity's tickCount to seed the randomness
 
         for (int i = 0; i < frequency * 100; i++) {
-            if (random.nextFloat() > frequency)
+            if (random.nextFloat() > frequency) {
                 continue;  // Randomly decide whether to render a lightning arc based on frequency
+            }
 
             matrixStackIn.pushPose();
             matrixStackIn.translate(0, 0.5, 0);  // Translate to the center of the entity

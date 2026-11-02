@@ -26,6 +26,5 @@ public class JustDireDataMaps extends DataMapProvider {
                 .add(Registration.Coal_T4.getId(), new FurnaceFuel(129600), false)
                 .add(Registration.CoalBlock_T4.getId(), new FurnaceFuel(1296000), false)
                 .add(Registration.CharcoalBlock.getId(), new FurnaceFuel(16000), false);
-        ;
     }
 }

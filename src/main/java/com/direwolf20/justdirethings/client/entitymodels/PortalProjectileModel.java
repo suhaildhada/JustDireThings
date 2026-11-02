@@ -14,10 +14,10 @@ import net.minecraft.resources.ResourceLocation;
 
 public class PortalProjectileModel extends HierarchicalModel<PortalProjectile> {
 
-    public static ModelLayerLocation Portal_Projectile_Layer = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_projectile"), "body");
-    private static final String MAIN = "main";
-    private final ModelPart root;
-    private final ModelPart main;
+    private static final String             MAIN                    = "main";
+    public static        ModelLayerLocation Portal_Projectile_Layer = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_projectile"), "body");
+    private final        ModelPart          root;
+    private final        ModelPart          main;
 
     public PortalProjectileModel(ModelPart pRoot) {
         this.root = pRoot;

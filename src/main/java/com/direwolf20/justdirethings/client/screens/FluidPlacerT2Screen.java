@@ -16,12 +16,8 @@ public class FluidPlacerT2Screen extends BaseMachineScreen<FluidPlacerT2Containe
 
     @Override
     public void setTopSection() {
-        extraWidth = 60;
+        extraWidth  = 60;
         extraHeight = 0;
-    }
-
-    public int getFluidBarOffset() {
-        return 204;
     }
 
     @Override
@@ -31,5 +27,9 @@ public class FluidPlacerT2Screen extends BaseMachineScreen<FluidPlacerT2Containe
             direction = ((ToggleButton) b).getTexturePosition();
             PacketDistributor.sendToServer(new DirectionSettingPayload(direction));
         }));
+    }
+
+    public int getFluidBarOffset() {
+        return 204;
     }
 }

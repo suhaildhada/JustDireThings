@@ -14,14 +14,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 
 public class TimeWandEntity extends Entity {
-    private static final EntityDataAccessor<Integer> TICKSPEED = SynchedEntityData.defineId(TimeWandEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> TICKSPEED      = SynchedEntityData.defineId(TimeWandEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> REMAINING_TIME = SynchedEntityData.defineId(TimeWandEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> TOTAL_TIME = SynchedEntityData.defineId(TimeWandEntity.class, EntityDataSerializers.INT);
-    private BlockPos blockPos;
-
-    public TimeWandEntity(EntityType<? extends Entity> entityType, Level level) {
-        super(entityType, level);
-    }
+    private static final EntityDataAccessor<Integer> TOTAL_TIME     = SynchedEntityData.defineId(TimeWandEntity.class, EntityDataSerializers.INT);
+    private              BlockPos                    blockPos;
 
     public TimeWandEntity(Level level, BlockPos blockPos) {
         this(Registration.TimeWandEntity.get(), level);
@@ -29,23 +25,34 @@ public class TimeWandEntity extends Entity {
         this.moveTo(blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5);
     }
 
+    public TimeWandEntity(EntityType<? extends Entity> entityType, Level level) {
+        super(entityType, level);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(TICKSPEED, 1);
+        builder.define(REMAINING_TIME, 600); //30 Seconds Default
+        builder.define(TOTAL_TIME, 600); //30 Seconds Default
+    }
+
     @Override
     public void tick() {
         super.tick();
         if (!level().isClientSide) {
-            if (!canSurvive())
+            if (!canSurvive()) {
                 this.remove(RemovalReason.DISCARDED);
+            }
             doExtraTicks();
             tickLife();
         }
     }
 
     public boolean canSurvive() {
-        if (blockPos == null)
+        if (blockPos == null) {
             return false;
-        if (getRemainingTime() < 0)
-            return false;
-        return true;
+        }
+        return getRemainingTime() >= 0;
     }
 
     public void doExtraTicks() {
@@ -58,19 +65,8 @@ public class TimeWandEntity extends Entity {
         setRemainingTime(getRemainingTime() - 1);
     }
 
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        builder.define(TICKSPEED, 1);
-        builder.define(REMAINING_TIME, 600); //30 Seconds Default
-        builder.define(TOTAL_TIME, 600); //30 Seconds Default
-    }
-
-    public int getTickSpeed() {
-        return this.entityData.get(TICKSPEED);
-    }
-
-    public int getTotalTime() {
-        return this.entityData.get(TOTAL_TIME);
+    public int getRemainingTime() {
+        return this.entityData.get(REMAINING_TIME);
     }
 
     public float getAccelerationRate() {
@@ -81,46 +77,55 @@ public class TimeWandEntity extends Entity {
         return (float) Math.pow(2, speed);
     }
 
+    public int getTickSpeed() {
+        return this.entityData.get(TICKSPEED);
+    }
+
     public void setTickSpeed(int tickSpeed) {
         this.entityData.set(TICKSPEED, tickSpeed);
-    }
-
-    public void setTotalTime(int totalTime) {
-        this.entityData.set(TOTAL_TIME, totalTime);
-    }
-
-    public int getRemainingTime() {
-        return this.entityData.get(REMAINING_TIME);
     }
 
     public void setRemainingTime(int remainingTime) {
         this.entityData.set(REMAINING_TIME, remainingTime);
     }
 
-    public void addTime(int moreTime) {
-        this.entityData.set(REMAINING_TIME, getRemainingTime() + moreTime);
-        //this.entityData.set(TOTAL_TIME, getTotalTime() + moreTime);
-    }
-
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
-        if (compound.contains("tickSpeed"))
+        if (compound.contains("tickSpeed")) {
             this.entityData.set(TICKSPEED, compound.getInt("tickSpeed"));
-        if (compound.contains("remainingTime"))
+        }
+        if (compound.contains("remainingTime")) {
             this.entityData.set(REMAINING_TIME, compound.getInt("remainingTime"));
-        if (compound.contains("totalTime"))
+        }
+        if (compound.contains("totalTime")) {
             this.entityData.set(TOTAL_TIME, compound.getInt("totalTime"));
-        if (compound.contains("blockpos"))
+        }
+        if (compound.contains("blockpos")) {
             this.blockPos = NbtUtils.readBlockPos(compound, "blockpos").orElse(null);
+        }
     }
 
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         compound.putInt("tickSpeed", getTickSpeed());
         compound.putInt("remainingTime", getRemainingTime());
-        if (blockPos != null)
+        if (blockPos != null) {
             compound.put("blockpos", NbtUtils.writeBlockPos(blockPos));
+        }
         compound.putInt("totalTime", getTotalTime());
+    }
+
+    public int getTotalTime() {
+        return this.entityData.get(TOTAL_TIME);
+    }
+
+    public void setTotalTime(int totalTime) {
+        this.entityData.set(TOTAL_TIME, totalTime);
+    }
+
+    public void addTime(int moreTime) {
+        this.entityData.set(REMAINING_TIME, getRemainingTime() + moreTime);
+        //this.entityData.set(TOTAL_TIME, getTotalTime() + moreTime);
     }
 
 }

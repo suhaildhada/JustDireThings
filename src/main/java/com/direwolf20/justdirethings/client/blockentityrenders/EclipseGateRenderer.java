@@ -22,8 +22,9 @@ public class EclipseGateRenderer extends AreaAffectingBER {
         super.render(blockentity, partialTicks, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn);
         long gameTime = blockentity.getLevel().getGameTime();
         Matrix4f matrix4f = matrixStackIn.last().pose();
-        if (blockentity instanceof EclipseGateBE eclipseGateBE)
+        if (blockentity instanceof EclipseGateBE eclipseGateBE) {
             this.renderCube(eclipseGateBE, matrix4f, bufferIn.getBuffer(this.renderType()), gameTime, partialTicks);
+        }
     }
 
     private void renderCube(EclipseGateBE blockEntity, Matrix4f matrixStack, VertexConsumer vertexConsumer, long gameTime, float partialTicks) {
@@ -39,10 +40,10 @@ public class EclipseGateRenderer extends AreaAffectingBER {
         float one;
         if (f1 < ticks / 2f) {
             zero = Mth.lerp(lerp, zeroSmall, zeroBig);
-            one = Mth.lerp(lerp, oneSmall, oneBig);
+            one  = Mth.lerp(lerp, oneSmall, oneBig);
         } else {
             zero = Mth.lerp(lerp, zeroBig, zeroSmall);
-            one = Mth.lerp(lerp, oneBig, oneSmall);
+            one  = Mth.lerp(lerp, oneBig, oneSmall);
         }
         float diff = one - zero;
         float f;
@@ -106,15 +107,15 @@ public class EclipseGateRenderer extends AreaAffectingBER {
         }
     }
 
+    protected RenderType renderType() {
+        return RenderType.endPortal();
+    }
+
     private void renderFace(Matrix4f matrixStack, VertexConsumer vertexConsumer, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4) {
         vertexConsumer.addVertex(matrixStack, x1, y1, z1);
         vertexConsumer.addVertex(matrixStack, x2, y1, z2);
         vertexConsumer.addVertex(matrixStack, x2, y2, z3);
         vertexConsumer.addVertex(matrixStack, x1, y2, z4);
-    }
-
-    protected RenderType renderType() {
-        return RenderType.endPortal();
     }
 
 }

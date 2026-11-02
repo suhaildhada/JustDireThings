@@ -12,11 +12,18 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class EnergyTransmitterScreen extends BaseMachineScreen<EnergyTransmitterContainer> {
     public boolean showParticles;
+
     public EnergyTransmitterScreen(EnergyTransmitterContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof EnergyTransmitterBE energyTransmitterBE) {
             showParticles = energyTransmitterBE.showParticles;
         }
+    }
+
+    @Override
+    public void setTopSection() {
+        extraWidth  = 60;
+        extraHeight = 0;
     }
 
     @Override
@@ -30,19 +37,13 @@ public class EnergyTransmitterScreen extends BaseMachineScreen<EnergyTransmitter
     }
 
     @Override
-    public void addRedstoneButtons() {
-        super.addRedstoneButtons();
-    }
-
-    @Override
-    public void setTopSection() {
-        extraWidth = 60;
-        extraHeight = 0;
-    }
-
-    @Override
     public void addTickSpeedButton() {
         //No-Op
+    }
+
+    @Override
+    public void addRedstoneButtons() {
+        super.addRedstoneButtons();
     }
 
     @Override

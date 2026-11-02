@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BlockPlacerT2BE extends BlockPlacerT1BE implements PoweredMachineBE, AreaAffectingBE, FilterableBE {
-    public FilterData filterData = new FilterData();
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
     public final PoweredMachineContainerData poweredMachineData;
+    public       FilterData                  filterData        = new FilterData();
+    public       AreaAffectingData           areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
 
     public BlockPlacerT2BE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.BlockPlacerT2BE.get(), pPos, pBlockState);
@@ -54,26 +54,18 @@ public class BlockPlacerT2BE extends BlockPlacerT1BE implements PoweredMachineBE
     }
 
     @Override
-    public FilterBasicHandler getFilterHandler() {
-        return getData(Registration.HANDLER_BASIC_FILTER);
-    }
-
-    @Override
     public FilterData getFilterData() {
         return filterData;
     }
 
     @Override
-    public boolean canPlace() {
-        return hasEnoughPower(getStandardEnergyCost());
+    public FilterBasicHandler getFilterHandler() {
+        return getData(Registration.HANDLER_BASIC_FILTER);
     }
 
     @Override
-    public InteractionResult placeBlock(ItemStack itemStack, FakePlayer fakePlayer, BlockPos blockPos) {
-        InteractionResult interactionResult = super.placeBlock(itemStack, fakePlayer, blockPos);
-        if (interactionResult.equals(InteractionResult.CONSUME))
-            extractEnergy(getStandardEnergyCost(), false);
-        return interactionResult;
+    public boolean canPlace() {
+        return hasEnoughPower(getStandardEnergyCost());
     }
 
     @Override
@@ -87,9 +79,19 @@ public class BlockPlacerT2BE extends BlockPlacerT1BE implements PoweredMachineBE
     }
 
     @Override
+    public InteractionResult placeBlock(ItemStack itemStack, FakePlayer fakePlayer, BlockPos blockPos) {
+        InteractionResult interactionResult = super.placeBlock(itemStack, fakePlayer, blockPos);
+        if (interactionResult.equals(InteractionResult.CONSUME)) {
+            extractEnergy(getStandardEnergyCost(), false);
+        }
+        return interactionResult;
+    }
+
+    @Override
     public boolean isBlockPosValid(FakePlayer fakePlayer, BlockPos blockPos) {
-        if (!super.isBlockPosValid(fakePlayer, blockPos))
+        if (!super.isBlockPosValid(fakePlayer, blockPos)) {
             return false; //Do the same checks as normal, then check the filters
+        }
         ItemStack blockItemStack = level.getBlockState(blockPos.relative(getDirectionValue())).getCloneItemStack(new BlockHitResult(Vec3.ZERO, getDirectionValue(), blockPos, false), level, blockPos, fakePlayer);
         return isStackValidFilter(blockItemStack);
     }

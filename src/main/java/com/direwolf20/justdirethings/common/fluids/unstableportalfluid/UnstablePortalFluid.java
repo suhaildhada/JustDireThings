@@ -30,13 +30,13 @@ public abstract class UnstablePortalFluid extends BaseFlowingFluid {
     }
 
     @Override
-    public Item getBucket() {
-        return Registration.UNSTABLE_PORTAL_FLUID_BUCKET.get();
+    protected boolean canConvertToSource(Level pLevel) {
+        return false;
     }
 
     @Override
-    protected boolean canConvertToSource(Level pLevel) {
-        return false;
+    public Item getBucket() {
+        return Registration.UNSTABLE_PORTAL_FLUID_BUCKET.get();
     }
 
     public static class Flowing extends UnstablePortalFluid {

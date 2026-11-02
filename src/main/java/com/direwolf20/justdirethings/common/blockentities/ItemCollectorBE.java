@@ -32,15 +32,20 @@ import java.util.List;
 import static net.minecraft.world.entity.Entity.RemovalReason.DISCARDED;
 
 public class ItemCollectorBE extends BaseMachineBE implements FilterableBE, AreaAffectingBE, RedstoneControlledBE {
+    public    FilterData                                    filterData          = new FilterData();
+    public    AreaAffectingData                             areaAffectingData   = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING).getOpposite());
+    public    RedstoneControlData                           redstoneControlData = new RedstoneControlData();
+    public    boolean                                       respectPickupDelay  = false;
+    public    boolean                                       showParticles       = true;
     protected BlockCapabilityCache<IItemHandler, Direction> attachedInventory;
-    public FilterData filterData = new FilterData();
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING).getOpposite());
-    public RedstoneControlData redstoneControlData = new RedstoneControlData();
-    public boolean respectPickupDelay = false;
-    public boolean showParticles = true;
 
     public ItemCollectorBE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.ItemCollectorBE.get(), pPos, pBlockState);
+    }
+
+    @Override
+    public FilterData getFilterData() {
+        return filterData;
     }
 
     @Override
@@ -49,8 +54,8 @@ public class ItemCollectorBE extends BaseMachineBE implements FilterableBE, Area
     }
 
     @Override
-    public FilterData getFilterData() {
-        return filterData;
+    public FilterBasicHandler getFilterHandler() {
+        return getData(Registration.HANDLER_BASIC_FILTER);
     }
 
     @Override
@@ -71,48 +76,34 @@ public class ItemCollectorBE extends BaseMachineBE implements FilterableBE, Area
         findItemsAndStore();
     }
 
-    public void setSettings(boolean respectPickupDelay, boolean showParticles) {
-        this.respectPickupDelay = respectPickupDelay;
-        this.showParticles = showParticles;
-        markDirtyClient();
-    }
-
-    @Override
-    public FilterBasicHandler getFilterHandler() {
-        return getData(Registration.HANDLER_BASIC_FILTER);
-    }
-
-    public void doParticles(ItemStack itemStack, Vec3 sourcePos) {
-        if (!showParticles)
-            return;
-        Direction direction = getBlockState().getValue(BlockStateProperties.FACING);
-        BlockPos blockPos = getBlockPos();
-        ItemFlowParticleData data = new ItemFlowParticleData(itemStack, blockPos.getX() + 0.5f - (0.3 * direction.getStepX()), blockPos.getY() + 0.5f - (0.3 * direction.getStepY()), blockPos.getZ() + 0.5f - (0.3 * direction.getStepZ()), 5);
-        double d0 = sourcePos.x();
-        double d1 = sourcePos.y();
-        double d2 = sourcePos.z();
-        ((ServerLevel) level).sendParticles(data, d0, d1, d2, 10, 0, 0, 0, 0);
-    }
-
     private void findItemsAndStore() {
-        if (!isActiveRedstone() || !canRun()) return;
+        if (!isActiveRedstone() || !canRun()) {
+            return;
+        }
         assert level != null;
         AABB searchArea = getAABB(getBlockPos());
 
         List<ItemEntity> entityList = level.getEntitiesOfClass(ItemEntity.class, searchArea, entity -> true)
                 .stream().toList();
 
-        if (entityList.isEmpty()) return;
+        if (entityList.isEmpty()) {
+            return;
+        }
 
         IItemHandler handler = getAttachedInventory();
 
-        if (handler == null) return;
+        if (handler == null) {
+            return;
+        }
 
         for (ItemEntity itemEntity : entityList) {
-            if (respectPickupDelay && itemEntity.hasPickUpDelay())
+            if (respectPickupDelay && itemEntity.hasPickUpDelay()) {
                 continue;
+            }
             ItemStack stack = itemEntity.getItem();
-            if (stack.isEmpty() || !isStackValidFilter(stack)) continue;
+            if (stack.isEmpty() || !isStackValidFilter(stack)) {
+                continue;
+            }
             ItemStack leftover = ItemHandlerHelper.insertItemStacked(handler, stack, false);
             if (leftover.isEmpty()) {
                 // If the stack is now empty, remove the ItemEntity from the collection
@@ -141,9 +132,24 @@ public class ItemCollectorBE extends BaseMachineBE implements FilterableBE, Area
         return attachedInventory.getCapability();
     }
 
+    public void doParticles(ItemStack itemStack, Vec3 sourcePos) {
+        if (!showParticles) {
+            return;
+        }
+        Direction direction = getBlockState().getValue(BlockStateProperties.FACING);
+        BlockPos blockPos = getBlockPos();
+        ItemFlowParticleData data = new ItemFlowParticleData(itemStack, blockPos.getX() + 0.5f - (0.3 * direction.getStepX()), blockPos.getY() + 0.5f - (0.3 * direction.getStepY()), blockPos.getZ() + 0.5f - (0.3 * direction.getStepZ()), 5);
+        double d0 = sourcePos.x();
+        double d1 = sourcePos.y();
+        double d2 = sourcePos.z();
+        ((ServerLevel) level).sendParticles(data, d0, d1, d2, 10, 0, 0, 0, 0);
+    }
+
     @Override
-    public AreaAffectingData getDefaultAreaData(AreaAffectingBE areaAffectingBE) {
-        return areaAffectingBE.getDefaultAreaData(getBlockState().getValue(BlockStateProperties.FACING).getOpposite());
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        respectPickupDelay = tag.getBoolean("respectPickupDelay");
+        showParticles      = tag.getBoolean("showParticles");
     }
 
     @Override
@@ -154,9 +160,13 @@ public class ItemCollectorBE extends BaseMachineBE implements FilterableBE, Area
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        respectPickupDelay = tag.getBoolean("respectPickupDelay");
-        showParticles = tag.getBoolean("showParticles");
+    public AreaAffectingData getDefaultAreaData(AreaAffectingBE areaAffectingBE) {
+        return areaAffectingBE.getDefaultAreaData(getBlockState().getValue(BlockStateProperties.FACING).getOpposite());
+    }
+
+    public void setSettings(boolean respectPickupDelay, boolean showParticles) {
+        this.respectPickupDelay = respectPickupDelay;
+        this.showParticles      = showParticles;
+        markDirtyClient();
     }
 }

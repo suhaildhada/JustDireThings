@@ -49,162 +49,6 @@ import java.util.*;
 import static com.direwolf20.justdirethings.common.items.interfaces.Helpers.*;
 
 public interface ToggleableTool extends ToggleableItem {
-    EnumSet<Ability> getAllAbilities();
-    EnumSet<Ability> getAbilities();
-
-    Map<Ability, AbilityParams> getAbilityParamsMap();
-
-    default AbilityParams getAbilityParams(Ability toolAbility) {
-        return getAbilityParamsMap().getOrDefault(toolAbility, new AbilityParams(-1, -1, -1));
-    }
-
-    default void registerAbility(Ability ability) {
-        getAllAbilities().add(ability);
-    }
-
-    default void registerAbility(Ability ability, AbilityParams abilityParams) {
-        getAllAbilities().add(ability);
-        getAbilityParamsMap().put(ability, abilityParams);
-    }
-
-    default boolean hasAbility(Ability ability) {
-        return getAbilities().contains(ability);
-    }
-
-    default List<Ability> getUseOnAbilities(ItemStack itemStack) {
-        List<Ability> abilityList = new ArrayList<>();
-        for (Ability ability : getAbilities()) {
-            if (ability.useType == Ability.UseType.USE_ON && canUseAbility(itemStack, ability))
-                abilityList.add(ability);
-        }
-        return abilityList;
-    }
-
-    default List<Ability> getActiveAbilities(ItemStack itemStack) {
-        List<Ability> abilityList = new ArrayList<>();
-        for (Ability ability : getAbilities()) {
-            if ((ability.useType == Ability.UseType.USE || ability.useType == Ability.UseType.USE_COOLDOWN) && canUseAbility(itemStack, ability))
-                abilityList.add(ability);
-        }
-        return abilityList;
-    }
-
-    default List<Ability> getPassiveTickAbilities(ItemStack itemStack) {
-        List<Ability> abilityList = new ArrayList<>();
-        for (Ability ability : getAbilities()) {
-            if ((ability.useType == Ability.UseType.PASSIVE_TICK || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN) && canUseAbility(itemStack, ability))
-                abilityList.add(ability);
-        }
-        return abilityList;
-    }
-
-    default List<Ability> getCooldownAbilities() {
-        List<Ability> abilityList = new ArrayList<>();
-        for (Ability ability : getAbilities()) {
-            if (ability.useType == Ability.UseType.USE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN)
-                abilityList.add(ability);
-        }
-        return abilityList;
-    }
-
-    /**
-     * Used for toggling on and off via hotkey
-     */
-    default List<Ability> getAllPassiveAbilities() {
-        List<Ability> abilityList = new ArrayList<>();
-        for (Ability ability : getAbilities()) {
-            if ((ability.useType == Ability.UseType.PASSIVE || ability.useType == Ability.UseType.PASSIVE_TICK || ability.useType == Ability.UseType.PASSIVE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN))
-                abilityList.add(ability);
-        }
-        return abilityList;
-    }
-
-    default boolean canUseAbility(ItemStack itemStack, Ability toolAbility) {
-        return hasAbility(toolAbility) && hasUpgrade(itemStack, toolAbility) && getEnabled(itemStack) && getSetting(itemStack, toolAbility.getName());
-    }
-
-    default boolean canUseAbilityAndDurability(ItemStack itemStack, Ability toolAbility) {
-        return canUseAbility(itemStack, toolAbility) && (testUseTool(itemStack, toolAbility) >= 0);
-    }
-
-    default boolean canUseAbilityAndDurability(ItemStack itemStack, Ability toolAbility, int multiplier) {
-        return canUseAbility(itemStack, toolAbility) && (testUseTool(itemStack, toolAbility, multiplier) >= 0);
-    }
-
-    default void openSettings(Player player) {
-        player.openMenu(new SimpleMenuProvider(
-                (windowId, playerInventory, playerEntity) -> new ToolSettingContainer(windowId, playerInventory, player), Component.translatable("")));
-
-    }
-
-    //Abilities
-    default boolean hurtEnemyAbility(ItemStack pStack, LivingEntity pTarget, LivingEntity pAttacker) {
-        damageTool(pStack, pAttacker);
-        return true;
-    }
-
-    default Set<BlockPos> getBreakBlockPositions(ItemStack pStack, Level pLevel, BlockPos pPos, LivingEntity pEntityLiving, BlockState pState) {
-        Set<BlockPos> breakBlockPositions = new HashSet<>();
-        int maxBreak = Config.TOOL_MAX_BREAK_FERRICORE.get();
-        if (pStack.getItem() instanceof TieredItem tieredItem) {
-            if (tieredItem.getTier().equals(GooTier.BLAZEGOLD))
-                maxBreak = Config.TOOL_MAX_BREAK_BLAZEGOLD.get();
-            else if (tieredItem.getTier().equals(GooTier.CELESTIGEM))
-                maxBreak = Config.TOOL_MAX_BREAK_CELESTIGEM.get();
-            else if (tieredItem.getTier().equals(GooTier.ECLIPSEALLOY))
-                maxBreak = Config.TOOL_MAX_BREAK_ECLIPSEALLOY.get();
-        }
-        if (canUseAbility(pStack, Ability.OREMINER) && oreCondition.test(pState) && pStack.isCorrectToolForDrops(pState)) {
-            breakBlockPositions.addAll(findLikeBlocks(pLevel, pState, pPos, maxBreak, 2));
-        }
-        if (canUseAbility(pStack, Ability.TREEFELLER) && logCondition.test(pState) && pStack.isCorrectToolForDrops(pState)) {
-            breakBlockPositions.addAll(findLikeBlocks(pLevel, pState, pPos, maxBreak, 2));
-        }
-        if (canUseAbility(pStack, Ability.HAMMER)) {
-            breakBlockPositions.addAll(MiningCollect.collect(pEntityLiving, pPos, getTargetLookDirection(pEntityLiving), pLevel, getToolValue(pStack, Ability.HAMMER.getName()), MiningCollect.SizeMode.AUTO, pStack));
-        }
-        breakBlockPositions.add(pPos);
-        if (canUseAbility(pStack, Ability.SKYSWEEPER) && pStack.isCorrectToolForDrops(pState)) {
-            Set<BlockPos> newPos = new HashSet<>();
-            for (BlockPos blockPos : breakBlockPositions) {
-                BlockState blockState = pLevel.getBlockState(blockPos.above());
-                if (fallingBlockCondition.test(blockState))
-                    newPos.addAll(findBlocksSkyfall(pLevel, blockPos.above(), maxBreak, Direction.UP, maxBreak));
-            }
-            breakBlockPositions.addAll(newPos);
-        }
-        return breakBlockPositions;
-    }
-
-    default boolean canInstaBreak(ItemStack pStack, Level pLevel, Set<BlockPos> breakBlockPositions) {
-        boolean instaBreak = false;
-        if (canUseAbility(pStack, Ability.INSTABREAK)) { //Only Instabreak if we can instabreak ALL blocks in the area!
-            float cumulativeDestroy = 0;
-            for (BlockPos pos : breakBlockPositions) {
-                BlockState blockState = pLevel.getBlockState(pos);
-                float destroySpeedTarget = blockState.getDestroySpeed(pLevel, pos);
-                cumulativeDestroy = cumulativeDestroy + destroySpeedTarget;
-            }
-            int rfCostInstaBreak = getInstantRFCost(cumulativeDestroy, pLevel, pStack);
-            if (testUseTool(pStack, rfCostInstaBreak) > 0)
-                instaBreak = true;
-        }
-        return instaBreak;
-    }
-
-    default void mineBlocksAbility(ItemStack pStack, Level pLevel, BlockPos pPos, LivingEntity pEntityLiving) {
-        BlockState pState = pLevel.getBlockState(pPos);
-        Set<BlockPos> breakBlockPositions = getBreakBlockPositions(pStack, pLevel, pPos, pEntityLiving, pState);
-        boolean instaBreak = canInstaBreak(pStack, pLevel, breakBlockPositions);
-        BlockEvents.spawnDropsAtPos = pPos;
-        for (BlockPos breakPos : breakBlockPositions) {
-            if (testUseTool(pStack) < 0)
-                break;
-            breakBlocksNew(pLevel, breakPos, pEntityLiving, pStack, true, instaBreak);
-        }
-        BlockEvents.spawnDropsAtPos = BlockPos.ZERO;
-    }
-
     static int getInstantRFCost(float cumulativeDestroy, Level level, ItemStack stack) {
         int rfCost = Math.max(Ability.INSTABREAK.getFeCost(), Ability.INSTABREAK.getFeCost() * (int) cumulativeDestroy);
         if (level.holder(Enchantments.EFFICIENCY).isPresent()) {
@@ -252,6 +96,13 @@ public interface ToggleableTool extends ToggleableItem {
         }
     }
 
+    static void teleportParticles(ServerLevel level, Set<BlockPos> oreBlocksList) {
+        int iterations = oreBlocksList.size() > 10 ? 1 : 5;
+        for (BlockPos pos : oreBlocksList) {
+            teleportParticles(level, pos, iterations);
+        }
+    }
+
     static void teleportParticles(ServerLevel level, BlockPos pos, int iterations) {
         Random random = new Random();
                 /*// Generate random positions within the block
@@ -281,25 +132,23 @@ public interface ToggleableTool extends ToggleableItem {
         }
     }
 
-    static void teleportParticles(ServerLevel level, Set<BlockPos> oreBlocksList) {
-        int iterations = oreBlocksList.size() > 10 ? 1 : 5;
-        for (BlockPos pos : oreBlocksList) {
-            teleportParticles(level, pos, iterations);
-        }
-    }
-
     static int getAnyCooldown(ItemStack itemStack, Ability ability) {
-        if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) return -1;
+        if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) {
+            return -1;
+        }
         List<ToolRecords.AbilityCooldown> abilityCooldowns = itemStack.get(JustDireDataComponents.ABILITY_COOLDOWNS);
         for (ToolRecords.AbilityCooldown abilityCooldown : abilityCooldowns) {
-            if (abilityCooldown.abilityName().equals(ability.getName()))
+            if (abilityCooldown.abilityName().equals(ability.getName())) {
                 return abilityCooldown.cooldownTicks();
+            }
         }
         return -1;
     }
 
     static int getCooldown(ItemStack itemStack, Ability ability, boolean active) {
-        if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) return -1;
+        if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) {
+            return -1;
+        }
         List<ToolRecords.AbilityCooldown> abilityCooldowns = itemStack.get(JustDireDataComponents.ABILITY_COOLDOWNS);
         for (ToolRecords.AbilityCooldown abilityCooldown : abilityCooldowns) {
             if (abilityCooldown.abilityName().equals(ability.getName()) && abilityCooldown.isactive() == active) {
@@ -309,58 +158,13 @@ public interface ToggleableTool extends ToggleableItem {
         return -1;
     }
 
-    static void tickCooldowns(Level level, ItemStack itemStack, Player player) {
-        if (level.isClientSide || !itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) return;
-        Set<ToolRecords.AbilityCooldown> cooldownsToRemove = new HashSet<>();
-        List<ToolRecords.AbilityCooldown> abilityCooldowns = new ArrayList<>(itemStack.getOrDefault(JustDireDataComponents.ABILITY_COOLDOWNS, new ArrayList<>()));
-        for (int i = 0; i < abilityCooldowns.size(); i++) {
-            ToolRecords.AbilityCooldown abilityCooldown = abilityCooldowns.get(i);
-            int cooldown = abilityCooldown.cooldownTicks();
-            boolean active = abilityCooldown.isactive();
-            cooldown = cooldown - 1;
-            if (cooldown == 0) {
-                if (!active)
-                    cooldownsToRemove.add(abilityCooldown);
-                else {
-                    Ability ability = Ability.valueOf(abilityCooldown.abilityName().toUpperCase(Locale.ROOT));
-                    if (itemStack.getItem() instanceof ToggleableTool toggleableTool) {
-                        AbilityParams abilityParams = toggleableTool.getAbilityParams(ability);
-                        ToolRecords.AbilityCooldown updatedCooldown = new ToolRecords.AbilityCooldown(
-                                abilityCooldown.abilityName(), abilityParams.cooldown, false
-                        );
-                        abilityCooldowns.set(i, updatedCooldown);
-                        player.playNotifySound(SoundEvents.CONDUIT_DEACTIVATE, SoundSource.PLAYERS, 1.0F, 1.0F);
-                        cooldownDataClear(itemStack, ability);
-                    }
-                }
-            } else {
-                ToolRecords.AbilityCooldown updatedCooldown = new ToolRecords.AbilityCooldown(
-                        abilityCooldown.abilityName(), cooldown, abilityCooldown.isactive()
-                );
-                abilityCooldowns.set(i, updatedCooldown);
-            }
-        }
-        for (ToolRecords.AbilityCooldown cooldown : cooldownsToRemove) {
-            abilityCooldowns.remove(cooldown);
-            player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
-        }
-        if (abilityCooldowns.isEmpty())
-            itemStack.remove(JustDireDataComponents.ABILITY_COOLDOWNS);
-        else
-            itemStack.set(JustDireDataComponents.ABILITY_COOLDOWNS, abilityCooldowns);
-    }
-
-    static void cooldownDataClear(ItemStack itemStack, Ability ability) {
-        if (ability == Ability.STUPEFY)
-            AbilityMethods.clearStupefyTargets(itemStack);
-    }
-
     static void addCooldown(ItemStack itemStack, Ability ability, int cooldown, boolean active) {
         List<ToolRecords.AbilityCooldown> abilityCooldowns;
-        if (itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS))
+        if (itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) {
             abilityCooldowns = itemStack.get(JustDireDataComponents.ABILITY_COOLDOWNS);
-        else
+        } else {
             abilityCooldowns = new ArrayList<>();
+        }
         ToolRecords.AbilityCooldown cooldownRecord = new ToolRecords.AbilityCooldown(
                 ability.getName(), cooldown, active
         );
@@ -369,184 +173,19 @@ public interface ToggleableTool extends ToggleableItem {
     }
 
     static boolean isItemEquipped(ItemStack itemStack, Player player) {
-        if (itemStack.getItem() instanceof BaseBoots)
+        if (itemStack.getItem() instanceof BaseBoots) {
             return ItemStack.isSameItemSameComponents(itemStack, player.getItemBySlot(EquipmentSlot.FEET));
-        if (itemStack.getItem() instanceof BaseLeggings)
+        }
+        if (itemStack.getItem() instanceof BaseLeggings) {
             return ItemStack.isSameItemSameComponents(itemStack, player.getItemBySlot(EquipmentSlot.LEGS));
-        if (itemStack.getItem() instanceof BaseChestplate)
+        }
+        if (itemStack.getItem() instanceof BaseChestplate) {
             return ItemStack.isSameItemSameComponents(itemStack, player.getItemBySlot(EquipmentSlot.CHEST));
-        if (itemStack.getItem() instanceof BaseHelmet)
+        }
+        if (itemStack.getItem() instanceof BaseHelmet) {
             return ItemStack.isSameItemSameComponents(itemStack, player.getItemBySlot(EquipmentSlot.HEAD));
+        }
         return ItemStack.isSameItemSameComponents(itemStack, player.getItemInHand(InteractionHand.MAIN_HAND)) || ItemStack.isSameItemSameComponents(itemStack, player.getItemInHand(InteractionHand.OFF_HAND));
-    }
-
-    default boolean useAbility(Level level, Player player, ItemStack itemStack, int keyCode, boolean isMouse) {
-        boolean anyRan = false;
-        Set<Ability> customBindAbilities = new HashSet<>();
-        if (itemStack.getItem() instanceof LeftClickableTool)
-            customBindAbilities.addAll(LeftClickableTool.getCustomBindingListFor(itemStack, keyCode, isMouse, player));
-        for (Ability ability : getActiveAbilities(itemStack)) {
-            if (customBindAbilities.contains(ability)) {
-                if (ability.action != null) {
-                    ability.action.execute(level, player, itemStack);
-                }
-            }
-        }
-        if (!level.isClientSide) {
-            for (Ability ability : getAllPassiveAbilities()) {
-                if (customBindAbilities.contains(ability)) {
-                    if (ability.settingType == Ability.SettingType.CYCLE) {
-                        String abilityName = ability.getName();
-                        ToggleableTool.cycleSetting(itemStack, abilityName);
-                        boolean is_enabled = ToggleableTool.getSetting(itemStack, abilityName);
-                        if (is_enabled) {
-                            int currentValue = getToolValue(itemStack, abilityName);
-                            player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization() + "_" + currentValue), Component.translatable("justdirethings.enabled")), true);
-                        } else {
-                            player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization()), Component.translatable("justdirethings.disabled")), true);
-                        }
-                    } else {
-                        ToggleableTool.toggleSetting(itemStack, ability.getName());
-                        player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization()), ToggleableTool.getSetting(itemStack, ability.getName()) ? Component.translatable("justdirethings.enabled") : Component.translatable("justdirethings.disabled")), true);
-                    }
-                }
-            }
-        }
-        return anyRan;
-    }
-
-    default boolean useAbility(Level level, Player player, InteractionHand hand, boolean rightClick) {
-        if (player.isShiftKeyDown()) return false;
-        ItemStack itemStack = player.getItemInHand(hand);
-        boolean anyRan = false;
-        Set<Ability> leftClickAbilities = new HashSet<>();
-        if (itemStack.getItem() instanceof LeftClickableTool)
-            leftClickAbilities.addAll(LeftClickableTool.getLeftClickList(itemStack));
-        for (Ability ability : getActiveAbilities(itemStack)) {
-            if ((rightClick && LeftClickableTool.getBindingMode(itemStack, ability) == 0) || (!rightClick && leftClickAbilities.contains(ability))) {
-                if (ability.action != null) {
-                    ability.action.execute(level, player, itemStack);
-                }
-            }
-        }
-        return anyRan;
-    }
-
-    default boolean armorTick(Level level, Player player, ItemStack itemStack) {
-        boolean anyRan = false;
-        for (Ability ability : getPassiveTickAbilities(itemStack)) {
-            if (ability.action.execute(level, player, itemStack))
-                anyRan = true;
-        }
-        tickCooldowns(level, itemStack, player);
-        return anyRan;
-    }
-
-    default boolean useOnAbility(UseOnContext pContext, ItemStack itemStack, int keyCode, boolean isMouse) {
-        if (pContext.getPlayer().isShiftKeyDown()) return false;
-        boolean anyRan = false;
-        Set<Ability> customBindAbilities = new HashSet<>();
-        if (itemStack.getItem() instanceof LeftClickableTool)
-            customBindAbilities.addAll(LeftClickableTool.getCustomBindingListFor(itemStack, keyCode, isMouse, pContext.getPlayer()));
-        for (Ability ability : getUseOnAbilities(itemStack)) {
-            if (customBindAbilities.contains(ability)) {
-                if (ability.useOnAction != null) {
-                    if (ability.useOnAction.execute(pContext))
-                        anyRan = true;
-                }
-            }
-        }
-        return anyRan;
-    }
-
-    default boolean useOnAbility(UseOnContext pContext, boolean rightClick) {
-        if (pContext.getPlayer().isShiftKeyDown()) return false;
-        ItemStack itemStack = pContext.getItemInHand();
-        boolean anyRan = false;
-        Set<Ability> leftClickAbilities = new HashSet<>();
-        if (itemStack.getItem() instanceof LeftClickableTool)
-            leftClickAbilities.addAll(LeftClickableTool.getLeftClickList(itemStack));
-        for (Ability ability : getUseOnAbilities(itemStack)) {
-            if ((rightClick && !leftClickAbilities.contains(ability)) || (!rightClick && leftClickAbilities.contains(ability))) {
-                if (ability.useOnAction != null) {
-                    if (ability.useOnAction.execute(pContext))
-                        anyRan = true;
-                }
-            }
-        }
-        return anyRan;
-    }
-
-    default boolean useAbility(Level level, Player player, InteractionHand hand) {
-        return useAbility(level, player, hand, true);
-    }
-
-    default boolean useOnAbility(UseOnContext pContext) {
-        return useOnAbility(pContext, true);
-    }
-
-    default boolean bindDrops(UseOnContext pContext) {
-        Player player = pContext.getPlayer();
-        if (player == null) return false;
-        if (!player.isShiftKeyDown()) return false;
-        ItemStack pStack = pContext.getItemInHand();
-        if (!(pStack.getItem() instanceof ToggleableTool toggleableTool)) return false;
-        if (!toggleableTool.canUseAbility(pStack, Ability.DROPTELEPORT)) return false;
-        Level pLevel = pContext.getLevel();
-        BlockPos pPos = pContext.getClickedPos();
-        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-        if (blockEntity == null) return false;
-        IItemHandler handler = pLevel.getCapability(Capabilities.ItemHandler.BLOCK, pPos, pContext.getClickedFace());
-        if (handler == null) return false;
-        if (pContext.getLevel().isClientSide) return true;
-        NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(pStack);
-        NBTHelpers.BoundInventory newBind = new NBTHelpers.BoundInventory(GlobalPos.of(pLevel.dimension(), pPos), pContext.getClickedFace());
-        if (boundInventory != null && boundInventory.equals(newBind)) {
-            removeBoundInventory(pStack);
-            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.bindremoved"), true);
-            player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
-        } else {
-            setBoundInventory(pStack, newBind);
-            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.boundto", Component.translatable(pLevel.dimension().location().getPath()), "[" + pPos.toShortString() + "]"), true);
-            player.playNotifySound(SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
-        }
-        return true;
-    }
-
-    default boolean bindSoil(UseOnContext pContext) {
-        boolean bindingSuccess = false;
-        if (!pContext.getPlayer().level().isClientSide) {
-            Level pLevel = pContext.getLevel();
-            Player player = pContext.getPlayer();
-            ItemStack heldItem = pContext.getItemInHand();
-            BlockPos clickedPos = pContext.getClickedPos();
-            BlockState blockState = pLevel.getBlockState(clickedPos);
-            if (blockState.getBlock() instanceof GooSoilBase) {
-                if (heldItem.getItem() instanceof ToggleableTool toggleableTool) {
-                    if (toggleableTool.canUseAbility(heldItem, Ability.DROPTELEPORT)) {
-                        if (Helpers.testUseTool(heldItem, Ability.DROPTELEPORT) > 0) {
-                            NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(heldItem);
-                            if (boundInventory != null) {
-                                BlockEntity blockEntity = pLevel.getBlockEntity(clickedPos);
-                                if (blockEntity instanceof GooSoilBE gooSoilBE) {
-                                    gooSoilBE.bindInventory(boundInventory);
-                                    gooSoilBE.invalidateHandler();
-                                    pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.boundto", Component.translatable(boundInventory.globalPos().dimension().location().getPath()), "[" + boundInventory.globalPos().pos().toShortString() + "]"), true);
-                                    player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
-                                    Helpers.damageTool(heldItem, player, Ability.DROPTELEPORT);
-                                    bindingSuccess = true;
-                                }
-                            }
-                        }
-                        if (!bindingSuccess) {
-                            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.bindfailed").withStyle(ChatFormatting.RED), true);
-                            player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
-                        }
-                    }
-                }
-            }
-        }
-        return bindingSuccess;
     }
 
     //Thanks Soaryn!
@@ -584,39 +223,17 @@ public interface ToggleableTool extends ToggleableItem {
         setToolValue(stack, setting, nextValue);
     }
 
-    static void setBoundInventory(ItemStack stack, NBTHelpers.BoundInventory boundInventory) {
-        stack.set(JustDireDataComponents.BOUND_INVENTORY, boundInventory);
-    }
-
-    static void removeBoundInventory(ItemStack stack) {
-        stack.remove(JustDireDataComponents.BOUND_INVENTORY);
-    }
-
-    @Nullable
-    static NBTHelpers.BoundInventory getBoundInventory(ItemStack stack) {
-        return stack.getOrDefault(JustDireDataComponents.BOUND_INVENTORY, null);
-    }
-
     static IItemHandler getBoundHandler(ServerLevel serverLevel, ItemStack stack) {
         NBTHelpers.BoundInventory boundInventory = getBoundInventory(stack);
-        if (boundInventory != null)
+        if (boundInventory != null) {
             return MiscHelpers.getAttachedInventory(serverLevel.getServer().getLevel(boundInventory.globalPos().dimension()), boundInventory.globalPos().pos(), boundInventory.direction());
+        }
         return null;
     }
 
     static void setSetting(ItemStack stack, String setting, boolean value) {
         Ability toolAbility = Ability.byName(setting);
         stack.set(JustDireDataComponents.ABILITY_TOGGLES.get(toolAbility), value);
-    }
-
-    static boolean getSetting(ItemStack stack, String setting) {
-        Ability toolAbility = Ability.byName(setting);
-        return !stack.has(JustDireDataComponents.ABILITY_TOGGLES.get(toolAbility)) || stack.getOrDefault(JustDireDataComponents.ABILITY_TOGGLES.get(toolAbility), true); //Enabled by default
-    }
-
-    static boolean hasUpgrade(ItemStack stack, Ability ability) {
-        if (!ability.requiresUpgrade()) return true;
-        return stack.getOrDefault(JustDireDataComponents.ABILITY_UPGRADE_INSTALLS.get(ability), false);
     }
 
     static void setCustomSetting(ItemStack stack, String setting, int value) {
@@ -643,8 +260,446 @@ public interface ToggleableTool extends ToggleableItem {
         AbilityParams abilityParams = ((ToggleableTool) stack.getItem()).getAbilityParams(toolAbility);
         int min = abilityParams.minSlider;
         int max = abilityParams.maxSlider;
-        if (stack.has(JustDireDataComponents.ABILITY_VALUES.get(toolAbility)))
+        if (stack.has(JustDireDataComponents.ABILITY_VALUES.get(toolAbility))) {
             return Math.max(min, Math.min(max, stack.getOrDefault(JustDireDataComponents.ABILITY_VALUES.get(toolAbility), abilityParams.defaultValue)));
+        }
         return abilityParams.defaultValue;
+    }
+
+    default void registerAbility(Ability ability) {
+        getAllAbilities().add(ability);
+    }
+
+    EnumSet<Ability> getAllAbilities();
+
+    default void registerAbility(Ability ability, AbilityParams abilityParams) {
+        getAllAbilities().add(ability);
+        getAbilityParamsMap().put(ability, abilityParams);
+    }
+
+    Map<Ability, AbilityParams> getAbilityParamsMap();
+
+    default List<Ability> getCooldownAbilities() {
+        List<Ability> abilityList = new ArrayList<>();
+        for (Ability ability : getAbilities()) {
+            if (ability.useType == Ability.UseType.USE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN) {
+                abilityList.add(ability);
+            }
+        }
+        return abilityList;
+    }
+
+    EnumSet<Ability> getAbilities();
+
+    /**
+     * Used for toggling on and off via hotkey
+     */
+    default List<Ability> getAllPassiveAbilities() {
+        List<Ability> abilityList = new ArrayList<>();
+        for (Ability ability : getAbilities()) {
+            if ((ability.useType == Ability.UseType.PASSIVE || ability.useType == Ability.UseType.PASSIVE_TICK || ability.useType == Ability.UseType.PASSIVE_COOLDOWN || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN)) {
+                abilityList.add(ability);
+            }
+        }
+        return abilityList;
+    }
+
+    default boolean canUseAbilityAndDurability(ItemStack itemStack, Ability toolAbility) {
+        return canUseAbility(itemStack, toolAbility) && (testUseTool(itemStack, toolAbility) >= 0);
+    }
+
+    default boolean canUseAbility(ItemStack itemStack, Ability toolAbility) {
+        return hasAbility(toolAbility) && hasUpgrade(itemStack, toolAbility) && getEnabled(itemStack) && getSetting(itemStack, toolAbility.getName());
+    }
+
+    default boolean hasAbility(Ability ability) {
+        return getAbilities().contains(ability);
+    }
+
+    static boolean hasUpgrade(ItemStack stack, Ability ability) {
+        if (!ability.requiresUpgrade()) {
+            return true;
+        }
+        return stack.getOrDefault(JustDireDataComponents.ABILITY_UPGRADE_INSTALLS.get(ability), false);
+    }
+
+    static boolean getSetting(ItemStack stack, String setting) {
+        Ability toolAbility = Ability.byName(setting);
+        return !stack.has(JustDireDataComponents.ABILITY_TOGGLES.get(toolAbility)) || stack.getOrDefault(JustDireDataComponents.ABILITY_TOGGLES.get(toolAbility), true); //Enabled by default
+    }
+
+    default boolean canUseAbilityAndDurability(ItemStack itemStack, Ability toolAbility, int multiplier) {
+        return canUseAbility(itemStack, toolAbility) && (testUseTool(itemStack, toolAbility, multiplier) >= 0);
+    }
+
+    default void openSettings(Player player) {
+        player.openMenu(new SimpleMenuProvider(
+                (windowId, playerInventory, playerEntity) -> new ToolSettingContainer(windowId, playerInventory, player), Component.translatable("")));
+
+    }
+
+    //Abilities
+    default boolean hurtEnemyAbility(ItemStack pStack, LivingEntity pTarget, LivingEntity pAttacker) {
+        damageTool(pStack, pAttacker);
+        return true;
+    }
+
+    default Set<BlockPos> getBreakBlockPositions(ItemStack pStack, Level pLevel, BlockPos pPos, LivingEntity pEntityLiving, BlockState pState) {
+        Set<BlockPos> breakBlockPositions = new HashSet<>();
+        int maxBreak = Config.TOOL_MAX_BREAK_FERRICORE.get();
+        if (pStack.getItem() instanceof TieredItem tieredItem) {
+            if (tieredItem.getTier().equals(GooTier.BLAZEGOLD)) {
+                maxBreak = Config.TOOL_MAX_BREAK_BLAZEGOLD.get();
+            } else if (tieredItem.getTier().equals(GooTier.CELESTIGEM)) {
+                maxBreak = Config.TOOL_MAX_BREAK_CELESTIGEM.get();
+            } else if (tieredItem.getTier().equals(GooTier.ECLIPSEALLOY)) {
+                maxBreak = Config.TOOL_MAX_BREAK_ECLIPSEALLOY.get();
+            }
+        }
+        if (canUseAbility(pStack, Ability.OREMINER) && oreCondition.test(pState) && pStack.isCorrectToolForDrops(pState)) {
+            breakBlockPositions.addAll(findLikeBlocks(pLevel, pState, pPos, maxBreak, 2));
+        }
+        if (canUseAbility(pStack, Ability.TREEFELLER) && logCondition.test(pState) && pStack.isCorrectToolForDrops(pState)) {
+            breakBlockPositions.addAll(findLikeBlocks(pLevel, pState, pPos, maxBreak, 2));
+        }
+        if (canUseAbility(pStack, Ability.HAMMER)) {
+            breakBlockPositions.addAll(MiningCollect.collect(pEntityLiving, pPos, getTargetLookDirection(pEntityLiving), pLevel, getToolValue(pStack, Ability.HAMMER.getName()), MiningCollect.SizeMode.AUTO, pStack));
+        }
+        breakBlockPositions.add(pPos);
+        if (canUseAbility(pStack, Ability.SKYSWEEPER) && pStack.isCorrectToolForDrops(pState)) {
+            Set<BlockPos> newPos = new HashSet<>();
+            for (BlockPos blockPos : breakBlockPositions) {
+                BlockState blockState = pLevel.getBlockState(blockPos.above());
+                if (fallingBlockCondition.test(blockState)) {
+                    newPos.addAll(findBlocksSkyfall(pLevel, blockPos.above(), maxBreak, Direction.UP, maxBreak));
+                }
+            }
+            breakBlockPositions.addAll(newPos);
+        }
+        return breakBlockPositions;
+    }
+
+    default boolean canInstaBreak(ItemStack pStack, Level pLevel, Set<BlockPos> breakBlockPositions) {
+        boolean instaBreak = false;
+        if (canUseAbility(pStack, Ability.INSTABREAK)) { //Only Instabreak if we can instabreak ALL blocks in the area!
+            float cumulativeDestroy = 0;
+            for (BlockPos pos : breakBlockPositions) {
+                BlockState blockState = pLevel.getBlockState(pos);
+                float destroySpeedTarget = blockState.getDestroySpeed(pLevel, pos);
+                cumulativeDestroy = cumulativeDestroy + destroySpeedTarget;
+            }
+            int rfCostInstaBreak = getInstantRFCost(cumulativeDestroy, pLevel, pStack);
+            if (testUseTool(pStack, rfCostInstaBreak) > 0) {
+                instaBreak = true;
+            }
+        }
+        return instaBreak;
+    }
+
+    default void mineBlocksAbility(ItemStack pStack, Level pLevel, BlockPos pPos, LivingEntity pEntityLiving) {
+        BlockState pState = pLevel.getBlockState(pPos);
+        Set<BlockPos> breakBlockPositions = getBreakBlockPositions(pStack, pLevel, pPos, pEntityLiving, pState);
+        boolean instaBreak = canInstaBreak(pStack, pLevel, breakBlockPositions);
+        BlockEvents.spawnDropsAtPos = pPos;
+        for (BlockPos breakPos : breakBlockPositions) {
+            if (testUseTool(pStack) < 0) {
+                break;
+            }
+            breakBlocksNew(pLevel, breakPos, pEntityLiving, pStack, true, instaBreak);
+        }
+        BlockEvents.spawnDropsAtPos = BlockPos.ZERO;
+    }
+
+    default boolean useAbility(Level level, Player player, ItemStack itemStack, int keyCode, boolean isMouse) {
+        boolean anyRan = false;
+        Set<Ability> customBindAbilities = new HashSet<>();
+        if (itemStack.getItem() instanceof LeftClickableTool) {
+            customBindAbilities.addAll(LeftClickableTool.getCustomBindingListFor(itemStack, keyCode, isMouse, player));
+        }
+        for (Ability ability : getActiveAbilities(itemStack)) {
+            if (customBindAbilities.contains(ability)) {
+                if (ability.action != null) {
+                    ability.action.execute(level, player, itemStack);
+                }
+            }
+        }
+        if (!level.isClientSide) {
+            for (Ability ability : getAllPassiveAbilities()) {
+                if (customBindAbilities.contains(ability)) {
+                    if (ability.settingType == Ability.SettingType.CYCLE) {
+                        String abilityName = ability.getName();
+                        ToggleableTool.cycleSetting(itemStack, abilityName);
+                        boolean is_enabled = ToggleableTool.getSetting(itemStack, abilityName);
+                        if (is_enabled) {
+                            int currentValue = getToolValue(itemStack, abilityName);
+                            player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization() + "_" + currentValue), Component.translatable("justdirethings.enabled")), true);
+                        } else {
+                            player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization()), Component.translatable("justdirethings.disabled")), true);
+                        }
+                    } else {
+                        ToggleableTool.toggleSetting(itemStack, ability.getName());
+                        player.displayClientMessage(Component.translatable("justdirethings.ability", Component.translatable(ability.getLocalization()), ToggleableTool.getSetting(itemStack, ability.getName()) ? Component.translatable("justdirethings.enabled") : Component.translatable("justdirethings.disabled")), true);
+                    }
+                }
+            }
+        }
+        return anyRan;
+    }
+
+    default boolean armorTick(Level level, Player player, ItemStack itemStack) {
+        boolean anyRan = false;
+        for (Ability ability : getPassiveTickAbilities(itemStack)) {
+            if (ability.action.execute(level, player, itemStack)) {
+                anyRan = true;
+            }
+        }
+        tickCooldowns(level, itemStack, player);
+        return anyRan;
+    }
+
+    default List<Ability> getPassiveTickAbilities(ItemStack itemStack) {
+        List<Ability> abilityList = new ArrayList<>();
+        for (Ability ability : getAbilities()) {
+            if ((ability.useType == Ability.UseType.PASSIVE_TICK || ability.useType == Ability.UseType.PASSIVE_TICK_COOLDOWN) && canUseAbility(itemStack, ability)) {
+                abilityList.add(ability);
+            }
+        }
+        return abilityList;
+    }
+
+    static void tickCooldowns(Level level, ItemStack itemStack, Player player) {
+        if (level.isClientSide || !itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) {
+            return;
+        }
+        Set<ToolRecords.AbilityCooldown> cooldownsToRemove = new HashSet<>();
+        List<ToolRecords.AbilityCooldown> abilityCooldowns = new ArrayList<>(itemStack.getOrDefault(JustDireDataComponents.ABILITY_COOLDOWNS, new ArrayList<>()));
+        for (int i = 0; i < abilityCooldowns.size(); i++) {
+            ToolRecords.AbilityCooldown abilityCooldown = abilityCooldowns.get(i);
+            int cooldown = abilityCooldown.cooldownTicks();
+            boolean active = abilityCooldown.isactive();
+            cooldown = cooldown - 1;
+            if (cooldown == 0) {
+                if (!active) {
+                    cooldownsToRemove.add(abilityCooldown);
+                } else {
+                    Ability ability = Ability.valueOf(abilityCooldown.abilityName().toUpperCase(Locale.ROOT));
+                    if (itemStack.getItem() instanceof ToggleableTool toggleableTool) {
+                        AbilityParams abilityParams = toggleableTool.getAbilityParams(ability);
+                        ToolRecords.AbilityCooldown updatedCooldown = new ToolRecords.AbilityCooldown(
+                                abilityCooldown.abilityName(), abilityParams.cooldown, false
+                        );
+                        abilityCooldowns.set(i, updatedCooldown);
+                        player.playNotifySound(SoundEvents.CONDUIT_DEACTIVATE, SoundSource.PLAYERS, 1.0F, 1.0F);
+                        cooldownDataClear(itemStack, ability);
+                    }
+                }
+            } else {
+                ToolRecords.AbilityCooldown updatedCooldown = new ToolRecords.AbilityCooldown(
+                        abilityCooldown.abilityName(), cooldown, abilityCooldown.isactive()
+                );
+                abilityCooldowns.set(i, updatedCooldown);
+            }
+        }
+        for (ToolRecords.AbilityCooldown cooldown : cooldownsToRemove) {
+            abilityCooldowns.remove(cooldown);
+            player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+        if (abilityCooldowns.isEmpty()) {
+            itemStack.remove(JustDireDataComponents.ABILITY_COOLDOWNS);
+        } else {
+            itemStack.set(JustDireDataComponents.ABILITY_COOLDOWNS, abilityCooldowns);
+        }
+    }
+
+    default AbilityParams getAbilityParams(Ability toolAbility) {
+        return getAbilityParamsMap().getOrDefault(toolAbility, new AbilityParams(-1, -1, -1));
+    }
+
+    static void cooldownDataClear(ItemStack itemStack, Ability ability) {
+        if (ability == Ability.STUPEFY) {
+            AbilityMethods.clearStupefyTargets(itemStack);
+        }
+    }
+
+    default boolean useOnAbility(UseOnContext pContext, ItemStack itemStack, int keyCode, boolean isMouse) {
+        if (pContext.getPlayer().isShiftKeyDown()) {
+            return false;
+        }
+        boolean anyRan = false;
+        Set<Ability> customBindAbilities = new HashSet<>();
+        if (itemStack.getItem() instanceof LeftClickableTool) {
+            customBindAbilities.addAll(LeftClickableTool.getCustomBindingListFor(itemStack, keyCode, isMouse, pContext.getPlayer()));
+        }
+        for (Ability ability : getUseOnAbilities(itemStack)) {
+            if (customBindAbilities.contains(ability)) {
+                if (ability.useOnAction != null) {
+                    if (ability.useOnAction.execute(pContext)) {
+                        anyRan = true;
+                    }
+                }
+            }
+        }
+        return anyRan;
+    }
+
+    default List<Ability> getUseOnAbilities(ItemStack itemStack) {
+        List<Ability> abilityList = new ArrayList<>();
+        for (Ability ability : getAbilities()) {
+            if (ability.useType == Ability.UseType.USE_ON && canUseAbility(itemStack, ability)) {
+                abilityList.add(ability);
+            }
+        }
+        return abilityList;
+    }
+
+    default boolean useAbility(Level level, Player player, InteractionHand hand) {
+        return useAbility(level, player, hand, true);
+    }
+
+    default boolean useAbility(Level level, Player player, InteractionHand hand, boolean rightClick) {
+        if (player.isShiftKeyDown()) {
+            return false;
+        }
+        ItemStack itemStack = player.getItemInHand(hand);
+        boolean anyRan = false;
+        Set<Ability> leftClickAbilities = new HashSet<>();
+        if (itemStack.getItem() instanceof LeftClickableTool) {
+            leftClickAbilities.addAll(LeftClickableTool.getLeftClickList(itemStack));
+        }
+        for (Ability ability : getActiveAbilities(itemStack)) {
+            if ((rightClick && LeftClickableTool.getBindingMode(itemStack, ability) == 0) || (!rightClick && leftClickAbilities.contains(ability))) {
+                if (ability.action != null) {
+                    ability.action.execute(level, player, itemStack);
+                }
+            }
+        }
+        return anyRan;
+    }
+
+    default List<Ability> getActiveAbilities(ItemStack itemStack) {
+        List<Ability> abilityList = new ArrayList<>();
+        for (Ability ability : getAbilities()) {
+            if ((ability.useType == Ability.UseType.USE || ability.useType == Ability.UseType.USE_COOLDOWN) && canUseAbility(itemStack, ability)) {
+                abilityList.add(ability);
+            }
+        }
+        return abilityList;
+    }
+
+    default boolean useOnAbility(UseOnContext pContext) {
+        return useOnAbility(pContext, true);
+    }
+
+    default boolean useOnAbility(UseOnContext pContext, boolean rightClick) {
+        if (pContext.getPlayer().isShiftKeyDown()) {
+            return false;
+        }
+        ItemStack itemStack = pContext.getItemInHand();
+        boolean anyRan = false;
+        Set<Ability> leftClickAbilities = new HashSet<>();
+        if (itemStack.getItem() instanceof LeftClickableTool) {
+            leftClickAbilities.addAll(LeftClickableTool.getLeftClickList(itemStack));
+        }
+        for (Ability ability : getUseOnAbilities(itemStack)) {
+            if ((rightClick && !leftClickAbilities.contains(ability)) || (!rightClick && leftClickAbilities.contains(ability))) {
+                if (ability.useOnAction != null) {
+                    if (ability.useOnAction.execute(pContext)) {
+                        anyRan = true;
+                    }
+                }
+            }
+        }
+        return anyRan;
+    }
+
+    default boolean bindDrops(UseOnContext pContext) {
+        Player player = pContext.getPlayer();
+        if (player == null) {
+            return false;
+        }
+        if (!player.isShiftKeyDown()) {
+            return false;
+        }
+        ItemStack pStack = pContext.getItemInHand();
+        if (!(pStack.getItem() instanceof ToggleableTool toggleableTool)) {
+            return false;
+        }
+        if (!toggleableTool.canUseAbility(pStack, Ability.DROPTELEPORT)) {
+            return false;
+        }
+        Level pLevel = pContext.getLevel();
+        BlockPos pPos = pContext.getClickedPos();
+        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+        if (blockEntity == null) {
+            return false;
+        }
+        IItemHandler handler = pLevel.getCapability(Capabilities.ItemHandler.BLOCK, pPos, pContext.getClickedFace());
+        if (handler == null) {
+            return false;
+        }
+        if (pContext.getLevel().isClientSide) {
+            return true;
+        }
+        NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(pStack);
+        NBTHelpers.BoundInventory newBind = new NBTHelpers.BoundInventory(GlobalPos.of(pLevel.dimension(), pPos), pContext.getClickedFace());
+        if (boundInventory != null && boundInventory.equals(newBind)) {
+            removeBoundInventory(pStack);
+            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.bindremoved"), true);
+            player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
+        } else {
+            setBoundInventory(pStack, newBind);
+            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.boundto", Component.translatable(pLevel.dimension().location().getPath()), "[" + pPos.toShortString() + "]"), true);
+            player.playNotifySound(SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+        return true;
+    }
+
+    @Nullable
+    static NBTHelpers.BoundInventory getBoundInventory(ItemStack stack) {
+        return stack.getOrDefault(JustDireDataComponents.BOUND_INVENTORY, null);
+    }
+
+    static void removeBoundInventory(ItemStack stack) {
+        stack.remove(JustDireDataComponents.BOUND_INVENTORY);
+    }
+
+    static void setBoundInventory(ItemStack stack, NBTHelpers.BoundInventory boundInventory) {
+        stack.set(JustDireDataComponents.BOUND_INVENTORY, boundInventory);
+    }
+
+    default boolean bindSoil(UseOnContext pContext) {
+        boolean bindingSuccess = false;
+        if (!pContext.getPlayer().level().isClientSide) {
+            Level pLevel = pContext.getLevel();
+            Player player = pContext.getPlayer();
+            ItemStack heldItem = pContext.getItemInHand();
+            BlockPos clickedPos = pContext.getClickedPos();
+            BlockState blockState = pLevel.getBlockState(clickedPos);
+            if (blockState.getBlock() instanceof GooSoilBase) {
+                if (heldItem.getItem() instanceof ToggleableTool toggleableTool) {
+                    if (toggleableTool.canUseAbility(heldItem, Ability.DROPTELEPORT)) {
+                        if (Helpers.testUseTool(heldItem, Ability.DROPTELEPORT) > 0) {
+                            NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(heldItem);
+                            if (boundInventory != null) {
+                                BlockEntity blockEntity = pLevel.getBlockEntity(clickedPos);
+                                if (blockEntity instanceof GooSoilBE gooSoilBE) {
+                                    gooSoilBE.bindInventory(boundInventory);
+                                    gooSoilBE.invalidateHandler();
+                                    pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.boundto", Component.translatable(boundInventory.globalPos().dimension().location().getPath()), "[" + boundInventory.globalPos().pos().toShortString() + "]"), true);
+                                    player.playNotifySound(SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.0F, 1.0F);
+                                    Helpers.damageTool(heldItem, player, Ability.DROPTELEPORT);
+                                    bindingSuccess = true;
+                                }
+                            }
+                        }
+                        if (!bindingSuccess) {
+                            pContext.getPlayer().displayClientMessage(Component.translatable("justdirethings.bindfailed").withStyle(ChatFormatting.RED), true);
+                            player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.PLAYERS, 1.0F, 1.0F);
+                        }
+                    }
+                }
+            }
+        }
+        return bindingSuccess;
     }
 }

@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class ArmorTiers {
-    public static final Holder<ArmorMaterial> FERRICORE = register(
+    public static final Holder<ArmorMaterial> FERRICORE    = register(
             "ferricore",
             Util.make(new EnumMap<>(ArmorItem.Type.class), p_323384_ -> {
                 p_323384_.put(ArmorItem.Type.BOOTS, 2);
@@ -34,7 +34,7 @@ public class ArmorTiers {
             () -> Ingredient.of(Registration.FerricoreIngot.get()),
             List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ferricore"), "", true))
     );
-    public static final Holder<ArmorMaterial> BLAZEGOLD = register(
+    public static final Holder<ArmorMaterial> BLAZEGOLD    = register(
             "blazegold",
             Util.make(new EnumMap<>(ArmorItem.Type.class), p_323384_ -> {
                 p_323384_.put(ArmorItem.Type.BOOTS, 2);
@@ -50,7 +50,7 @@ public class ArmorTiers {
             () -> Ingredient.of(Registration.BlazegoldIngot.get()),
             List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "blazegold"), "", true))
     );
-    public static final Holder<ArmorMaterial> CELESTIGEM = register(
+    public static final Holder<ArmorMaterial> CELESTIGEM   = register(
             "celestigem",
             Util.make(new EnumMap<>(ArmorItem.Type.class), p_323384_ -> {
                 p_323384_.put(ArmorItem.Type.BOOTS, 3);

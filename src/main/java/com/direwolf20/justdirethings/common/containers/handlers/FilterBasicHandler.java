@@ -11,12 +11,12 @@ public class FilterBasicHandler extends ItemStackHandler {
     }
 
     @Override
-    public boolean isItemValid(int slot, @Nonnull ItemStack stack) {
-        return super.isItemValid(slot, stack);
+    public int getSlotLimit(int slot) {
+        return 1;
     }
 
     @Override
-    public int getSlotLimit(int slot) {
-        return 1;
+    public boolean isItemValid(int slot, @Nonnull ItemStack stack) {
+        return super.isItemValid(slot, stack);
     }
 }

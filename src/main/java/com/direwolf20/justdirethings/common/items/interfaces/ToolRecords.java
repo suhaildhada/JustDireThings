@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ToolRecords {
     public record AbilityCooldown(String abilityName, int cooldownTicks, boolean isactive) {
-        public static final Codec<AbilityCooldown> CODEC = RecordCodecBuilder.create(
+        public static final Codec<AbilityCooldown>                CODEC        = RecordCodecBuilder.create(
                 cooldownInstance -> cooldownInstance.group(
                                 Codec.STRING.fieldOf("ability_name").forGetter(AbilityCooldown::abilityName),
                                 Codec.INT.fieldOf("cooldown_ticks").forGetter(AbilityCooldown::cooldownTicks),
@@ -18,7 +18,7 @@ public class ToolRecords {
                         )
                         .apply(cooldownInstance, AbilityCooldown::new)
         );
-        public static final Codec<List<AbilityCooldown>> LIST_CODEC = CODEC.listOf();
+        public static final Codec<List<AbilityCooldown>>          LIST_CODEC   = CODEC.listOf();
         public static final StreamCodec<ByteBuf, AbilityCooldown> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
                 AbilityCooldown::abilityName,
@@ -31,7 +31,7 @@ public class ToolRecords {
     }
 
     public record AbilityBinding(String abilityName, int key, boolean isMouse, boolean requireEquipped) {
-        public static final Codec<AbilityBinding> CODEC = RecordCodecBuilder.create(
+        public static final Codec<AbilityBinding>                CODEC        = RecordCodecBuilder.create(
                 cooldownInstance -> cooldownInstance.group(
                                 Codec.STRING.fieldOf("ability_name").forGetter(AbilityBinding::abilityName),
                                 Codec.INT.fieldOf("key").forGetter(AbilityBinding::key),
@@ -40,7 +40,7 @@ public class ToolRecords {
                         )
                         .apply(cooldownInstance, AbilityBinding::new)
         );
-        public static final Codec<List<AbilityBinding>> LIST_CODEC = CODEC.listOf();
+        public static final Codec<List<AbilityBinding>>          LIST_CODEC   = CODEC.listOf();
         public static final StreamCodec<ByteBuf, AbilityBinding> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
                 AbilityBinding::abilityName,

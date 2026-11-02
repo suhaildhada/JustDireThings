@@ -19,6 +19,16 @@ public class GooBlock_Tier1 extends GooBlock_Base implements EntityBlock {
         super();
     }
 
+    @Override
+    protected boolean validRevivalItem(ItemStack itemStack) {
+        return itemStack.is(JustDireItemTags.GOO_REVIVE_TIER_1);
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new GooBlockBE_Tier1(pos, state);
+    }
 
     @Nullable
     @Override
@@ -35,17 +45,6 @@ public class GooBlock_Tier1 extends GooBlock_Base implements EntityBlock {
                 tile.tickServer();
             }
         };
-    }
-
-    @Override
-    protected boolean validRevivalItem(ItemStack itemStack) {
-        return itemStack.is(JustDireItemTags.GOO_REVIVE_TIER_1);
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new GooBlockBE_Tier1(pos, state);
     }
 
 }

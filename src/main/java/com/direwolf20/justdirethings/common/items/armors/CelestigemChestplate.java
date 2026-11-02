@@ -28,18 +28,19 @@ public class CelestigemChestplate extends BaseChestplate implements PoweredTool 
     @Override
     public int getBarColor(ItemStack stack) {
         int color = getPowerBarColor(stack);
-        if (color == -1)
+        if (color == -1) {
             return super.getBarColor(stack);
+        }
         return color;
-    }
-
-    public static boolean isFlyEnabled(ItemStack elytraStack) {
-        return elytraStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(elytraStack, Ability.ELYTRA);
     }
 
     @Override
     public boolean canElytraFly(ItemStack stack, net.minecraft.world.entity.LivingEntity entity) {
         return isFlyEnabled(stack);
+    }
+
+    public static boolean isFlyEnabled(ItemStack elytraStack) {
+        return elytraStack.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(elytraStack, Ability.ELYTRA);
     }
 
     @Override

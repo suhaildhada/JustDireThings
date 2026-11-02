@@ -18,17 +18,39 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class MachineSettingsCopierScreen extends Screen {
     public static final ResourceLocation SOCIALBACKGROUND = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "background");
-    private ItemStack copyMachineSettingsItemstack;
     boolean area, offset, filter, redstone;
     int topSectionWidth, topSectionHeight, topSectionLeft, topSectionTop;
+    private final ItemStack copyMachineSettingsItemstack;
 
     public MachineSettingsCopierScreen(ItemStack itemStack) {
         super(Component.literal(""));
         this.copyMachineSettingsItemstack = itemStack;
-        area = MachineSettingsCopier.getCopyArea(itemStack);
-        offset = MachineSettingsCopier.getCopyOffset(itemStack);
-        filter = MachineSettingsCopier.getCopyFilter(itemStack);
-        redstone = MachineSettingsCopier.getCopyRedstone(itemStack);
+        area                              = MachineSettingsCopier.getCopyArea(itemStack);
+        offset                            = MachineSettingsCopier.getCopyOffset(itemStack);
+        filter                            = MachineSettingsCopier.getCopyFilter(itemStack);
+        redstone                          = MachineSettingsCopier.getCopyRedstone(itemStack);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
+        for (Renderable renderable : this.renderables) {
+            if (renderable instanceof BaseButton button && !button.getLocalization(mouseX, mouseY).equals(Component.empty())) {
+                guiGraphics.renderTooltip(font, button.getLocalization(mouseX, mouseY), mouseX, mouseY);
+            }
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers) {
+        InputConstants.Key mouseKey = InputConstants.getKey(pKeyCode, pScanCode);
+        if (super.keyPressed(pKeyCode, pScanCode, pModifiers)) {
+            return true;
+        } else if (this.minecraft.options.keyInventory.isActiveAndMatches(mouseKey)) {
+            this.onClose();
+            return true;
+        }
+        return true;
     }
 
     @Override
@@ -61,19 +83,23 @@ public class MachineSettingsCopierScreen extends Screen {
 
     }
 
+    public void setPositions() {
+        topSectionWidth  = 140;
+        topSectionHeight = 60;
+        topSectionLeft   = getGuiLeft() - 20 / 2;
+        topSectionTop    = getGuiHeight();
+    }
+
+    public void saveSettings() {
+        PacketDistributor.sendToServer(new CopyMachineSettingsPayload(area, offset, filter, redstone));
+    }
+
     public int getGuiLeft() {
         return (this.width - 176) / 2;
     }
 
     public int getGuiHeight() {
         return (this.height - 166) / 2;
-    }
-
-    public void setPositions() {
-        topSectionWidth = 140;
-        topSectionHeight = 60;
-        topSectionLeft = getGuiLeft() - 20 / 2;
-        topSectionTop = getGuiHeight();
     }
 
     @Override
@@ -89,33 +115,8 @@ public class MachineSettingsCopierScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
-        for (Renderable renderable : this.renderables) {
-            if (renderable instanceof BaseButton button && !button.getLocalization(mouseX, mouseY).equals(Component.empty()))
-                guiGraphics.renderTooltip(font, button.getLocalization(mouseX, mouseY), mouseX, mouseY);
-        }
-    }
-
-    public void saveSettings() {
-        PacketDistributor.sendToServer(new CopyMachineSettingsPayload(area, offset, filter, redstone));
-    }
-
-    @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    @Override
-    public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers) {
-        InputConstants.Key mouseKey = InputConstants.getKey(pKeyCode, pScanCode);
-        if (super.keyPressed(pKeyCode, pScanCode, pModifiers)) {
-            return true;
-        } else if (this.minecraft.options.keyInventory.isActiveAndMatches(mouseKey)) {
-            this.onClose();
-            return true;
-        }
-        return true;
     }
 
 }

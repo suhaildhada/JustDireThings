@@ -1,7 +1,6 @@
 package com.direwolf20.justdirethings.common.capabilities;
 
 import com.direwolf20.justdirethings.common.fluids.basefluids.RefinedFuel;
-import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -20,16 +19,17 @@ public class GeneratorFluidItemHandler extends ItemStackHandler {
 
     @Override
     public boolean isItemValid(int slot, ItemStack itemStack) {
-        if (itemStack.isEmpty())
+        if (itemStack.isEmpty()) {
             return false;
+        }
         IFluidHandlerItem fluidHandlerItem = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
-        if (fluidHandlerItem == null)
+        if (fluidHandlerItem == null) {
             return false;
+        }
         FluidStack fluidStack = fluidHandlerItem.drain(1000, IFluidHandler.FluidAction.SIMULATE);
-        if (fluidStack.getAmount() == 0)
+        if (fluidStack.getAmount() == 0) {
             return false;
-        if (!(fluidStack.getFluid() instanceof RefinedFuel))
-            return false;
-        return true;
+        }
+        return fluidStack.getFluid() instanceof RefinedFuel;
     }
 }

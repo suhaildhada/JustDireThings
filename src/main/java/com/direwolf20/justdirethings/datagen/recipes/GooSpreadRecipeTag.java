@@ -20,23 +20,28 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.crafting.BlockTagIngredient;
 
 public class GooSpreadRecipeTag implements CraftingRecipe {
-    private final ResourceLocation id;
     protected final BlockTagIngredient input;
-    protected final BlockState output;
-    protected int tierRequirement;
-    protected int craftingDuration;
+    protected final BlockState         output;
+    private final   ResourceLocation   id;
+    protected       int                tierRequirement;
+    protected       int                craftingDuration;
 
     public GooSpreadRecipeTag(ResourceLocation id, BlockTagIngredient input, BlockState output, int tierRequirement, int craftingDuration) {
-        this.id = id;
-        this.input = input;
-        this.output = output;
-        this.tierRequirement = tierRequirement;
+        this.id               = id;
+        this.input            = input;
+        this.output           = output;
+        this.tierRequirement  = tierRequirement;
         this.craftingDuration = craftingDuration;
     }
 
     @Override
     public RecipeType<?> getType() {
         return Registration.GOO_SPREAD_RECIPE_TYPE_TAG.get();
+    }
+
+    @Override
+    public CraftingBookCategory category() {
+        return CraftingBookCategory.MISC;
     }
 
     public boolean matches(GooBlockBE_Base gooBlockBE_base, BlockState sourceState) {
@@ -60,21 +65,6 @@ public class GooSpreadRecipeTag implements CraftingRecipe {
     }
 
     @Override
-    public CraftingBookCategory category() {
-        return CraftingBookCategory.MISC;
-    }
-
-    @Override
-    public ItemStack getResultItem(HolderLookup.Provider provider) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public boolean isSpecial() {
-        return true;
-    }
-
-    @Override
     public boolean matches(CraftingInput p_346065_, Level p_345375_) {
         return false;
     }
@@ -93,14 +83,27 @@ public class GooSpreadRecipeTag implements CraftingRecipe {
     }
 
     @Override
+    public ItemStack getResultItem(HolderLookup.Provider provider) {
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
+    @Override
     public RecipeSerializer<?> getSerializer() {
         return Registration.GOO_SPREAD_RECIPE_SERIALIZER_TAG.get();
     }
 
 
     public static class Serializer implements RecipeSerializer<GooSpreadRecipeTag> {
-        private static final ResourceLocation NAME = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "goospread_tag");
-        private static final MapCodec<GooSpreadRecipeTag> CODEC = RecordCodecBuilder.mapCodec(
+        public static final  StreamCodec<RegistryFriendlyByteBuf, GooSpreadRecipeTag> STREAM_CODEC = StreamCodec.of(
+                GooSpreadRecipeTag.Serializer::toNetwork, GooSpreadRecipeTag.Serializer::fromNetwork
+        );
+        private static final ResourceLocation                                         NAME         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "goospread_tag");
+        private static final MapCodec<GooSpreadRecipeTag>                             CODEC        = RecordCodecBuilder.mapCodec(
                 p_311734_ -> p_311734_.group(
                                 ResourceLocation.CODEC.fieldOf("id").forGetter(p_301134_ -> p_301134_.id),
                                 BlockTagIngredient.CODEC.fieldOf("input").forGetter(p_301135_ -> p_301135_.input),
@@ -110,21 +113,6 @@ public class GooSpreadRecipeTag implements CraftingRecipe {
                         )
                         .apply(p_311734_, GooSpreadRecipeTag::new)
         );
-
-        public static final StreamCodec<RegistryFriendlyByteBuf, GooSpreadRecipeTag> STREAM_CODEC = StreamCodec.of(
-                GooSpreadRecipeTag.Serializer::toNetwork, GooSpreadRecipeTag.Serializer::fromNetwork
-        );
-
-
-        @Override
-        public MapCodec<GooSpreadRecipeTag> codec() {
-            return CODEC;
-        }
-
-        @Override
-        public StreamCodec<RegistryFriendlyByteBuf, GooSpreadRecipeTag> streamCodec() {
-            return STREAM_CODEC;
-        }
 
         public static GooSpreadRecipeTag fromNetwork(RegistryFriendlyByteBuf pBuffer) {
             ResourceLocation resourceLocation = pBuffer.readResourceLocation();
@@ -143,6 +131,16 @@ public class GooSpreadRecipeTag implements CraftingRecipe {
             pBuffer.writeInt(Block.getId(pRecipe.output));
             pBuffer.writeInt(pRecipe.tierRequirement);
             pBuffer.writeInt(pRecipe.craftingDuration);
+        }
+
+        @Override
+        public MapCodec<GooSpreadRecipeTag> codec() {
+            return CODEC;
+        }
+
+        @Override
+        public StreamCodec<RegistryFriendlyByteBuf, GooSpreadRecipeTag> streamCodec() {
+            return STREAM_CODEC;
         }
     }
 }

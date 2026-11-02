@@ -32,9 +32,9 @@ import static com.direwolf20.justdirethings.common.items.interfaces.ToggleableTo
 import static com.direwolf20.justdirethings.common.items.interfaces.ToggleableTool.getToolValue;
 
 public class PlayerEvents {
-    public static final AttributeModifier stepHeight = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "justdirestepassist"), 1.0, AttributeModifier.Operation.ADD_VALUE);
+    public static final AttributeModifier stepHeight     = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "justdirestepassist"), 1.0, AttributeModifier.Operation.ADD_VALUE);
     public static final AttributeModifier creativeFlight = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "justdireflight"), 1.0, AttributeModifier.Operation.ADD_VALUE);
-    public static final AttributeModifier phase = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "justdirephase"), 1.0, AttributeModifier.Operation.ADD_VALUE);
+    public static final AttributeModifier phase          = new AttributeModifier(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "justdirephase"), 1.0, AttributeModifier.Operation.ADD_VALUE);
 
     @SubscribeEvent
     public static void PlayerDestroyItem(PlayerDestroyItemEvent event) {
@@ -54,12 +54,15 @@ public class PlayerEvents {
     public static void ItemAttributes(ItemAttributeModifierEvent event) {
         ItemStack itemStack = event.getItemStack();
         if (itemStack.getItem() instanceof ToggleableTool toggleableTool) {
-            if (toggleableTool.canUseAbility(itemStack, Ability.STEPHEIGHT))
+            if (toggleableTool.canUseAbility(itemStack, Ability.STEPHEIGHT)) {
                 event.addModifier(Attributes.STEP_HEIGHT, stepHeight, EquipmentSlotGroup.FEET);
-            if (toggleableTool.canUseAbilityAndDurability(itemStack, Ability.FLIGHT))
+            }
+            if (toggleableTool.canUseAbilityAndDurability(itemStack, Ability.FLIGHT)) {
                 event.addModifier(NeoForgeMod.CREATIVE_FLIGHT, creativeFlight, EquipmentSlotGroup.CHEST);
-            if (toggleableTool.canUseAbility(itemStack, Ability.PHASE))
+            }
+            if (toggleableTool.canUseAbility(itemStack, Ability.PHASE)) {
                 event.addModifier(Registration.PHASE, phase, EquipmentSlotGroup.LEGS);
+            }
         }
         //A catch all for unpowered itemse
         if (itemStack.getItem() instanceof PoweredTool poweredTool && PoweredItem.getAvailableEnergy(itemStack) < poweredTool.getBlockBreakFECost()) {
@@ -74,8 +77,9 @@ public class PlayerEvents {
         float targetSpeed = event.getNewSpeed();
         if (player.getAbilities().flying && event.getNewSpeed() < event.getOriginalSpeed() * 5.0F) { //Prevent this combining with other mods like Apotheosis
             ItemStack chestPlate = player.getItemBySlot(EquipmentSlot.CHEST);
-            if (chestPlate.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(chestPlate, Ability.FLIGHT))
+            if (chestPlate.getItem() instanceof ToggleableTool toggleableTool && toggleableTool.canUseAbilityAndDurability(chestPlate, Ability.FLIGHT)) {
                 targetSpeed = targetSpeed * 5; //Vanilla divides by 5 if you're flying
+            }
         }
         ItemStack stack = player.getMainHandItem(); // Assuming the tool is in the main hand
         int rfCost = 0;
@@ -91,7 +95,9 @@ public class PlayerEvents {
             BlockState originalState = level.getBlockState(event.getPosition().get());
             float originalDestroySpeed = originalState.getDestroySpeed(level, originalPos);
             float cumulativeDestroy = 0;
-            if (originalDestroySpeed <= 0) return;
+            if (originalDestroySpeed <= 0) {
+                return;
+            }
             Set<BlockPos> breakBlockPositions = toggleableTool.getBreakBlockPositions(stack, level, originalPos, player, originalState);
             if (!breakBlockPositions.isEmpty()) { //Avoid potential divide by zero
                 int radius = toggleableTool.canUseAbility(stack, Ability.HAMMER) ? getToolValue(stack, Ability.HAMMER.getName()) : 1;
@@ -110,14 +116,16 @@ public class PlayerEvents {
                 targetSpeed = 10000f;
             }
         }
-        if (targetSpeed != event.getNewSpeed())
+        if (targetSpeed != event.getNewSpeed()) {
             event.setNewSpeed(targetSpeed);
+        }
     }
 
     @SubscribeEvent
     public static void CancelEntityInteraction(PlayerInteractEvent.EntityInteract event) {
         ItemStack itemStack = event.getItemStack();
-        if (itemStack.getItem() instanceof PolymorphicWand || itemStack.getItem() instanceof PolymorphicWandV2)
+        if (itemStack.getItem() instanceof PolymorphicWand || itemStack.getItem() instanceof PolymorphicWandV2) {
             event.setCanceled(true);
+        }
     }
 }

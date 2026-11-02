@@ -25,30 +25,31 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class BaseMachineContainer extends BaseContainer {
-    public int FILTER_SLOTS = 0;
-    public int MACHINE_SLOTS = 0;
-    public BaseMachineBE baseMachineBE;
-    public FilterBasicHandler filterHandler;
-    public ItemStackHandler machineHandler;
-    protected Player player;
-    protected BlockPos pos;
-    public ContainerData data;
-    public ContainerData fluidData;
+    public    int                FILTER_SLOTS  = 0;
+    public    int                MACHINE_SLOTS = 0;
+    public    BaseMachineBE      baseMachineBE;
+    public    FilterBasicHandler filterHandler;
+    public    ItemStackHandler   machineHandler;
+    public    ContainerData      data;
+    public    ContainerData      fluidData;
+    protected Player             player;
+    protected BlockPos           pos;
 
     public BaseMachineContainer(@Nullable MenuType<?> menuType, int windowId, Inventory playerInventory, BlockPos blockPos) {
         super(menuType, windowId);
-        this.pos = blockPos;
+        this.pos    = blockPos;
         this.player = playerInventory.player;
         BlockEntity blockEntity = player.level().getBlockEntity(pos);
         if (blockEntity instanceof BaseMachineBE baseMachineBE) {
             this.baseMachineBE = baseMachineBE;
             this.MACHINE_SLOTS = baseMachineBE.MACHINE_SLOTS;
         }
-        if (MACHINE_SLOTS > 0)
+        if (MACHINE_SLOTS > 0) {
             addMachineSlots();
+        }
         if (blockEntity instanceof FilterableBE filterableBE) {
             filterHandler = filterableBE.getFilterHandler();
-            FILTER_SLOTS = filterHandler.getSlots();
+            FILTER_SLOTS  = filterHandler.getSlots();
             addFilterSlots();
         }
         if (blockEntity instanceof PoweredMachineBE poweredMachineBE) {
@@ -62,38 +63,44 @@ public abstract class BaseMachineContainer extends BaseContainer {
     }
 
     //Override this if you want the slot layout to be different...
+    public void addMachineSlots() {
+        machineHandler = baseMachineBE.getMachineHandler();
+        addSlotRange(machineHandler, 0, 80, 35, MACHINE_SLOTS, 18);
+    }
+
+    //Override this if you want the slot layout to be different...
     public void addFilterSlots() {
         addFilterSlots(filterHandler, 0, 8, 54, FILTER_SLOTS, 18);
     }
 
-    //Override this if you want the slot layout to be different...
-    public void addMachineSlots() {
-        machineHandler = baseMachineBE.getMachineHandler();
-        addSlotRange(machineHandler, 0, 80, 35, MACHINE_SLOTS, 18);
+    protected int addFilterSlots(IItemHandler handler, int index, int x, int y, int amount, int dx) {
+        for (int i = 0; i < amount; i++) {
+            if (handler instanceof FilterBasicHandler) //This should always be true, but can't hurt to check!
+            {
+                addSlot(new FilterBasicSlot(handler, index, x, y));
+            } else {
+                addSlot(new SlotItemHandler(handler, index, x, y));
+            }
+            x += dx;
+            index++;
+        }
+        return index;
     }
 
     public int getEnergy() {
         return this.data == null ? 0 : ((this.data.get(1) << 16) | this.data.get(0));
     }
 
-    public int getFluidAmount() {
-        return this.fluidData == null ? 0 : ((this.fluidData.get(2) << 16) | this.fluidData.get(1));
+    public FluidStack getFluidStack() {
+        return new FluidStack(getFluidType(), getFluidAmount());
     }
 
     public Fluid getFluidType() {
         return this.fluidData == null ? Fluids.EMPTY : BuiltInRegistries.FLUID.byId(this.fluidData.get(0));
     }
 
-    public FluidStack getFluidStack() {
-        return new FluidStack(getFluidType(), getFluidAmount());
-    }
-
-    @Override
-    public void clicked(int slotId, int dragType, ClickType clickTypeIn, Player player) {
-        if (baseMachineBE instanceof FilterableBE && slotId >= MACHINE_SLOTS && slotId < FILTER_SLOTS) {
-            return;
-        }
-        super.clicked(slotId, dragType, clickTypeIn, player);
+    public int getFluidAmount() {
+        return this.fluidData == null ? 0 : ((this.fluidData.get(2) << 16) | this.fluidData.get(1));
     }
 
     @Override
@@ -140,16 +147,12 @@ public abstract class BaseMachineContainer extends BaseContainer {
         return itemstack;
     }
 
-    protected int addFilterSlots(IItemHandler handler, int index, int x, int y, int amount, int dx) {
-        for (int i = 0; i < amount; i++) {
-            if (handler instanceof FilterBasicHandler) //This should always be true, but can't hurt to check!
-                addSlot(new FilterBasicSlot(handler, index, x, y));
-            else
-                addSlot(new SlotItemHandler(handler, index, x, y));
-            x += dx;
-            index++;
+    @Override
+    public void clicked(int slotId, int dragType, ClickType clickTypeIn, Player player) {
+        if (baseMachineBE instanceof FilterableBE && slotId >= MACHINE_SLOTS && slotId < FILTER_SLOTS) {
+            return;
         }
-        return index;
+        super.clicked(slotId, dragType, clickTypeIn, player);
     }
 
 }

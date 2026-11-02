@@ -20,35 +20,38 @@ import java.util.List;
 public class TooltipHelpers {
 
     public static void appendFEText(ItemStack stack, List<Component> tooltip) {
-        if (!(stack.getItem() instanceof PoweredItem poweredItem))
+        if (!(stack.getItem() instanceof PoweredItem poweredItem)) {
             return;
+        }
 
         var energy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (energy == null) {
             return;
         }
-        if (Screen.hasShiftDown())
+        if (Screen.hasShiftDown()) {
             tooltip.add(Component.translatable("justdirethings.festored", MagicHelpers.formatted(energy.getEnergyStored()), MagicHelpers.formatted(energy.getMaxEnergyStored())).withStyle(ChatFormatting.GREEN));
-        else
+        } else {
             tooltip.add(Component.translatable("justdirethings.festored", MagicHelpers.tidyValue(energy.getEnergyStored()), MagicHelpers.tidyValue(energy.getMaxEnergyStored())).withStyle(ChatFormatting.GREEN));
+        }
     }
 
     public static void appendToolEnabled(ItemStack stack, List<Component> tooltip) {
         if (stack.getItem() instanceof ToggleableItem toggleableItem) {
-            if (toggleableItem.getEnabled(stack))
+            if (toggleableItem.getEnabled(stack)) {
                 tooltip.add(Component.translatable("justdirethings.enabled")
                         .withStyle(ChatFormatting.GREEN)
                         .append(Component.literal(" ")
                                 .append(Component.translatable("justdirethings.presshotkey", KeyBindings.toggleTool.getKey().getDisplayName())
                                         .withStyle(ChatFormatting.DARK_GRAY)))
                 );
-            else
+            } else {
                 tooltip.add(Component.translatable("justdirethings.disabled")
                         .withStyle(ChatFormatting.DARK_RED)
                         .append(Component.literal(" ")
                                 .append(Component.translatable("justdirethings.presshotkey", KeyBindings.toggleTool.getKey().getDisplayName())
                                         .withStyle(ChatFormatting.DARK_GRAY)))
                 );
+            }
         }
     }
 
@@ -86,7 +89,9 @@ public class TooltipHelpers {
 
     public static void appendUpgradeDetails(ItemStack stack, List<Component> tooltip) {
         Ability ability = Ability.getAbilityFromUpgradeItem(stack.getItem());
-        if (ability == null) return;
+        if (ability == null) {
+            return;
+        }
 
         String detailTextKey = "justdirethings." + ability.getName() + ".detailtext";
         String flavorTextKey = "justdirethings." + ability.getName() + ".flavortext";
@@ -107,13 +112,15 @@ public class TooltipHelpers {
         ItemStack fuelStack = handler.getStackInSlot(0);
         if (Screen.hasShiftDown()) {
             tooltip.add(Component.translatable("justdirethings.pocketgeneratorburntime", stack.getOrDefault(JustDireDataComponents.POCKETGEN_COUNTER, 0), stack.getOrDefault(JustDireDataComponents.POCKETGEN_MAXBURN, 0)).withStyle(ChatFormatting.DARK_RED));
-            if (fuelStack.isEmpty())
+            if (fuelStack.isEmpty()) {
                 tooltip.add(Component.translatable("justdirethings.pocketgeneratornofuel").withStyle(ChatFormatting.RED));
-            else
+            } else {
                 tooltip.add(Component.translatable("justdirethings.pocketgeneratorfuelstack", fuelStack.getCount(), fuelStack.getItem().getName(fuelStack)).withStyle(ChatFormatting.DARK_AQUA));
+            }
         } else {
-            if (fuelStack.isEmpty())
+            if (fuelStack.isEmpty()) {
                 tooltip.add(Component.translatable("justdirethings.pocketgeneratornofuel").withStyle(ChatFormatting.RED));
+            }
         }
     }
 }

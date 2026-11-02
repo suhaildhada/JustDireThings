@@ -15,8 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nonnull;
 import java.util.UUID;
 
-public class ParadoxParticleData implements ParticleOptions {
-    public static final MapCodec<ParadoxParticleData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
+public record ParadoxParticleData(double targetX, double targetY, double targetZ, int ticksPerBlock, UUID paradox_uuid, ItemStack itemStack) implements ParticleOptions {
+    public static final MapCodec<ParadoxParticleData>                             MAP_CODEC    = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     ItemStack.CODEC.fieldOf("itemStack").forGetter(p -> p.itemStack),
                     Codec.DOUBLE.fieldOf("targetX").forGetter(p -> p.targetX),
@@ -27,64 +27,29 @@ public class ParadoxParticleData implements ParticleOptions {
             ).apply(instance, ParadoxParticleData::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, ParadoxParticleData> STREAM_CODEC = StreamCodec.composite(
             ItemStack.STREAM_CODEC,
-            ParadoxParticleData::getItemStack,
+            ParadoxParticleData::itemStack,
             ByteBufCodecs.DOUBLE,
-            ParadoxParticleData::getTargetX,
+            ParadoxParticleData::targetX,
             ByteBufCodecs.DOUBLE,
-            ParadoxParticleData::getTargetY,
+            ParadoxParticleData::targetY,
             ByteBufCodecs.DOUBLE,
-            ParadoxParticleData::getTargetZ,
+            ParadoxParticleData::targetZ,
             ByteBufCodecs.INT,
-            ParadoxParticleData::getTicksPerBlock,
+            ParadoxParticleData::ticksPerBlock,
             UUIDUtil.STREAM_CODEC,
-            ParadoxParticleData::getParadox_uuid,
+            ParadoxParticleData::paradox_uuid,
             ParadoxParticleData::new
     );
 
-    private final ItemStack itemStack;
-    public final double targetX;
-    public final double targetY;
-    public final double targetZ;
-    public final int ticksPerBlock;
-    public final UUID paradox_uuid;
-
     public ParadoxParticleData(ItemStack itemStack, double tx, double ty, double tz, int ticks, UUID paradox_uuid) {
-        this.itemStack = itemStack.copy(); //Forge: Fix stack updating after the fact causing particle changes.
-        targetX = tx;
-        targetY = ty;
-        targetZ = tz;
-        ticksPerBlock = ticks;
-        this.paradox_uuid = paradox_uuid;
+        //Forge: Fix stack updating after the fact causing particle changes.
+        this(tx, ty, tz, ticks, paradox_uuid, itemStack.copy());
     }
 
     @Nonnull
     @Override
     public ParticleType<ParadoxParticleData> getType() {
         return ModParticles.PARADOXPARTICLE.get();
-    }
-
-    public ItemStack getItemStack() {
-        return this.itemStack;
-    }
-
-    public double getTargetX() {
-        return targetX;
-    }
-
-    public double getTargetY() {
-        return targetY;
-    }
-
-    public double getTargetZ() {
-        return targetZ;
-    }
-
-    public int getTicksPerBlock() {
-        return ticksPerBlock;
-    }
-
-    public UUID getParadox_uuid() {
-        return paradox_uuid;
     }
 }
 

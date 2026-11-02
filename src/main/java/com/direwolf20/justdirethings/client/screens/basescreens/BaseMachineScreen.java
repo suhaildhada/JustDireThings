@@ -45,42 +45,42 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends BaseScreen<T> {
-    protected final ResourceLocation JUSTSLOT = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/justslot.png");
-    protected final ResourceLocation POWERBAR = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/powerbar.png");
-    protected final ResourceLocation FLUIDBAR = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fluidbar.png");
-    protected final ResourceLocation SOCIALBACKGROUND = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "background");
-    protected BaseMachineContainer container;
-    protected BaseMachineBE baseMachineBE;
-    protected double xRadius = 3, yRadius = 3, zRadius = 3;
+    protected final ResourceLocation     JUSTSLOT         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/justslot.png");
+    protected final ResourceLocation     POWERBAR         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/powerbar.png");
+    protected final ResourceLocation     FLUIDBAR         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/fluidbar.png");
+    protected final ResourceLocation     SOCIALBACKGROUND = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "background");
+    protected       BaseMachineContainer container;
+    protected       BaseMachineBE        baseMachineBE;
+    protected       double               xRadius          = 3, yRadius = 3, zRadius = 3;
     protected int xOffset = 0, yOffset = 0, zOffset = 0;
-    protected boolean renderArea = false;
-    protected FilterData filterData;
+    protected boolean                  renderArea             = false;
+    protected FilterData               filterData;
     protected MiscHelpers.RedstoneMode redstoneMode;
-    protected List<ValueButtons> valueButtonsList = new ArrayList<>();
+    protected List<ValueButtons>       valueButtonsList       = new ArrayList<>();
     protected List<ValueButtonsDouble> valueButtonsDoubleList = new ArrayList<>();
-    protected int topSectionLeft;
-    protected int topSectionTop;
-    protected int topSectionWidth;
-    protected int topSectionHeight;
-    protected int extraWidth;
-    protected int extraHeight;
-    protected int direction;
-    protected int tickSpeed;
-    protected List<AbstractWidget> widgetsToRemove = new ArrayList<>();
-    protected List<AbstractWidget> widgetsToAdd = new ArrayList<>();
-    protected boolean renderablesChanged = false;
+    protected int                      topSectionLeft;
+    protected int                      topSectionTop;
+    protected int                      topSectionWidth;
+    protected int                      topSectionHeight;
+    protected int                      extraWidth;
+    protected int                      extraHeight;
+    protected int                      direction;
+    protected int                      tickSpeed;
+    protected List<AbstractWidget>     widgetsToRemove        = new ArrayList<>();
+    protected List<AbstractWidget>     widgetsToAdd           = new ArrayList<>();
+    protected boolean                  renderablesChanged     = false;
 
     public BaseMachineScreen(T container, Inventory pPlayerInventory, Component pTitle) {
         super(container, pPlayerInventory, pTitle);
         this.container = container;
-        baseMachineBE = container.baseMachineBE;
+        baseMachineBE  = container.baseMachineBE;
         if (baseMachineBE instanceof AreaAffectingBE areaAffectingBE) {
-            this.xRadius = areaAffectingBE.getAreaAffectingData().xRadius;
-            this.yRadius = areaAffectingBE.getAreaAffectingData().yRadius;
-            this.zRadius = areaAffectingBE.getAreaAffectingData().zRadius;
-            this.xOffset = areaAffectingBE.getAreaAffectingData().xOffset;
-            this.yOffset = areaAffectingBE.getAreaAffectingData().yOffset;
-            this.zOffset = areaAffectingBE.getAreaAffectingData().zOffset;
+            this.xRadius    = areaAffectingBE.getAreaAffectingData().xRadius;
+            this.yRadius    = areaAffectingBE.getAreaAffectingData().yRadius;
+            this.zRadius    = areaAffectingBE.getAreaAffectingData().zRadius;
+            this.xOffset    = areaAffectingBE.getAreaAffectingData().xOffset;
+            this.yOffset    = areaAffectingBE.getAreaAffectingData().yOffset;
+            this.zOffset    = areaAffectingBE.getAreaAffectingData().zOffset;
             this.renderArea = areaAffectingBE.getAreaAffectingData().renderArea;
         }
         if (baseMachineBE instanceof FilterableBE filterableBE) {
@@ -95,68 +95,34 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         }
     }
 
-    public void calculateTopSection() {
-        topSectionWidth = imageWidth + extraWidth;
-        topSectionHeight = imageHeight + extraHeight - 64; //-64 for the inventory spots
-        topSectionLeft = getGuiLeft() - extraWidth / 2;
-        topSectionTop = getGuiTop() - extraHeight - 26;
-    }
-
-    public void setTopSection() {
-        extraWidth = 20;
-        extraHeight = 0;
-    }
-
     @Override
     public void init() {
         super.init();
         setTopSection();
         calculateTopSection();
         valueButtonsList.clear();
-        if (baseMachineBE instanceof AreaAffectingBE)
+        if (baseMachineBE instanceof AreaAffectingBE) {
             addAreaButtons();
-        if (baseMachineBE instanceof RedstoneControlledBE)
+        }
+        if (baseMachineBE instanceof RedstoneControlledBE) {
             addRedstoneButtons();
-        if (baseMachineBE instanceof FilterableBE)
+        }
+        if (baseMachineBE instanceof FilterableBE) {
             addFilterButtons();
+        }
         addTickSpeedButton();
     }
 
-    public void addTickSpeedButton() {
-        addRenderableWidget(ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, b -> {
-            tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
-            PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
-        }));
+    public void setTopSection() {
+        extraWidth  = 20;
+        extraHeight = 0;
     }
 
-    public void addRedstoneButtons() {
-        addRenderableWidget(ToggleButtonFactory.REDSTONEBUTTON(getGuiLeft() + 134, topSectionTop + 62, redstoneMode.ordinal(), b -> {
-            redstoneMode = MiscHelpers.RedstoneMode.values()[((ToggleButton) b).getTexturePosition()];
-            //((ToggleButton) b).nextTexturePosition();
-            saveSettings();
-        }));
-    }
-
-    public void addFilterButtons() {
-        addRenderableWidget(ToggleButtonFactory.ALLOWLISTBUTTON(getGuiLeft() + 8, topSectionTop + 62, filterData.allowlist, b -> {
-            filterData.allowlist = !filterData.allowlist;
-            //((ToggleButton) b).toggleActive();
-            saveSettings();
-        }));
-
-        addRenderableWidget(ToggleButtonFactory.COMPARENBTBUTTON(getGuiLeft() + 26, topSectionTop + 62, filterData.compareNBT, b -> {
-            filterData.compareNBT = !filterData.compareNBT;
-            ((GrayscaleButton) b).toggleActive();
-            saveSettings();
-        }));
-
-        if (filterData.blockItemFilter != -1) {
-            addRenderableWidget(ToggleButtonFactory.FILTERBLOCKITEMBUTTON(getGuiLeft() + 44, topSectionTop + 62, filterData.blockItemFilter, b -> {
-                //((ToggleButton) b).nextTexturePosition();
-                filterData.blockItemFilter = ((ToggleButton) b).getTexturePosition();
-                saveSettings();
-            }));
-        }
+    public void calculateTopSection() {
+        topSectionWidth  = imageWidth + extraWidth;
+        topSectionHeight = imageHeight + extraHeight - 64; //-64 for the inventory spots
+        topSectionLeft   = getGuiLeft() - extraWidth / 2;
+        topSectionTop    = getGuiTop() - extraHeight - 26;
     }
 
     public void addAreaButtons() {
@@ -200,22 +166,53 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         valueButtonsDoubleList.forEach(valueButtons -> valueButtons.widgetList.forEach(this::addRenderableWidget));
     }
 
-    public int adjustNumberButton(int value, int change, int min, int max) {
-        if (Screen.hasShiftDown()) change *= 10;
-        if (Screen.hasControlDown()) change *= 64;
-        if (change < 0) {
-            value = (Math.max(value + change, min));
-        } else {
-            value = (Math.min(value + change, max));
-        }
-        return value;
+    public void addRedstoneButtons() {
+        addRenderableWidget(ToggleButtonFactory.REDSTONEBUTTON(getGuiLeft() + 134, topSectionTop + 62, redstoneMode.ordinal(), b -> {
+            redstoneMode = MiscHelpers.RedstoneMode.values()[((ToggleButton) b).getTexturePosition()];
+            //((ToggleButton) b).nextTexturePosition();
+            saveSettings();
+        }));
     }
 
-    @Override
-    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeftIn, int guiTopIn, int mouseButton) {
-        if (MiscTools.inBounds(topSectionLeft, topSectionTop, topSectionWidth, topSectionHeight, mouseX, mouseY))
-            return false;
-        return super.hasClickedOutside(mouseX, mouseY, guiLeftIn, guiTopIn, mouseButton);
+    public void addFilterButtons() {
+        addRenderableWidget(ToggleButtonFactory.ALLOWLISTBUTTON(getGuiLeft() + 8, topSectionTop + 62, filterData.allowlist, b -> {
+            filterData.allowlist = !filterData.allowlist;
+            //((ToggleButton) b).toggleActive();
+            saveSettings();
+        }));
+
+        addRenderableWidget(ToggleButtonFactory.COMPARENBTBUTTON(getGuiLeft() + 26, topSectionTop + 62, filterData.compareNBT, b -> {
+            filterData.compareNBT = !filterData.compareNBT;
+            ((GrayscaleButton) b).toggleActive();
+            saveSettings();
+        }));
+
+        if (filterData.blockItemFilter != -1) {
+            addRenderableWidget(ToggleButtonFactory.FILTERBLOCKITEMBUTTON(getGuiLeft() + 44, topSectionTop + 62, filterData.blockItemFilter, b -> {
+                //((ToggleButton) b).nextTexturePosition();
+                filterData.blockItemFilter = ((ToggleButton) b).getTexturePosition();
+                saveSettings();
+            }));
+        }
+    }
+
+    public void addTickSpeedButton() {
+        addRenderableWidget(ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, b -> {
+            tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
+            PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
+        }));
+    }
+
+    public void saveSettings() {
+        if (baseMachineBE instanceof AreaAffectingBE) {
+            PacketDistributor.sendToServer(new AreaAffectingPayload(xRadius, yRadius, zRadius, xOffset, yOffset, zOffset, renderArea));
+        }
+        if (baseMachineBE instanceof FilterableBE) {
+            PacketDistributor.sendToServer(new FilterSettingPayload(filterData.allowlist, filterData.compareNBT, filterData.blockItemFilter));
+        }
+        if (baseMachineBE instanceof RedstoneControlledBE) {
+            PacketDistributor.sendToServer(new RedstoneSettingPayload(redstoneMode.ordinal()));
+        }
     }
 
     @Override
@@ -236,37 +233,25 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         }
     }
 
-    protected void drawSlot(GuiGraphics guiGraphics, Slot slot) {
-        if (slot instanceof SlotItemHandler slotItemHandler) {
-            if (slotItemHandler.getItemHandler() instanceof FilterBasicHandler)
-                drawFilterSlot(guiGraphics, slot);
-            else if (slotItemHandler.getItemHandler() instanceof InvWrapper)
-                drawInventorySlot(guiGraphics, slot);
-            else
-                drawMachineSlot(guiGraphics, slot);
-        } else {
-            drawBasicSlot(guiGraphics, slot);
+    @Override
+    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
+        int relX = (this.width - this.imageWidth) / 2;
+        int relY = (this.height - this.imageHeight) / 2;
+
+        renderTitleSprite(guiGraphics, mouseX, mouseY, partialTicks);
+        renderMachineSprite(guiGraphics, mouseX, mouseY, partialTicks);
+
+        renderInventorySection(guiGraphics, relX, relY);
+        for (Slot slot : container.slots) {
+            drawSlot(guiGraphics, slot);
         }
-    }
 
-    protected void drawFilterSlot(GuiGraphics guiGraphics, Slot slot) {
-        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
-    }
+        renderPowerBar(guiGraphics, mouseX, mouseY, partialTicks);
+        renderFluidTank(guiGraphics, mouseX, mouseY, partialTicks);
 
-    protected void drawMachineSlot(GuiGraphics guiGraphics, Slot slot) {
-        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
-    }
-
-    protected void drawInventorySlot(GuiGraphics guiGraphics, Slot slot) {
-        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
-    }
-
-    protected void drawBasicSlot(GuiGraphics guiGraphics, Slot slot) {
-        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
-    }
-
-    public void renderInventorySection(GuiGraphics guiGraphics, int relX, int relY) {
-        guiGraphics.blitSprite(SOCIALBACKGROUND, relX, relY + 83 - 8, this.imageWidth, this.imageHeight - 73); //Inventory Section
+        if (renderablesChanged) {
+            updateRenderables();
+        }
     }
 
     public void renderTitleSprite(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
@@ -277,6 +262,24 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
     public void renderMachineSprite(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         graphics.blitSprite(SOCIALBACKGROUND, topSectionLeft, topSectionTop, topSectionWidth, topSectionHeight);
+    }
+
+    public void renderInventorySection(GuiGraphics guiGraphics, int relX, int relY) {
+        guiGraphics.blitSprite(SOCIALBACKGROUND, relX, relY + 83 - 8, this.imageWidth, this.imageHeight - 73); //Inventory Section
+    }
+
+    protected void drawSlot(GuiGraphics guiGraphics, Slot slot) {
+        if (slot instanceof SlotItemHandler slotItemHandler) {
+            if (slotItemHandler.getItemHandler() instanceof FilterBasicHandler) {
+                drawFilterSlot(guiGraphics, slot);
+            } else if (slotItemHandler.getItemHandler() instanceof InvWrapper) {
+                drawInventorySlot(guiGraphics, slot);
+            } else {
+                drawMachineSlot(guiGraphics, slot);
+            }
+        } else {
+            drawBasicSlot(guiGraphics, slot);
+        }
     }
 
     public void renderPowerBar(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
@@ -307,24 +310,36 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         graphics.blit(FLUIDBAR, topSectionLeft + offset, topSectionTop + 5, 18, 0, 18, 72, 36, 72);
     }
 
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
-        int relX = (this.width - this.imageWidth) / 2;
-        int relY = (this.height - this.imageHeight) / 2;
-
-        renderTitleSprite(guiGraphics, mouseX, mouseY, partialTicks);
-        renderMachineSprite(guiGraphics, mouseX, mouseY, partialTicks);
-
-        renderInventorySection(guiGraphics, relX, relY);
-        for (Slot slot : container.slots) {
-            drawSlot(guiGraphics, slot);
+    public void updateRenderables() {
+        if (!widgetsToRemove.isEmpty()) {
+            for (AbstractWidget abstractWidget : widgetsToRemove) {
+                removeWidget(abstractWidget);
+            }
+            widgetsToRemove.clear();
         }
+        if (!widgetsToAdd.isEmpty()) {
+            for (AbstractWidget abstractWidget : widgetsToAdd) {
+                addRenderableWidget(abstractWidget);
+            }
+            widgetsToAdd.clear();
+        }
+        renderablesChanged = false;
+    }
 
-        renderPowerBar(guiGraphics, mouseX, mouseY, partialTicks);
-        renderFluidTank(guiGraphics, mouseX, mouseY, partialTicks);
+    protected void drawFilterSlot(GuiGraphics guiGraphics, Slot slot) {
+        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
+    }
 
-        if (renderablesChanged)
-            updateRenderables();
+    protected void drawInventorySlot(GuiGraphics guiGraphics, Slot slot) {
+        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
+    }
+
+    protected void drawMachineSlot(GuiGraphics guiGraphics, Slot slot) {
+        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
+    }
+
+    protected void drawBasicSlot(GuiGraphics guiGraphics, Slot slot) {
+        guiGraphics.blit(JUSTSLOT, getGuiLeft() + slot.x - 1, getGuiTop() + slot.y - 1, 0, 0, 18, 18);
     }
 
     public int getEnergyBarOffset() {
@@ -337,7 +352,9 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
 
     public void renderFluid(GuiGraphics guiGraphics, int startX, int startY, int width, int height) {
         FluidStack fluidStack = container.getFluidStack();
-        if (fluidStack.isEmpty() || height <= 0) return;
+        if (fluidStack.isEmpty() || height <= 0) {
+            return;
+        }
 
         Fluid fluid = fluidStack.getFluid();
         ResourceLocation fluidStill = IClientFluidTypeExtensions.of(fluid).getStillTexture();
@@ -394,49 +411,6 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         RenderSystem.applyModelViewMatrix();
     }
 
-    public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
-            if (MiscTools.inBounds(topSectionLeft + getEnergyBarOffset(), topSectionTop + 5, 18, 72, pX, pY)) {
-                if (hasShiftDown())
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy()))
-                    )), pX, pY);
-                else
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy()))
-                    )), pX, pY);
-            }
-        }
-    }
-
-    public void fluidBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (baseMachineBE instanceof FluidMachineBE fluidMachineBE) {
-            if (MiscTools.inBounds(topSectionLeft + getFluidBarOffset(), topSectionTop + 5, 18, 72, pX, pY)) {
-                if (hasShiftDown())
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.formatted(this.container.getFluidAmount()), MagicHelpers.formatted(fluidMachineBE.getMaxMB()))
-                    )), pX, pY);
-                else
-                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(Arrays.asList(
-                            Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.withSuffix(this.container.getFluidAmount()), MagicHelpers.withSuffix(fluidMachineBE.getMaxMB()))
-                    )), pX, pY);
-            }
-        }
-    }
-
-    @Override
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        super.renderTooltip(pGuiGraphics, pX, pY);
-        powerBarTooltip(pGuiGraphics, pX, pY);
-        fluidBarTooltip(pGuiGraphics, pX, pY);
-    }
-
-    @Override
-    public void onClose() {
-        saveSettings();
-        super.onClose();
-    }
-
     @Override
     public boolean mouseClicked(double x, double y, int btn) {
         if (baseMachineBE instanceof FilterableBE filterableBE) {
@@ -451,10 +425,11 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         }
         for (Renderable renderable : this.renderables) {
             if (renderable instanceof NumberButton numberButton && MiscTools.inBounds(numberButton.getX(), numberButton.getY(), numberButton.getWidth(), numberButton.getHeight(), x, y)) {
-                if (btn == 0)
+                if (btn == 0) {
                     numberButton.setValue(adjustNumberButton(numberButton.getValue(), 1, numberButton.min, numberButton.max));
-                else if (btn == 1)
+                } else if (btn == 1) {
                     numberButton.setValue(adjustNumberButton(numberButton.getValue(), -1, numberButton.min, numberButton.max));
+                }
                 numberButton.onPress();
                 numberButton.playDownSound(Minecraft.getInstance().getSoundManager());
                 return true;
@@ -469,28 +444,71 @@ public abstract class BaseMachineScreen<T extends BaseMachineContainer> extends 
         return super.mouseClicked(x, y, btn);
     }
 
-    public void updateRenderables() {
-        if (!widgetsToRemove.isEmpty()) {
-            for (AbstractWidget abstractWidget : widgetsToRemove) {
-                removeWidget(abstractWidget);
-            }
-            widgetsToRemove.clear();
+    public int adjustNumberButton(int value, int change, int min, int max) {
+        if (Screen.hasShiftDown()) {
+            change *= 10;
         }
-        if (!widgetsToAdd.isEmpty()) {
-            for (AbstractWidget abstractWidget : widgetsToAdd) {
-                addRenderableWidget(abstractWidget);
-            }
-            widgetsToAdd.clear();
+        if (Screen.hasControlDown()) {
+            change *= 64;
         }
-        renderablesChanged = false;
+        if (change < 0) {
+            value = (Math.max(value + change, min));
+        } else {
+            value = (Math.min(value + change, max));
+        }
+        return value;
     }
 
-    public void saveSettings() {
-        if (baseMachineBE instanceof AreaAffectingBE)
-            PacketDistributor.sendToServer(new AreaAffectingPayload(xRadius, yRadius, zRadius, xOffset, yOffset, zOffset, renderArea));
-        if (baseMachineBE instanceof FilterableBE)
-            PacketDistributor.sendToServer(new FilterSettingPayload(filterData.allowlist, filterData.compareNBT, filterData.blockItemFilter));
-        if (baseMachineBE instanceof RedstoneControlledBE)
-            PacketDistributor.sendToServer(new RedstoneSettingPayload(redstoneMode.ordinal()));
+    @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeftIn, int guiTopIn, int mouseButton) {
+        if (MiscTools.inBounds(topSectionLeft, topSectionTop, topSectionWidth, topSectionHeight, mouseX, mouseY)) {
+            return false;
+        }
+        return super.hasClickedOutside(mouseX, mouseY, guiLeftIn, guiTopIn, mouseButton);
+    }
+
+    @Override
+    public void onClose() {
+        saveSettings();
+        super.onClose();
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        super.renderTooltip(pGuiGraphics, pX, pY);
+        powerBarTooltip(pGuiGraphics, pX, pY);
+        fluidBarTooltip(pGuiGraphics, pX, pY);
+    }
+
+    public void powerBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        if (baseMachineBE instanceof PoweredMachineBE poweredMachineBE) {
+            if (MiscTools.inBounds(topSectionLeft + getEnergyBarOffset(), topSectionTop + 5, 18, 72, pX, pY)) {
+                if (hasShiftDown()) {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(List.of(
+                            Component.translatable("justdirethings.screen.energy", MagicHelpers.formatted(this.container.getEnergy()), MagicHelpers.formatted(poweredMachineBE.getMaxEnergy()))
+                    )), pX, pY);
+                } else {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(List.of(
+                            Component.translatable("justdirethings.screen.energy", MagicHelpers.withSuffix(this.container.getEnergy()), MagicHelpers.withSuffix(poweredMachineBE.getMaxEnergy()))
+                    )), pX, pY);
+                }
+            }
+        }
+    }
+
+    public void fluidBarTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        if (baseMachineBE instanceof FluidMachineBE fluidMachineBE) {
+            if (MiscTools.inBounds(topSectionLeft + getFluidBarOffset(), topSectionTop + 5, 18, 72, pX, pY)) {
+                if (hasShiftDown()) {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(List.of(
+                            Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.formatted(this.container.getFluidAmount()), MagicHelpers.formatted(fluidMachineBE.getMaxMB()))
+                    )), pX, pY);
+                } else {
+                    pGuiGraphics.renderTooltip(font, Language.getInstance().getVisualOrder(List.of(
+                            Component.translatable("justdirethings.screen.fluid", this.container.getFluidStack().getHoverName(), MagicHelpers.withSuffix(this.container.getFluidAmount()), MagicHelpers.withSuffix(fluidMachineBE.getMaxMB()))
+                    )), pX, pY);
+                }
+            }
+        }
     }
 }

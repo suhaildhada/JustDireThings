@@ -23,15 +23,17 @@ public class PortalGunFavoriteChangePacket {
         context.enqueueWork(() -> {
             Player sender = context.player();
             ItemStack itemStack = sender.getMainHandItem();
-            if (!(itemStack.getItem() instanceof PortalGunV2))
+            if (!(itemStack.getItem() instanceof PortalGunV2)) {
                 itemStack = sender.getOffhandItem();
-            if (!(itemStack.getItem() instanceof PortalGunV2))
+            }
+            if (!(itemStack.getItem() instanceof PortalGunV2)) {
                 return;
+            }
 
             Level level = sender.level();
-            if (!payload.add())
+            if (!payload.add()) {
                 PortalGunV2.removeFavorite(itemStack, payload.favorite());
-            else {
+            } else {
                 NBTHelpers.PortalDestination portalDestination = PortalGunV2.getFavorite(itemStack, payload.favorite());
                 if (!payload.editing()) {
                     Vec3 position = sender.position();

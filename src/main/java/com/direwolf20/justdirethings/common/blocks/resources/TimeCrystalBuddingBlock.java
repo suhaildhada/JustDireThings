@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Random;
 
 public class TimeCrystalBuddingBlock extends BuddingAmethystBlock {
-    private final static Random rand = new Random();
-    private static final Direction[] DIRECTIONS = Direction.values();
-    public static final IntegerProperty STAGE = IntegerProperty.create("stage", 0, 3);
+    public static final  IntegerProperty STAGE      = IntegerProperty.create("stage", 0, 3);
+    private final static Random          rand       = new Random();
+    private static final Direction[]     DIRECTIONS = Direction.values();
 
     public TimeCrystalBuddingBlock() {
         super(Properties.of()
@@ -48,42 +48,6 @@ public class TimeCrystalBuddingBlock extends BuddingAmethystBlock {
         return InteractionResult.SUCCESS;
     }*/
 
-    public int canAdvanceToCustom(Level level, BlockState state) {
-        int stage = state.getValue(STAGE);
-        if (stage == 0) {
-            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE1_DIMENSIONS.get();
-            if (allowedDims.contains(level.dimension().location().toString()))
-                return 1;
-        }
-        if (stage == 1) {
-            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE2_DIMENSIONS.get();
-            if (allowedDims.contains(level.dimension().location().toString()))
-                return 2;
-        }
-        if (stage == 2) {
-            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE3_DIMENSIONS.get();
-            if (allowedDims.contains(level.dimension().location().toString()))
-                return 3;
-        }
-        return -1;
-    }
-
-    public int canAdvanceTo(Level level, BlockState state) {
-        int stage = state.getValue(STAGE);
-        if (stage == 0 && (level.dimension() != Level.NETHER && level.dimension() != Level.END))
-            return 1;
-        if (stage == 1 && level.dimension() == Level.NETHER)
-            return 2;
-        if (stage == 2 && level.dimension() == Level.END)
-            return 3;
-        return -1;
-    }
-
-    public void advance(Level level, BlockState state, BlockPos pos, int advanceTo) {
-        level.setBlockAndUpdate(pos, state.setValue(STAGE, advanceTo));
-        level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1.0F, 0.25F);
-    }
-
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         int stage = state.getValue(STAGE);
@@ -91,7 +55,9 @@ public class TimeCrystalBuddingBlock extends BuddingAmethystBlock {
         if (advanceTo != -1) {
             advance(level, state, pos, advanceTo);
         }
-        if (stage != 3) return;
+        if (stage != 3) {
+            return;
+        }
         if (random.nextInt(5) == 0) {
             Direction direction = DIRECTIONS[random.nextInt(DIRECTIONS.length)];
             BlockPos blockpos = pos.relative(direction);
@@ -122,26 +88,62 @@ public class TimeCrystalBuddingBlock extends BuddingAmethystBlock {
         }
     }
 
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(STAGE, 0);
+    public int canAdvanceToCustom(Level level, BlockState state) {
+        int stage = state.getValue(STAGE);
+        if (stage == 0) {
+            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE1_DIMENSIONS.get();
+            if (allowedDims.contains(level.dimension().location().toString())) {
+                return 1;
+            }
+        }
+        if (stage == 1) {
+            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE2_DIMENSIONS.get();
+            if (allowedDims.contains(level.dimension().location().toString())) {
+                return 2;
+            }
+        }
+        if (stage == 2) {
+            List<? extends String> allowedDims = Config.TIME_CRYSTAL_STAGE3_DIMENSIONS.get();
+            if (allowedDims.contains(level.dimension().location().toString())) {
+                return 3;
+            }
+        }
+        return -1;
     }
 
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(STAGE);
+    public int canAdvanceTo(Level level, BlockState state) {
+        int stage = state.getValue(STAGE);
+        if (stage == 0 && (level.dimension() != Level.NETHER && level.dimension() != Level.END)) {
+            return 1;
+        }
+        if (stage == 1 && level.dimension() == Level.NETHER) {
+            return 2;
+        }
+        if (stage == 2 && level.dimension() == Level.END) {
+            return 3;
+        }
+        return -1;
+    }
+
+    public void advance(Level level, BlockState state, BlockPos pos, int advanceTo) {
+        level.setBlockAndUpdate(pos, state.setValue(STAGE, advanceTo));
+        level.playSound(null, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 1.0F, 0.25F);
     }
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        if (state.getValue(STAGE) == 3) return;
+        if (state.getValue(STAGE) == 3) {
+            return;
+        }
         double d0 = (double) pos.getX() + 0.5;
         double d1 = (double) pos.getY() + 0.5;
         double d2 = (double) pos.getZ() + 0.5;
 
         float r, g, b;
         int advanceTo = Config.TIME_CRYSTAL_CUSTOM_DIMENSIONS.isTrue() ? canAdvanceToCustom(level, state) : canAdvanceTo(level, state);
-        if (advanceTo == -1) return;
+        if (advanceTo == -1) {
+            return;
+        }
         if (advanceTo == 1) {
             r = 0.25f;
             g = 0.55f;
@@ -173,5 +175,15 @@ public class TimeCrystalBuddingBlock extends BuddingAmethystBlock {
             GlitterParticleData data = GlitterParticleData.playerparticle("glitter", d0, d1, d2, randomPartSize, r, g, b, 0.5f, 120, false);
             level.addParticle(data, startX, startY, startZ, 0.025, 0.025f, 0.025);
         }
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(STAGE, 0);
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(STAGE);
     }
 }

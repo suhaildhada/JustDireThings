@@ -30,29 +30,24 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 public class PortalEntity extends Entity {
-    private PortalEntity linkedPortal;
-    private UUID portalGunUUID;
-    private UUID linkedPortalUUID;
-    private boolean isAdvanced;
-    private static final int TELEPORT_COOLDOWN = 10; // Cooldown period in ticks (1 second)
-    public static int ANIMATION_COOLDOWN = 5;
-    public final Map<UUID, Integer> entityCooldowns = new HashMap<>();
-    public final Map<UUID, Integer> entityVelocityCooldowns = new HashMap<>();
-    public final Map<UUID, Vec3> entityLastPosition = new HashMap<>();
-    public final Map<UUID, Vec3> entityLastLastPosition = new HashMap<>();
-    public int expirationTime = -99;
-    public int deathCounter = 0;
+    private static final int                         TELEPORT_COOLDOWN       = 10; // Cooldown period in ticks (1 second)
+    private static final EntityDataAccessor<Byte>    DIRECTION               = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Byte>    ALIGNMENT               = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Boolean> ISPRIMARY               = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> ISDYING                 = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BOOLEAN);
+    public static        int                         ANIMATION_COOLDOWN      = 5;
+    public final         Map<UUID, Integer>          entityCooldowns         = new HashMap<>();
+    public final         Map<UUID, Integer>          entityVelocityCooldowns = new HashMap<>();
+    public final         Map<UUID, Vec3>             entityLastPosition      = new HashMap<>();
+    public final         Map<UUID, Vec3>             entityLastLastPosition  = new HashMap<>();
+    public               int                         expirationTime          = -99;
+    public               int                         deathCounter            = 0;
+    private              PortalEntity                linkedPortal;
+    private              UUID                        portalGunUUID;
+    private              UUID                        linkedPortalUUID;
+    private              boolean                     isAdvanced;
     @Nullable
-    private UUID ownerUUID;
-
-    private static final EntityDataAccessor<Byte> DIRECTION = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Byte> ALIGNMENT = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<Boolean> ISPRIMARY = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> ISDYING = SynchedEntityData.defineId(PortalEntity.class, EntityDataSerializers.BOOLEAN);
-
-    public PortalEntity(EntityType<?> entityType, Level world) {
-        super(entityType, world);
-    }
+    private              UUID                        ownerUUID;
 
     public PortalEntity(Level world, Direction direction, Direction.Axis axis, UUID portalGunUUID, boolean isPrimary, boolean isAdvanced, UUID owner) {
         this(Registration.PortalEntity.get(), world);
@@ -61,42 +56,53 @@ public class PortalEntity extends Entity {
         this.entityData.set(ALIGNMENT, (byte) axis.ordinal());
         this.entityData.set(ISPRIMARY, isPrimary);
         this.isAdvanced = isAdvanced;
-        if (isAdvanced)
+        if (isAdvanced) {
             expirationTime = 100;
+        }
         setOwner(owner);
     }
 
-    public void setOwner(UUID owner) {
-        if (owner != null) {
-            this.ownerUUID = owner;
-        }
+    public PortalEntity(EntityType<?> entityType, Level world) {
+        super(entityType, world);
+    }
+
+    // Helper method to transform the motion vector based on entry and exit directions
+    public static Vec3 transformMotion(Vec3 motion, Direction from, Direction to) {
+        // Get the rotation quaternions for the from and to directions
+        Quaternionf fromRotation = from.getRotation();
+        Quaternionf toRotation = to.getRotation();
+
+        // Invert the fromRotation quaternion
+        fromRotation.invert();
+
+        // Transform the motion vector
+        Vector3f motionVec = new Vector3f((float) motion.x, (float) motion.y, (float) motion.z);
+
+        // Apply the rotations
+        fromRotation.transform(motionVec);
+        toRotation.transform(motionVec);
+
+        return new Vec3(motionVec.x(), motionVec.y(), motionVec.z());
+    }
+
+    private static Vec2 toDegrees(Vec3 vector) {
+        double x = vector.x;
+        double y = vector.y;
+        double z = vector.z;
+        double hyp = Math.sqrt(x * x + z * z);
+        float xrot = Mth.wrapDegrees((float) (-(Mth.atan2(y, hyp) * 180.0F / (float) Math.PI)));
+        float yrot = Mth.wrapDegrees((float) (Mth.atan2(z, x) * 180.0F / (float) Math.PI) - 90.0F);
+        return new Vec2(xrot, yrot);
     }
 
     public UUID getOwner() {
         return ownerUUID;
     }
 
-    public UUID getPortalGunUUID() {
-        return portalGunUUID;
-    }
-
-    @Override
-    public void playerTouch(Player pPlayer) {
-        pPlayer.resetFallDistance();
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        refreshDimensions();
-        if (!level().isClientSide) {
-            tickCooldowns();
-            if (getLinkedPortal() != null) {
-                teleportCollidingEntities();
-                captureVelocity();
-            }
+    public void setOwner(UUID owner) {
+        if (owner != null) {
+            this.ownerUUID = owner;
         }
-        tickDying();
     }
 
     public void tickCooldowns() {
@@ -120,8 +126,9 @@ public class PortalEntity extends Entity {
         if (isAdvanced && expirationTime > 0) {
             expirationTime = expirationTime - 1;
             if (expirationTime == 0) {
-                if (getLinkedPortal() != null)
+                if (getLinkedPortal() != null) {
                     getLinkedPortal().setDying();
+                }
                 setDying();
             }
         }
@@ -131,8 +138,9 @@ public class PortalEntity extends Entity {
     public void tickDying() {
         if (isDying()) {
             deathCounter++;
-            if (deathCounter > ANIMATION_COOLDOWN)
+            if (deathCounter > ANIMATION_COOLDOWN) {
                 this.remove(RemovalReason.DISCARDED);
+            }
         }
     }
 
@@ -143,8 +151,9 @@ public class PortalEntity extends Entity {
             UUID entityUUID = entity.getUUID();
             if (entity != this && isValidEntity(entity)) {
                 Vec3 currentPos = entity.position();
-                if (entityLastPosition.containsKey(entityUUID))
+                if (entityLastPosition.containsKey(entityUUID)) {
                     entityLastLastPosition.put(entityUUID, entityLastPosition.get(entityUUID));
+                }
                 entityLastPosition.put(entityUUID, currentPos);
                 entityVelocityCooldowns.put(entityUUID, 10);
             }
@@ -167,24 +176,12 @@ public class PortalEntity extends Entity {
         }
     }
 
-    public Direction getDirection() {
-        return Direction.values()[this.entityData.get(DIRECTION)];
-    }
-
     public Direction.Axis getAlignment() {
         return Direction.Axis.values()[this.entityData.get(ALIGNMENT)];
     }
 
-    public boolean getIsPrimary() {
-        return this.entityData.get(ISPRIMARY);
-    }
-
     public int getDeathCounter() {
         return deathCounter;
-    }
-
-    public boolean isDying() {
-        return this.entityData.get(ISDYING);
     }
 
     @Override
@@ -196,75 +193,6 @@ public class PortalEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag compound) {
-        this.entityData.set(DIRECTION, compound.getByte("direction"));
-        this.entityData.set(ALIGNMENT, compound.getByte("alignment"));
-        this.entityData.set(ISPRIMARY, compound.getBoolean("isPrimary"));
-        this.entityData.set(ISDYING, compound.getBoolean("isDying"));
-        deathCounter = compound.getInt("deathCounter");
-        if (compound.hasUUID("portalGunUUID"))
-            portalGunUUID = compound.getUUID("portalGunUUID");
-        if (compound.hasUUID("linkedPortalUUID"))
-            linkedPortalUUID = compound.getUUID("linkedPortalUUID");
-        if (compound.hasUUID("Owner")) {
-            this.ownerUUID = compound.getUUID("Owner");
-        }
-    }
-
-    @Override
-    protected void addAdditionalSaveData(CompoundTag compound) {
-        compound.putByte("direction", this.entityData.get(DIRECTION));
-        compound.putByte("alignment", this.entityData.get(ALIGNMENT));
-        compound.putBoolean("isPrimary", getIsPrimary());
-        compound.putBoolean("isDying", isDying());
-        compound.putInt("deathCounter", deathCounter);
-        if (this.getPortalGunUUID() != null) {
-            compound.putUUID("portalGunUUID", this.getPortalGunUUID());
-        }
-        if (this.linkedPortalUUID != null) {
-            compound.putUUID("linkedPortalUUID", this.linkedPortalUUID);
-        }
-        if (this.ownerUUID != null) {
-            compound.putUUID("Owner", this.ownerUUID);
-        }
-    }
-
-    @Override
-    public void onAddedToLevel() {
-        super.onAddedToLevel();
-        if (!level().isClientSide) {
-            ServerLevel serverLevel = (ServerLevel) this.level();
-            ChunkPos chunkPos = new ChunkPos(this.blockPosition());
-            Registration.TICKET_CONTROLLER.forceChunk(serverLevel, this, chunkPos.x, chunkPos.z, true, false);
-
-            level().playSound(
-                    null,
-                    getX(),
-                    getY(),
-                    getZ(),
-                    Registration.PORTAL_GUN_OPEN.get(),
-                    SoundSource.NEUTRAL,
-                    0.75F,
-                    0.4F
-            );
-        }
-    }
-
-    public void setDying() {
-        this.entityData.set(ISDYING, true);
-        level().playSound(
-                null,
-                getX(),
-                getY(),
-                getZ(),
-                Registration.PORTAL_GUN_CLOSE.get(),
-                SoundSource.NEUTRAL,
-                0.5F,
-                0.2F
-        );
-    }
-
-    @Override
     public void remove(Entity.RemovalReason pReason) {
         super.remove(pReason);
         if (!level().isClientSide) {
@@ -272,11 +200,6 @@ public class PortalEntity extends Entity {
             ChunkPos chunkPos = new ChunkPos(this.blockPosition());
             Registration.TICKET_CONTROLLER.forceChunk(serverLevel, this, chunkPos.x, chunkPos.z, false, false);
         }
-    }
-
-    @Override
-    public void refreshDimensions() {
-        this.setBoundingBox(makeBoundingBox());
     }
 
     @Override
@@ -315,6 +238,117 @@ public class PortalEntity extends Entity {
         return this.makeBoundingBox(this.getX(), this.getY(), this.getZ(), width, height, depth);
     }
 
+    @Override
+    public void tick() {
+        super.tick();
+        refreshDimensions();
+        if (!level().isClientSide) {
+            tickCooldowns();
+            if (getLinkedPortal() != null) {
+                teleportCollidingEntities();
+                captureVelocity();
+            }
+        }
+        tickDying();
+    }
+
+    @Override
+    public void playerTouch(Player pPlayer) {
+        pPlayer.resetFallDistance();
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag compound) {
+        this.entityData.set(DIRECTION, compound.getByte("direction"));
+        this.entityData.set(ALIGNMENT, compound.getByte("alignment"));
+        this.entityData.set(ISPRIMARY, compound.getBoolean("isPrimary"));
+        this.entityData.set(ISDYING, compound.getBoolean("isDying"));
+        deathCounter = compound.getInt("deathCounter");
+        if (compound.hasUUID("portalGunUUID")) {
+            portalGunUUID = compound.getUUID("portalGunUUID");
+        }
+        if (compound.hasUUID("linkedPortalUUID")) {
+            linkedPortalUUID = compound.getUUID("linkedPortalUUID");
+        }
+        if (compound.hasUUID("Owner")) {
+            this.ownerUUID = compound.getUUID("Owner");
+        }
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag compound) {
+        compound.putByte("direction", this.entityData.get(DIRECTION));
+        compound.putByte("alignment", this.entityData.get(ALIGNMENT));
+        compound.putBoolean("isPrimary", getIsPrimary());
+        compound.putBoolean("isDying", isDying());
+        compound.putInt("deathCounter", deathCounter);
+        if (this.getPortalGunUUID() != null) {
+            compound.putUUID("portalGunUUID", this.getPortalGunUUID());
+        }
+        if (this.linkedPortalUUID != null) {
+            compound.putUUID("linkedPortalUUID", this.linkedPortalUUID);
+        }
+        if (this.ownerUUID != null) {
+            compound.putUUID("Owner", this.ownerUUID);
+        }
+    }
+
+    public boolean getIsPrimary() {
+        return this.entityData.get(ISPRIMARY);
+    }
+
+    public boolean isDying() {
+        return this.entityData.get(ISDYING);
+    }
+
+    public UUID getPortalGunUUID() {
+        return portalGunUUID;
+    }
+
+    @Override
+    public void refreshDimensions() {
+        this.setBoundingBox(makeBoundingBox());
+    }
+
+    public Direction getDirection() {
+        return Direction.values()[this.entityData.get(DIRECTION)];
+    }
+
+    @Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        if (!level().isClientSide) {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            ChunkPos chunkPos = new ChunkPos(this.blockPosition());
+            Registration.TICKET_CONTROLLER.forceChunk(serverLevel, this, chunkPos.x, chunkPos.z, true, false);
+
+            level().playSound(
+                    null,
+                    getX(),
+                    getY(),
+                    getZ(),
+                    Registration.PORTAL_GUN_OPEN.get(),
+                    SoundSource.NEUTRAL,
+                    0.75F,
+                    0.4F
+            );
+        }
+    }
+
+    public void setDying() {
+        this.entityData.set(ISDYING, true);
+        level().playSound(
+                null,
+                getX(),
+                getY(),
+                getZ(),
+                Registration.PORTAL_GUN_CLOSE.get(),
+                SoundSource.NEUTRAL,
+                0.5F,
+                0.2F
+        );
+    }
+
     private AABB makeBoundingBox(double x, double y, double z, float width, float height, float depth) {
         float halfWidth = width / 2.0F;
         float halfDepth = depth / 2.0F;
@@ -324,14 +358,17 @@ public class PortalEntity extends Entity {
     public PortalEntity findPartnerPortal(MinecraftServer server) {
         for (ServerLevel serverLevel : server.getAllLevels()) {
             List<? extends PortalEntity> customEntities = serverLevel.getEntities(Registration.PortalEntity.get(), k -> k.getUUID().equals(this.linkedPortalUUID));
-            if (!customEntities.isEmpty())
+            if (!customEntities.isEmpty()) {
                 return customEntities.getFirst();
+            }
         }
         return null;
     }
 
     public PortalEntity getLinkedPortal() {
-        if (level().isClientSide) return null;
+        if (level().isClientSide) {
+            return null;
+        }
         if (linkedPortal == null && linkedPortalUUID != null) {
             linkedPortal = findPartnerPortal(level().getServer());
         }
@@ -340,7 +377,7 @@ public class PortalEntity extends Entity {
 
     public void setLinkedPortal(PortalEntity linkedPortal) {
         this.linkedPortalUUID = linkedPortal.getUUID();
-        this.linkedPortal = null;
+        this.linkedPortal     = null;
     }
 
     public Vec3 getTeleportTo(Entity entity, PortalEntity matchingPortal) {
@@ -366,13 +403,13 @@ public class PortalEntity extends Entity {
                 double offset = entityHeightFraction * linkedPortal.getBoundingBox().getXsize();
                 double buffer = entityBB.getXsize() / 2 + Shapes.EPSILON;
                 // Don't collide in wall next to top/bottom of floor/ceiling portal
-                offset = Mth.clamp(offset, buffer, linkedPortal.getBoundingBox().getXsize() - buffer);
+                offset     = Mth.clamp(offset, buffer, linkedPortal.getBoundingBox().getXsize() - buffer);
                 teleportTo = new Vec3(linkedPortal.getBoundingBox().minX + offset, linkedPortal.getY(), linkedPortal.getZ());
             } else {
                 double offset = entityHeightFraction * linkedPortal.getBoundingBox().getZsize();
                 double buffer = entityBB.getZsize() / 2 + Shapes.EPSILON;
                 // Don't collide in wall next to top/bottom of floor/ceiling portal
-                offset = Mth.clamp(offset, buffer, linkedPortal.getBoundingBox().getZsize() - buffer);
+                offset     = Mth.clamp(offset, buffer, linkedPortal.getBoundingBox().getZsize() - buffer);
                 teleportTo = new Vec3(linkedPortal.getX(), linkedPortal.getY(), linkedPortal.getBoundingBox().minZ + offset);
             }
         } else {
@@ -422,7 +459,9 @@ public class PortalEntity extends Entity {
     }
 
     public void teleport(Entity entity) {
-        if (entity.level().isClientSide) return;
+        if (entity.level().isClientSide) {
+            return;
+        }
         if (getLinkedPortal() != null) {
             Vec3 teleportTo = getTeleportTo(entity, linkedPortal);
             // Adjust the entity's rotation to match the exit portal's direction
@@ -439,10 +478,11 @@ public class PortalEntity extends Entity {
                 if (!newMotion.equals(Vec3.ZERO)) {
                     entity.setDeltaMovement(newMotion);
                     entity.hasImpulse = true;
-                    if (entity instanceof Player player)
+                    if (entity instanceof Player player) {
                         ((ServerPlayer) player).connection.send(new ClientboundSetEntityMotionPacket(player));
-                    else
+                    } else {
                         ((ServerLevel) entity.level()).getChunkSource().broadcast(entity, new ClientboundSetEntityMotionPacket(entity));
+                    }
                 }
                 linkedPortal.entityCooldowns.put(entity.getUUID(), TELEPORT_COOLDOWN); //Ensure it doesn't get teleported back!
             }
@@ -450,42 +490,26 @@ public class PortalEntity extends Entity {
     }
 
     public boolean isValidEntity(Entity entity) {
-        if (entity.getType().equals(Registration.PortalEntity.get()))
+        if (entity.getType().equals(Registration.PortalEntity.get())) {
             return false;
-        if (entityCooldowns.containsKey(entity.getUUID()))
+        }
+        if (entityCooldowns.containsKey(entity.getUUID())) {
             return false; // Skip entities with active cooldown
-        if (entity.isMultipartEntity())
+        }
+        if (entity.isMultipartEntity()) {
             return false;
-        if (entity instanceof PartEntity<?>)
+        }
+        if (entity instanceof PartEntity<?>) {
             return false;
-        if (!entity.canChangeDimensions(level(), getLinkedPortal().level()) && !isSameLevel())
+        }
+        if (!entity.canChangeDimensions(level(), getLinkedPortal().level()) && !isSameLevel()) {
             return false;
-        if (entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED))
-            return false;
-        return true;
+        }
+        return !entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED);
     }
 
     public boolean isSameLevel() {
         return level().equals(getLinkedPortal().level());
-    }
-
-    // Helper method to transform the motion vector based on entry and exit directions
-    public static Vec3 transformMotion(Vec3 motion, Direction from, Direction to) {
-        // Get the rotation quaternions for the from and to directions
-        Quaternionf fromRotation = from.getRotation();
-        Quaternionf toRotation = to.getRotation();
-
-        // Invert the fromRotation quaternion
-        fromRotation.invert();
-
-        // Transform the motion vector
-        Vector3f motionVec = new Vector3f((float) motion.x, (float) motion.y, (float) motion.z);
-
-        // Apply the rotations
-        fromRotation.transform(motionVec);
-        toRotation.transform(motionVec);
-
-        return new Vec3(motionVec.x(), motionVec.y(), motionVec.z());
     }
 
     /**
@@ -498,15 +522,5 @@ public class PortalEntity extends Entity {
     private Vec2 transformLookAngle(Entity entity, PortalEntity destination) {
         final Vec3 newLook = transformMotion(entity.getLookAngle(), getDirection(), destination.getDirection().getOpposite());
         return toDegrees(newLook);
-    }
-
-    private static Vec2 toDegrees(Vec3 vector) {
-        double x = vector.x;
-        double y = vector.y;
-        double z = vector.z;
-        double hyp = Math.sqrt(x * x + z * z);
-        float xrot = Mth.wrapDegrees((float)(-(Mth.atan2(y, hyp) * 180.0F / (float)Math.PI)));
-        float yrot = Mth.wrapDegrees((float)(Mth.atan2(z, x) * 180.0F / (float)Math.PI) - 90.0F);
-        return new Vec2(xrot, yrot);
     }
 }

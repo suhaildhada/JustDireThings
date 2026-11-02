@@ -35,16 +35,16 @@ import java.util.Map;
 import java.util.UUID;
 
 public class BaseMachineBE extends BlockEntity implements Clearable {
-    public int MACHINE_SLOTS = 0;
-    public int ANYSIZE_FILTER_SLOTS = 0;
-    public static final UUID defaultFakePlayerUUID = UUID.fromString("4191a6f5-37fe-45d9-8ba3-4549be778e54");
-    public static final GameProfile defaultFakePlayerProfile = new GameProfile(defaultFakePlayerUUID, "[JustDiresFakePlayer]");
-    public UUID placedByUUID;
-    protected int direction = 0;
-    protected int tickSpeed = 20;
-    protected int operationTicks = -1;
-    protected UsefulFakePlayer usefulFakePlayer;
-    protected final Map<ChunkPos, Boolean> chunkTestCache = new Object2BooleanOpenHashMap<>();
+    public static final UUID                   defaultFakePlayerUUID    = UUID.fromString("4191a6f5-37fe-45d9-8ba3-4549be778e54");
+    public static final GameProfile            defaultFakePlayerProfile = new GameProfile(defaultFakePlayerUUID, "[JustDiresFakePlayer]");
+    protected final     Map<ChunkPos, Boolean> chunkTestCache           = new Object2BooleanOpenHashMap<>();
+    public              int                    MACHINE_SLOTS            = 0;
+    public              int                    ANYSIZE_FILTER_SLOTS     = 0;
+    public              UUID                   placedByUUID;
+    protected           int                    direction                = 0;
+    protected           int                    tickSpeed                = 20;
+    protected           int                    operationTicks           = -1;
+    protected           UsefulFakePlayer       usefulFakePlayer;
 
     public BaseMachineBE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
@@ -56,18 +56,20 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
     public void tickServer() {
         handleTicks();
         clearProtectionCache();
-        if (this instanceof RedstoneControlledBE redstoneControlledBE)
+        if (this instanceof RedstoneControlledBE redstoneControlledBE) {
             redstoneControlledBE.evaluateRedstone();
+        }
+    }
+
+    public void handleTicks() {
+        if (operationTicks <= 0) {
+            operationTicks = tickSpeed;
+        }
+        operationTicks--;
     }
 
     public void clearProtectionCache() {
         chunkTestCache.clear();
-    }
-
-    public void handleTicks() {
-        if (operationTicks <= 0)
-            operationTicks = tickSpeed;
-        operationTicks--;
     }
 
     public int getTickSpeed() {
@@ -76,14 +78,24 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
 
     public void setTickSpeed(int newTickSpeed) {
         this.tickSpeed = newTickSpeed;
-        if (operationTicks > tickSpeed)
+        if (operationTicks > tickSpeed) {
             operationTicks = tickSpeed;
+        }
         markDirtyClient();
     }
 
+    public void markDirtyClient() {
+        setChanged();
+        if (level != null) {
+            BlockState state = level.getBlockState(getBlockPos());
+            level.sendBlockUpdated(getBlockPos(), state, state, 3);
+        }
+    }
+
     public boolean canRun() {
-        if (this instanceof RedstoneControlledBE redstoneControlledBE)
+        if (this instanceof RedstoneControlledBE redstoneControlledBE) {
             return operationTicks == 0 || redstoneControlledBE.getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE);
+        }
         return operationTicks == 0;
     }
 
@@ -91,27 +103,22 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
         return direction;
     }
 
-    public Direction getDirectionValue() {
-        return Direction.values()[direction];
-    }
-
     public void setDirection(int direction) {
         this.direction = direction;
     }
 
-    protected GameProfile getPlacedByProfile() {
-        if (placedByUUID == null)
-            return defaultFakePlayerProfile;
-        return new GameProfile(placedByUUID, "[JustDiresFakePlayer]");
+    public Direction getDirectionValue() {
+        return Direction.values()[direction];
     }
 
-    protected boolean canPlaceAt(Level level, BlockPos blockPos, FakePlayer fakePlayer) {
+    protected boolean canBreakAndPlaceAt(Level level, BlockPos blockPos, FakePlayer fakePlayer) {
         ChunkPos chunkPos = new ChunkPos(blockPos);
-        if (chunkTestCache.containsKey(chunkPos))
+        if (chunkTestCache.containsKey(chunkPos)) {
             return chunkTestCache.get(chunkPos);
-        boolean canPlace = !EventHooks.onBlockPlace(fakePlayer, BlockSnapshot.create(level.dimension(), level, blockPos.below()), Direction.UP);
-        chunkTestCache.put(chunkPos, canPlace);
-        return canPlace;
+        }
+        boolean canBreak = canBreakAt(level, blockPos, fakePlayer) && canPlaceAt(level, blockPos, fakePlayer);
+        chunkTestCache.put(chunkPos, canBreak);
+        return canBreak;
     }
 
     protected boolean canBreakAt(Level level, BlockPos blockPos, FakePlayer fakePlayer) {
@@ -123,17 +130,25 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
         return true;
     }
 
-    protected boolean canBreakAndPlaceAt(Level level, BlockPos blockPos, FakePlayer fakePlayer) {
+    protected boolean canPlaceAt(Level level, BlockPos blockPos, FakePlayer fakePlayer) {
         ChunkPos chunkPos = new ChunkPos(blockPos);
-        if (chunkTestCache.containsKey(chunkPos))
+        if (chunkTestCache.containsKey(chunkPos)) {
             return chunkTestCache.get(chunkPos);
-        boolean canBreak = canBreakAt(level, blockPos, fakePlayer) && canPlaceAt(level, blockPos, fakePlayer);
-        chunkTestCache.put(chunkPos, canBreak);
-        return canBreak;
+        }
+        boolean canPlace = !EventHooks.onBlockPlace(fakePlayer, BlockSnapshot.create(level.dimension(), level, blockPos.below()), Direction.UP);
+        chunkTestCache.put(chunkPos, canPlace);
+        return canPlace;
     }
 
     protected FakePlayer getFakePlayer(ServerLevel level) {
         return FakePlayerFactory.get(level, getPlacedByProfile());
+    }
+
+    protected GameProfile getPlacedByProfile() {
+        if (placedByUUID == null) {
+            return defaultFakePlayerProfile;
+        }
+        return new GameProfile(placedByUUID, "[JustDiresFakePlayer]");
     }
 
     protected FakePlayer getFakePlayer(ServerLevel level, UUID uuid) {
@@ -142,8 +157,9 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
     }
 
     protected UsefulFakePlayer getUsefulFakePlayer(ServerLevel level) {
-        if (usefulFakePlayer == null)
+        if (usefulFakePlayer == null) {
             usefulFakePlayer = UsefulFakePlayer.createPlayer(level, getPlacedByProfile());
+        }
         return usefulFakePlayer;
     }
 
@@ -161,9 +177,12 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
     }
 
     @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        // Vanilla uses the type parameter to indicate which type of tile entity (command block, skull, or beacon?) is receiving the packet, but it seems like Forge has overridden this behavior
-        return ClientboundBlockEntityDataPacket.create(this);
+    public void clearContent() {
+        ItemStackHandler machineHandler = getMachineHandler();
+
+        for (int i = 0; i < machineHandler.getSlots(); i++) {
+            machineHandler.setStackInSlot(i, ItemStack.EMPTY);
+        }
     }
 
     public ItemStackHandler getMachineHandler() {
@@ -171,11 +190,10 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
     }
 
     @Override
-    public void clearContent() {
-        ItemStackHandler machineHandler = getMachineHandler();
-
-        for (int i = 0; i < machineHandler.getSlots(); i++) {
-            machineHandler.setStackInSlot(i, ItemStack.EMPTY);
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+        super.onDataPacket(net, pkt, lookupProvider);
+        if (this instanceof AreaAffectingBE areaAffectingBE) {
+            areaAffectingBE.getAreaAffectingData().area = null; //Clear this cache when a packet comes in, so it can redraw properly if the area was changed
         }
     }
 
@@ -185,24 +203,44 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag, provider);
-        return tag;
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        if (tag.contains("direction")) {
+            direction = tag.getInt("direction");
+        }
+        if (tag.contains("tickspeed")) {
+            tickSpeed = tag.getInt("tickspeed");
+        }
+        if (tag.contains("placedBy")) {
+            placedByUUID = tag.getUUID("placedBy");
+        }
+        if (this instanceof AreaAffectingBE areaAffectingBE) {
+            areaAffectingBE.loadAreaSettings(tag);
+        }
+        if (this instanceof FilterableBE filterableBE) {
+            filterableBE.loadFilterSettings(tag);
+        }
+        if (this instanceof RedstoneControlledBE redstoneControlledBE) {
+            redstoneControlledBE.loadRedstoneSettings(tag);
+        }
+        super.loadAdditional(tag, provider);
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
-        super.onDataPacket(net, pkt, lookupProvider);
-        if (this instanceof AreaAffectingBE areaAffectingBE)
-            areaAffectingBE.getAreaAffectingData().area = null; //Clear this cache when a packet comes in, so it can redraw properly if the area was changed
-    }
-
-    public void markDirtyClient() {
-        setChanged();
-        if (level != null) {
-            BlockState state = level.getBlockState(getBlockPos());
-            level.sendBlockUpdated(getBlockPos(), state, state, 3);
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.putInt("tickspeed", tickSpeed);
+        if (placedByUUID != null) {
+            tag.putUUID("placedBy", placedByUUID);
+        }
+        tag.putInt("direction", direction);
+        if (this instanceof AreaAffectingBE areaAffectingBE) {
+            areaAffectingBE.saveAreaSettings(tag);
+        }
+        if (this instanceof FilterableBE filterableBE) {
+            filterableBE.saveFilterSettings(tag);
+        }
+        if (this instanceof RedstoneControlledBE redstoneControlledBE) {
+            redstoneControlledBE.saveRedstoneSettings(tag);
         }
     }
 
@@ -215,70 +253,55 @@ public class BaseMachineBE extends BlockEntity implements Clearable {
         }
     }
 
-    public FilterData getDefaultFilterData() {
-        return new FilterData();
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        // Vanilla uses the type parameter to indicate which type of tile entity (command block, skull, or beacon?) is receiving the packet, but it seems like Forge has overridden this behavior
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    public RedstoneControlData getDefaultRedstoneData() {
-        return new RedstoneControlData();
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, provider);
+        return tag;
+    }
+
+    public boolean isDefaultSettings() {
+        if (tickSpeed != 20) {
+            return false;
+        }
+        if (direction != 0) {
+            return false;
+        }
+        if (this instanceof AreaAffectingBE areaAffectingBE && !areaAffectingBE.getAreaAffectingData().equals(getDefaultAreaData(areaAffectingBE))) {
+            return false;
+        }
+        if (this instanceof FilterableBE filterableBE && !filterableBE.getFilterData().equals(getDefaultFilterData())) {
+            return false;
+        }
+        if (this instanceof FilterableBE filterableBE) {
+            FilterBasicHandler filteredItems = filterableBE.getFilterHandler();
+            for (int i = 0; i < filteredItems.getSlots(); i++) {
+                if (!filteredItems.getStackInSlot(i).isEmpty()) {
+                    return false;
+                }
+            }
+        }
+        if (this instanceof PoweredMachineBE poweredMachineBE && poweredMachineBE.getEnergyStored() > 0) {
+            return false;
+        }
+        return !(this instanceof RedstoneControlledBE redstoneControlledBE) || redstoneControlledBE.getRedstoneControlData().equals(getDefaultRedstoneData());
     }
 
     public AreaAffectingData getDefaultAreaData(AreaAffectingBE areaAffectingBE) {
         return areaAffectingBE.getDefaultAreaData(getBlockState().getValue(BlockStateProperties.FACING));
     }
 
-    public boolean isDefaultSettings() {
-        if (tickSpeed != 20)
-            return false;
-        if (direction != 0)
-            return false;
-        if (this instanceof AreaAffectingBE areaAffectingBE && !areaAffectingBE.getAreaAffectingData().equals(getDefaultAreaData(areaAffectingBE)))
-            return false;
-        if (this instanceof FilterableBE filterableBE && !filterableBE.getFilterData().equals(getDefaultFilterData()))
-            return false;
-        if (this instanceof FilterableBE filterableBE) {
-            FilterBasicHandler filteredItems = filterableBE.getFilterHandler();
-            for (int i = 0; i < filteredItems.getSlots(); i++) {
-                if (!filteredItems.getStackInSlot(i).isEmpty())
-                    return false;
-            }
-        }
-        if (this instanceof PoweredMachineBE poweredMachineBE && poweredMachineBE.getEnergyStored() > 0)
-            return false;
-        if (this instanceof RedstoneControlledBE redstoneControlledBE && !redstoneControlledBE.getRedstoneControlData().equals(getDefaultRedstoneData()))
-            return false;
-        return true;
+    public FilterData getDefaultFilterData() {
+        return new FilterData();
     }
 
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putInt("tickspeed", tickSpeed);
-        if (placedByUUID != null)
-            tag.putUUID("placedBy", placedByUUID);
-        tag.putInt("direction", direction);
-        if (this instanceof AreaAffectingBE areaAffectingBE)
-            areaAffectingBE.saveAreaSettings(tag);
-        if (this instanceof FilterableBE filterableBE)
-            filterableBE.saveFilterSettings(tag);
-        if (this instanceof RedstoneControlledBE redstoneControlledBE)
-            redstoneControlledBE.saveRedstoneSettings(tag);
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        if (tag.contains("direction"))
-            direction = tag.getInt("direction");
-        if (tag.contains("tickspeed"))
-            tickSpeed = tag.getInt("tickspeed");
-        if (tag.contains("placedBy"))
-            placedByUUID = tag.getUUID("placedBy");
-        if (this instanceof AreaAffectingBE areaAffectingBE)
-            areaAffectingBE.loadAreaSettings(tag);
-        if (this instanceof FilterableBE filterableBE)
-            filterableBE.loadFilterSettings(tag);
-        if (this instanceof RedstoneControlledBE redstoneControlledBE)
-            redstoneControlledBE.loadRedstoneSettings(tag);
-        super.loadAdditional(tag, provider);
+    public RedstoneControlData getDefaultRedstoneData() {
+        return new RedstoneControlData();
     }
 }

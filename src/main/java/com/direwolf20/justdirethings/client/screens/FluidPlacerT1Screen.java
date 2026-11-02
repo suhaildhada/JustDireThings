@@ -18,7 +18,7 @@ public class FluidPlacerT1Screen extends BaseMachineScreen<FluidPlacerT1Containe
 
     @Override
     public void setTopSection() {
-        extraWidth = 0;
+        extraWidth  = 0;
         extraHeight = 0;
     }
 

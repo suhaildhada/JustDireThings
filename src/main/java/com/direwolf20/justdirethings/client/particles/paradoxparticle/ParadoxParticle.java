@@ -22,25 +22,28 @@ import java.util.UUID;
 
 public class ParadoxParticle extends BreakingItemParticle {
 
+    public static        ParticleProvider<ParadoxParticleData> FACTORY =
+            (data, world, x, y, z, xSpeed, ySpeed, zSpeed) ->
+                    new ParadoxParticle(world, x, y, z, data.targetX(), data.targetY(), data.targetZ(), data.itemStack(), data.ticksPerBlock(), data.paradox_uuid());
+    private static final Random                                random  = new Random();
+    private final        BlockPos                              sourcePos;
     private double targetX, targetY, targetZ;
-    private static Random random = new Random();
-    private double initialRadius;
-    private double angularVelocity;
-    private double currentAngle;
-    private double currentRadius;
-    private double gravitationalPull;  // Controls the speed of movement
-    private UUID paradox_uuid;
-    private boolean dying = false;
-    private final BlockPos sourcePos;
+    private        double   initialRadius;
+    private        double   angularVelocity;
+    private        double   currentAngle;
+    private        double   currentRadius;
+    private        double   gravitationalPull;  // Controls the speed of movement
+    private        UUID     paradox_uuid;
+    private        boolean  dying  = false;
 
     public ParadoxParticle(ClientLevel world, double x, double y, double z, double targetX, double targetY, double targetZ, ItemStack itemStack, int gravitationalPull, UUID paradox_uuid) {
         super(world, x, y, z, itemStack);
 
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.targetZ = targetZ;
+        this.targetX           = targetX;
+        this.targetY           = targetY;
+        this.targetZ           = targetZ;
         this.gravitationalPull = gravitationalPull;  // Properly assign gravitationalPull
-        this.paradox_uuid = paradox_uuid;
+        this.paradox_uuid      = paradox_uuid;
 
         // Calculate initial radius
         this.initialRadius = Math.sqrt(Math.pow(targetX - x, 2) + Math.pow(targetY - y, 2) + Math.pow(targetZ - z, 2));
@@ -48,13 +51,13 @@ public class ParadoxParticle extends BreakingItemParticle {
 
         // Set the initial angular velocity and angle
         this.angularVelocity = 0;
-        this.currentAngle = 0;
+        this.currentAngle    = 0;
 
         // Particle settings
-        this.xd = 0;
-        this.yd = 0;
-        this.zd = 0;
-        this.gravity = 0.0f;
+        this.xd         = 0;
+        this.yd         = 0;
+        this.zd         = 0;
+        this.gravity    = 0.0f;
         this.hasPhysics = false;
 
         // Determine lifetime based on gravitational pull (lower pull = longer lifetime)
@@ -84,28 +87,6 @@ public class ParadoxParticle extends BreakingItemParticle {
         this.sourcePos = new BlockPos((int) x, (int) y, (int) z);
     }
 
-    @Nullable
-    private ParadoxEntity findEntityByUUID(ClientLevel world, UUID uuid) {
-        for (Entity entity : world.entitiesForRendering()) { // Iterating through all entities
-            if (entity.getUUID().equals(uuid) && entity instanceof ParadoxEntity paradoxEntity) {
-                return paradoxEntity;
-            }
-        }
-        return null; // Return null if no matching entity is found
-    }
-
-    public void deathMovement() {
-        if (!this.onGround) {
-            this.xd *= 0.5; // Reduce horizontal speed to simulate "falling"
-            this.zd *= 0.5;
-            this.yd -= this.gravity;
-            // Update the position with the new physics-applied motion
-            this.move(this.xd, this.yd, this.zd);
-        }
-        if (this.age++ >= this.lifetime)
-            this.remove();
-    }
-
     @Override
     public void tick() {
         this.xo = this.x;
@@ -115,11 +96,11 @@ public class ParadoxParticle extends BreakingItemParticle {
         ParadoxEntity entity = findEntityByUUID(level, paradox_uuid);
         if (entity == null || entity.getShrinkScale() < 1 || !entity.isBlockWithinRadius(sourcePos) || dying) {
             if (!dying) {
-                this.gravity = 0.04f; // Adjust gravity as needed
+                this.gravity    = 0.04f; // Adjust gravity as needed
                 this.hasPhysics = true;
                 // Randomize the remaining lifetime after it hits the ground
                 this.lifetime = this.age + 20 + random.nextInt(41); // 20-60 ticks
-                this.dying = true;
+                this.dying    = true;
             }
             deathMovement();
             return;
@@ -199,9 +180,27 @@ public class ParadoxParticle extends BreakingItemParticle {
         }
     }
 
+    @Nullable
+    private ParadoxEntity findEntityByUUID(ClientLevel world, UUID uuid) {
+        for (Entity entity : world.entitiesForRendering()) { // Iterating through all entities
+            if (entity.getUUID().equals(uuid) && entity instanceof ParadoxEntity paradoxEntity) {
+                return paradoxEntity;
+            }
+        }
+        return null; // Return null if no matching entity is found
+    }
 
-    public static ParticleProvider<ParadoxParticleData> FACTORY =
-            (data, world, x, y, z, xSpeed, ySpeed, zSpeed) ->
-                    new ParadoxParticle(world, x, y, z, data.targetX, data.targetY, data.targetZ, data.getItemStack(), data.ticksPerBlock, data.paradox_uuid);
+    public void deathMovement() {
+        if (!this.onGround) {
+            this.xd *= 0.5; // Reduce horizontal speed to simulate "falling"
+            this.zd *= 0.5;
+            this.yd -= this.gravity;
+            // Update the position with the new physics-applied motion
+            this.move(this.xd, this.yd, this.zd);
+        }
+        if (this.age++ >= this.lifetime) {
+            this.remove();
+        }
+    }
 }
 

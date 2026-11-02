@@ -1,6 +1,5 @@
 package com.direwolf20.justdirethings.client.jei;
 
-import com.direwolf20.justdirethings.JustDireThings;
 import com.direwolf20.justdirethings.datagen.recipes.FluidDropRecipe;
 import com.direwolf20.justdirethings.setup.Registration;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -25,21 +24,21 @@ public class FluidDropRecipeCategory implements IRecipeCategory<RecipeHolder<Flu
     public static final RecipeType<RecipeHolder<FluidDropRecipe>> TYPE =
             RecipeType.createFromVanilla(Registration.FLUID_DROP_RECIPE_TYPE.get());
 
-    public static final int width = 120;
+    public static final int width  = 120;
     public static final int height = 40;
 
-    private final IDrawable background;
-    private final IDrawable slot;
-    private final IDrawable icon;
-    private final Component localizedName;
+    private final IDrawable       background;
+    private final IDrawable       slot;
+    private final IDrawable       icon;
+    private final Component       localizedName;
     private final IDrawableStatic arrow;
 
     public FluidDropRecipeCategory(IGuiHelper guiHelper) {
-        background = guiHelper.createBlankDrawable(width, height);
-        slot = guiHelper.getSlotDrawable();
-        icon = guiHelper.createDrawableItemStack(new ItemStack(Registration.PolymorphicCatalyst.get()));
+        background    = guiHelper.createBlankDrawable(width, height);
+        slot          = guiHelper.getSlotDrawable();
+        icon          = guiHelper.createDrawableItemStack(new ItemStack(Registration.PolymorphicCatalyst.get()));
         localizedName = Component.translatable("justdirethings.fluiddroprecipe.title");
-        this.arrow = guiHelper.getRecipeArrow();
+        this.arrow    = guiHelper.getRecipeArrow();
     }
 
     @Override
@@ -63,25 +62,17 @@ public class FluidDropRecipeCategory implements IRecipeCategory<RecipeHolder<Flu
     }
 
     @Override
-    public void draw(RecipeHolder<FluidDropRecipe> recipe, IRecipeSlotsView slotsView, GuiGraphics gui, double mouseX, double mouseY) {
-        RenderSystem.enableBlend();
-        arrow.draw(gui, 34, 20);
-        background.draw(gui, 17, 0);
-        RenderSystem.disableBlend();
-    }
-
-    @Override
     public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<FluidDropRecipe> recipe, IFocusGroup focuses) {
-        BlockState input = recipe.value().getInput();
+        BlockState input = recipe.value().input();
         IRecipeSlotBuilder inputSlotBuilder = builder.addSlot(RecipeIngredientRole.INPUT, 9, 20);
         if (input.getBlock() instanceof LiquidBlock liquidBlock) {
             inputSlotBuilder
                     .addFluidStack(liquidBlock.fluid, 1000);
         }
         builder.addSlot(RecipeIngredientRole.CATALYST, 9, 0)
-                .addItemStack(new ItemStack(recipe.value().getCatalyst()));
+                .addItemStack(new ItemStack(recipe.value().catalyst()));
 
-        BlockState output = recipe.value().getOutput();
+        BlockState output = recipe.value().output();
         if (output.getBlock() instanceof LiquidBlock liquidBlock) {
             builder.addSlot(RecipeIngredientRole.OUTPUT, 68, 20)
                     .addFluidStack(liquidBlock.fluid, 1000);
@@ -89,5 +80,13 @@ public class FluidDropRecipeCategory implements IRecipeCategory<RecipeHolder<Flu
             builder.addSlot(RecipeIngredientRole.OUTPUT, 68, 20)
                     .addItemStack(new ItemStack(output.getBlock()));
         }
+    }
+
+    @Override
+    public void draw(RecipeHolder<FluidDropRecipe> recipe, IRecipeSlotsView slotsView, GuiGraphics gui, double mouseX, double mouseY) {
+        RenderSystem.enableBlend();
+        arrow.draw(gui, 34, 20);
+        background.draw(gui, 17, 0);
+        RenderSystem.disableBlend();
     }
 }

@@ -37,13 +37,13 @@ public abstract class RefinedT3Fuel extends BaseFlowingFluid implements RefinedF
     }
 
     @Override
-    public Item getBucket() {
-        return Registration.REFINED_T3_FLUID_BUCKET.get();
+    protected boolean canConvertToSource(Level pLevel) {
+        return false;
     }
 
     @Override
-    protected boolean canConvertToSource(Level pLevel) {
-        return false;
+    public Item getBucket() {
+        return Registration.REFINED_T3_FLUID_BUCKET.get();
     }
 
     public static class Flowing extends RefinedT3Fuel {

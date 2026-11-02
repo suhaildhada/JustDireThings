@@ -23,21 +23,21 @@ import java.util.List;
 
 public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
     public RedstoneControlData redstoneControlData = new RedstoneControlData();
-    public int dropCount = 1;
-    public int pickupDelay = 0;
-    public List<Integer> slotsToDropList = new ArrayList<>();
+    public int                 dropCount           = 1;
+    public int                 pickupDelay         = 0;
+    public List<Integer>       slotsToDropList     = new ArrayList<>();
+
+    public DropperT1BE(BlockPos pPos, BlockState pBlockState) {
+        this(Registration.DropperT1BE.get(), pPos, pBlockState);
+    }
 
     public DropperT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
         MACHINE_SLOTS = 1; //Slot for dropping
     }
 
-    public DropperT1BE(BlockPos pPos, BlockState pBlockState) {
-        this(Registration.DropperT1BE.get(), pPos, pBlockState);
-    }
-
     public void setDropperSettings(int dropCount, int pickupDelay) {
-        this.dropCount = dropCount;
+        this.dropCount   = dropCount;
         this.pickupDelay = pickupDelay;
         markDirtyClient();
     }
@@ -53,6 +53,27 @@ public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
     }
 
     @Override
+    public boolean isActiveRedstone() {
+        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.IGNORED)) {
+            return true;
+        }
+        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.LOW)) {
+            return !getRedstoneControlData().receivingRedstone;
+        }
+        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.HIGH)) {
+            return getRedstoneControlData().receivingRedstone;
+        }
+        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE) && getRedstoneControlData().pulsed) {
+            getRedstoneControlData().pulsed = false;
+            if (slotsToDropList.isEmpty()) {
+                operationTicks = 0; //Because of how this machine works, we force Operation Ticks to 0 on pulse
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void tickClient() {
     }
 
@@ -62,14 +83,39 @@ public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
         doDrop();
     }
 
-    public boolean clearTrackerIfNeeded() {
-        if (slotsToDropList.isEmpty())
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        this.dropCount   = tag.getInt("dropCount");
+        this.pickupDelay = tag.getInt("pickupDelay");
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.putInt("dropCount", dropCount);
+        tag.putInt("pickupDelay", pickupDelay);
+    }
+
+    @Override
+    public boolean isDefaultSettings() {
+        if (!super.isDefaultSettings()) {
             return false;
-        if (!canDrop())
+        }
+        if (dropCount != 1) {
+            return false;
+        }
+        return pickupDelay == 0;
+    }
+
+    public boolean clearTrackerIfNeeded() {
+        if (slotsToDropList.isEmpty()) {
+            return false;
+        }
+        if (!canDrop()) {
             return true;
-        if (!isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE))
-            return true;
-        return false;
+        }
+        return !isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE);
     }
 
     public void populateDropSlots() {
@@ -86,33 +132,20 @@ public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
         return true;
     }
 
-    @Override
-    public boolean isActiveRedstone() {
-        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.IGNORED))
-            return true;
-        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.LOW))
-            return !getRedstoneControlData().receivingRedstone;
-        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.HIGH))
-            return getRedstoneControlData().receivingRedstone;
-        if (getRedstoneControlData().redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE) && getRedstoneControlData().pulsed) {
-            getRedstoneControlData().pulsed = false;
-            if (slotsToDropList.isEmpty())
-                operationTicks = 0; //Because of how this machine works, we force Operation Ticks to 0 on pulse
-            return true;
-        }
-        return false;
-    }
-
     public void doDrop() {
         if (clearTrackerIfNeeded()) {
             slotsToDropList.clear();
             return;
         }
-        if (!canDrop()) return;
-        if (isActiveRedstone() && canRun() && slotsToDropList.isEmpty())
-            populateDropSlots();
-        if (slotsToDropList.isEmpty())
+        if (!canDrop()) {
             return;
+        }
+        if (isActiveRedstone() && canRun() && slotsToDropList.isEmpty()) {
+            populateDropSlots();
+        }
+        if (slotsToDropList.isEmpty()) {
+            return;
+        }
         if (operationTicks == 0) { //Use this check, because we want to ensure we drop once every <Ticks>
             ItemStack dropStack = getMachineHandler().getStackInSlot(slotsToDropList.remove(0));
             if (dropStack.isEmpty()) { //If this occurs, something changed, so clear the remaining list of things to drop
@@ -120,7 +153,9 @@ public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
                 return;
             }
             BlockPos dropPos = getDropPos();
-            if (dropPos == null) return; //Happens if the position is invalid - like not air...
+            if (dropPos == null) {
+                return; //Happens if the position is invalid - like not air...
+            }
             spawnItem(level, dropStack.split(dropCount), 0.3, Direction.values()[this.direction], new Vec3(dropPos.getX() + 0.5, dropPos.getY() + 0.5, dropPos.getZ() + 0.5));
         }
     }
@@ -146,33 +181,9 @@ public class DropperT1BE extends BaseMachineBE implements RedstoneControlledBE {
 
     public BlockPos getDropPos() {
         BlockPos blockPos = getBlockPos().relative(getBlockState().getValue(BlockStateProperties.FACING));
-        if (isBlockPosValid(blockPos))
+        if (isBlockPosValid(blockPos)) {
             return blockPos;
+        }
         return null;
-    }
-
-    @Override
-    public boolean isDefaultSettings() {
-        if (!super.isDefaultSettings())
-            return false;
-        if (dropCount != 1)
-            return false;
-        if (pickupDelay != 0)
-            return false;
-        return true;
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putInt("dropCount", dropCount);
-        tag.putInt("pickupDelay", pickupDelay);
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        this.dropCount = tag.getInt("dropCount");
-        this.pickupDelay = tag.getInt("pickupDelay");
     }
 }

@@ -16,7 +16,9 @@ public class ParadoxSyncPacket {
     public void handle(final ParadoxSyncPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
             Level level = context.player().level();
-            if (level == null) return;
+            if (level == null) {
+                return;
+            }
             BlockEntity blockEntity = level.getBlockEntity(payload.blockPos());
             if (blockEntity instanceof ParadoxMachineBE paradoxMachineBE) {
                 paradoxMachineBE.receiveRunTime(payload.runtime());

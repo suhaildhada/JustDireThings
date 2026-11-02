@@ -49,24 +49,52 @@ public class TimeWand extends BasePoweredItem implements PoweredItem, FluidConta
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
-        if (!Config.TIME_WAND_FAKE_PLAYER_ALLOWED.get() && player instanceof FakePlayer)
+        if (!Config.TIME_WAND_FAKE_PLAYER_ALLOWED.get() && player instanceof FakePlayer) {
             return InteractionResultHolder.fail(itemStack);
+        }
         BlockHitResult blockhitresult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.SOURCE_ONLY);
         if (blockhitresult.getType() == HitResult.Type.BLOCK) {
-            if (pickupFluid(level, player, itemStack, blockhitresult))
+            if (pickupFluid(level, player, itemStack, blockhitresult)) {
                 return InteractionResultHolder.fail(itemStack);
-            if (spawnEntity(level, player, blockhitresult.getBlockPos(), itemStack))
+            }
+            if (spawnEntity(level, player, blockhitresult.getBlockPos(), itemStack)) {
                 return InteractionResultHolder.success(itemStack);
+            }
         }
         return InteractionResultHolder.fail(itemStack);
     }
 
+    public static boolean pickupFluid(Level level, Player player, ItemStack itemStack, BlockHitResult blockhitresult) {
+        BlockPos blockpos = blockhitresult.getBlockPos();
+        BlockState blockstate1 = level.getBlockState(blockpos);
+        if (blockstate1.getBlock() instanceof TimeFluidBlock timeFluidBlock) {
+            IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (fluidHandler == null) {
+                return true;
+            }
+            int filledAmt = fluidHandler.fill(new FluidStack(Registration.TIME_FLUID_SOURCE.get(), 1000), IFluidHandler.FluidAction.SIMULATE);
+            if (filledAmt == 1000) {
+                ItemStack itemstack2 = timeFluidBlock.pickupBlock(player, level, blockpos, blockstate1);
+                fluidHandler.fill(new FluidStack(Registration.TIME_FLUID_SOURCE.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+                timeFluidBlock.getPickupSound(blockstate1).ifPresent(p_150709_ -> player.playSound(p_150709_, 1.0F, 1.0F));
+                if (!level.isClientSide) {
+                    CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer) player, itemstack2);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     public boolean spawnEntity(Level level, Player player, BlockPos blockPos, ItemStack itemStack) {
-        if (level.isClientSide) return false;
+        if (level.isClientSide) {
+            return false;
+        }
         BlockState blockState = level.getBlockState(blockPos);
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
-        if (!MiscTools.isValidTickAccelBlock((ServerLevel) level, blockState, blockEntity))
+        if (!MiscTools.isValidTickAccelBlock((ServerLevel) level, blockState, blockEntity)) {
             return false;
+        }
 
         int setRate = 1;
         Optional<TimeWandEntity> existingEntity = level.getEntitiesOfClass(TimeWandEntity.class, new AABB(blockPos)).stream().findFirst();
@@ -74,8 +102,9 @@ public class TimeWand extends BasePoweredItem implements PoweredItem, FluidConta
         if (existingEntity.isPresent()) {
             TimeWandEntity timeWandEntity = existingEntity.get();
             setRate = timeWandEntity.getTickSpeed() + 1;
-            if (setRate > Config.logBase2(Config.TIME_WAND_MAX_MULTIPLIER.get()))
+            if (setRate > Config.logBase2(Config.TIME_WAND_MAX_MULTIPLIER.get())) {
                 return false;
+            }
             float accelRate = TimeWandEntity.calculateAccelRate(setRate);
             int cost = calculateFluidCost(player, (int) accelRate);
             int feCost = calculateFECost(player, (int) accelRate);
@@ -105,6 +134,20 @@ public class TimeWand extends BasePoweredItem implements PoweredItem, FluidConta
         return false;
     }
 
+    public static int calculateFluidCost(Player player, int setRate) {
+        if (player.isCreative()) {
+            return 0;
+        }
+        return (int) (setRate * getMBPerRate());
+    }
+
+    public static int calculateFECost(Player player, int setRate) {
+        if (player.isCreative()) {
+            return 0;
+        }
+        return setRate * getFEPerRate();
+    }
+
     public boolean hasResources(Player player, ItemStack itemStack, int feCost, int fluidCost) {
         float failurePitch = 0.5F; // G# - lower pitch for failure sound
         if (!FluidContainingItem.hasEnoughFluid(itemStack, fluidCost)) {
@@ -118,44 +161,6 @@ public class TimeWand extends BasePoweredItem implements PoweredItem, FluidConta
             return false;
         }
         return true;
-    }
-
-    public static int calculateFECost(Player player, int setRate) {
-        if (player.isCreative()) return 0;
-        return setRate * getFEPerRate();
-    }
-
-    public static int calculateFluidCost(Player player, int setRate) {
-        if (player.isCreative()) return 0;
-        return (int) (setRate * getMBPerRate());
-    }
-
-    public static float getMBPerRate() {
-        return Config.TIMEWAND_FLUID_COST.get().floatValue();
-    }
-
-    public static int getFEPerRate() {
-        return Config.TIMEWAND_RF_COST.get();
-    }
-
-    public static boolean pickupFluid(Level level, Player player, ItemStack itemStack, BlockHitResult blockhitresult) {
-        BlockPos blockpos = blockhitresult.getBlockPos();
-        BlockState blockstate1 = level.getBlockState(blockpos);
-        if (blockstate1.getBlock() instanceof TimeFluidBlock timeFluidBlock) {
-            IFluidHandlerItem fluidHandler = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
-            if (fluidHandler == null) return true;
-            int filledAmt = fluidHandler.fill(new FluidStack(Registration.TIME_FLUID_SOURCE.get(), 1000), IFluidHandler.FluidAction.SIMULATE);
-            if (filledAmt == 1000) {
-                ItemStack itemstack2 = timeFluidBlock.pickupBlock(player, level, blockpos, blockstate1);
-                fluidHandler.fill(new FluidStack(Registration.TIME_FLUID_SOURCE.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
-                timeFluidBlock.getPickupSound(blockstate1).ifPresent(p_150709_ -> player.playSound(p_150709_, 1.0F, 1.0F));
-                if (!level.isClientSide) {
-                    CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer) player, itemstack2);
-                }
-            }
-            return true;
-        }
-        return false;
     }
 
     private void playTimeWandSound(Level serverLevel, BlockPos pos, int setRate) {
@@ -177,14 +182,22 @@ public class TimeWand extends BasePoweredItem implements PoweredItem, FluidConta
 
     }
 
-    @Override
-    public int getMaxEnergy() {
-        return Config.TIME_WAND_RF_CAPACITY.get();
+    public static float getMBPerRate() {
+        return Config.TIMEWAND_FLUID_COST.get().floatValue();
+    }
+
+    public static int getFEPerRate() {
+        return Config.TIMEWAND_RF_COST.get();
     }
 
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.NONE;
+    }
+
+    @Override
+    public int getMaxEnergy() {
+        return Config.TIME_WAND_RF_CAPACITY.get();
     }
 
     @Override

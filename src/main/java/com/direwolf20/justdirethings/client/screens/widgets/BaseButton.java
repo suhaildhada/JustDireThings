@@ -11,13 +11,14 @@ public class BaseButton extends Button {
         super(pX, pY, pWidth, pHeight, pMessage, pOnPress, pCreateNarration);
     }
 
-    public Component getLocalization() {
-        return localization;
+    public Component getLocalization(int mouseX, int mouseY) {
+        if (MiscTools.inBounds(getX(), getY(), getWidth(), getHeight(), mouseX, mouseY)) {
+            return getLocalization();
+        }
+        return Component.empty();
     }
 
-    public Component getLocalization(int mouseX, int mouseY) {
-        if (MiscTools.inBounds(getX(), getY(), getWidth(), getHeight(), mouseX, mouseY))
-            return getLocalization();
-        return Component.empty();
+    public Component getLocalization() {
+        return localization;
     }
 }

@@ -5,17 +5,17 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 public class ShaderMods {
-    private static boolean usingOptifine;
-    private static boolean usingIris;
+    private static boolean      usingOptifine;
+    private static boolean      usingIris;
     private static MethodHandle shaderAccess;
-    private static Object instance;
+    private static Object       instance;
 
     static {
         try {
             Class<?> clazz = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
             shaderAccess = MethodHandles.lookup().findVirtual(clazz, "isShaderPackInUse", MethodType.methodType(boolean.class));
-            instance = MethodHandles.lookup().findStatic(clazz, "getInstance", MethodType.methodType(clazz)).invoke();
-            usingIris = true;
+            instance     = MethodHandles.lookup().findStatic(clazz, "getInstance", MethodType.methodType(clazz)).invoke();
+            usingIris    = true;
         } catch (Throwable ignored) {
 
         }
@@ -23,7 +23,7 @@ public class ShaderMods {
         if (shaderAccess == null) {
             // Try Optifine
             try {
-                shaderAccess = MethodHandles.lookup().findStatic(Class.forName("net.optifine.Config"), "isShaders", MethodType.methodType(boolean.class));
+                shaderAccess  = MethodHandles.lookup().findStatic(Class.forName("net.optifine.Config"), "isShaders", MethodType.methodType(boolean.class));
                 usingOptifine = true;
             } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException ignored) {
 

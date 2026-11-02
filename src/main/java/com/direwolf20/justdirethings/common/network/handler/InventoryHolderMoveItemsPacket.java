@@ -20,12 +20,13 @@ public class InventoryHolderMoveItemsPacket {
 
             if (container instanceof InventoryHolderContainer inventoryHolderContainer) {
                 int moveType = payload.moveType();
-                if (moveType == 0)
+                if (moveType == 0) {
                     inventoryHolderContainer.sendAllItemsToMachine();
-                else if (moveType == 1)
+                } else if (moveType == 1) {
                     inventoryHolderContainer.sendAllItemsToPlayer();
-                else if (moveType == 2)
+                } else if (moveType == 2) {
                     inventoryHolderContainer.swapItems();
+                }
             }
         });
     }

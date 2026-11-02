@@ -28,16 +28,18 @@ public class RenderLevelLast {
             return;
         }
         Player player = Minecraft.getInstance().player;
-        if (player == null)
+        if (player == null) {
             return;
+        }
 
         ItemStack heldItemMain = player.getMainHandItem();
         ItemStack heldItemOff = player.getOffhandItem();
 
         if (heldItemMain.getItem() instanceof ToggleableTool toggleableTool) {
             ThingFinder.render(evt, player, heldItemMain);
-            if (toggleableTool.canUseAbilityAndDurability(heldItemMain, Ability.VOIDSHIFT) && ToggleableTool.getCustomSetting(heldItemMain, Ability.VOIDSHIFT.getName()) == 0)
+            if (toggleableTool.canUseAbilityAndDurability(heldItemMain, Ability.VOIDSHIFT) && ToggleableTool.getCustomSetting(heldItemMain, Ability.VOIDSHIFT.getName()) == 0) {
                 MiscRenders.renderTransparentPlayer(evt, player, heldItemMain);
+            }
             if (toggleableTool.canUseAbility(heldItemMain, Ability.DROPTELEPORT) && ToggleableTool.getCustomSetting(heldItemMain, Ability.DROPTELEPORT.getName()) == 0) {
                 NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(heldItemMain);
                 if (boundInventory != null && player.level().dimension().equals(boundInventory.globalPos().dimension())) {
@@ -47,8 +49,9 @@ public class RenderLevelLast {
         }
         if (heldItemOff.getItem() instanceof ToggleableTool toggleableTool) {
             ThingFinder.render(evt, player, heldItemOff);
-            if (toggleableTool.canUseAbilityAndDurability(heldItemOff, Ability.VOIDSHIFT) && ToggleableTool.getCustomSetting(heldItemOff, Ability.VOIDSHIFT.getName()) == 0)
+            if (toggleableTool.canUseAbilityAndDurability(heldItemOff, Ability.VOIDSHIFT) && ToggleableTool.getCustomSetting(heldItemOff, Ability.VOIDSHIFT.getName()) == 0) {
                 MiscRenders.renderTransparentPlayer(evt, player, heldItemOff);
+            }
             if (toggleableTool.canUseAbility(heldItemOff, Ability.DROPTELEPORT) && ToggleableTool.getCustomSetting(heldItemMain, Ability.DROPTELEPORT.getName()) == 0) {
                 NBTHelpers.BoundInventory boundInventory = ToggleableTool.getBoundInventory(heldItemOff);
                 if (boundInventory != null && player.level().dimension().equals(boundInventory.globalPos().dimension())) {

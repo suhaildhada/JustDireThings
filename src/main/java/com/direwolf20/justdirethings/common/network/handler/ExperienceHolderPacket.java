@@ -20,10 +20,11 @@ public class ExperienceHolderPacket {
             AbstractContainerMenu container = sender.containerMenu;
 
             if (container instanceof ExperienceHolderContainer experienceHolderContainer && experienceHolderContainer.baseMachineBE instanceof ExperienceHolderBE experienceHolderBE) {
-                if (payload.add())
+                if (payload.add()) {
                     experienceHolderBE.storeExp(sender, payload.levels());
-                else
+                } else {
                     experienceHolderBE.extractExp(sender, payload.levels());
+                }
             }
         });
     }

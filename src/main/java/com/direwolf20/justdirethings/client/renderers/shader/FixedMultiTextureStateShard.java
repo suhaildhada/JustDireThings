@@ -19,30 +19,30 @@ import java.util.Optional;
  */
 public class FixedMultiTextureStateShard extends RenderStateShard.EmptyTextureStateShard {
 
-	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	private final Optional<ResourceLocation> cutoutTexture;
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private final Optional<ResourceLocation> cutoutTexture;
 
-	public FixedMultiTextureStateShard(List<ShaderTexture> textures) {
-		super(() -> {
-			int i = 0;
+    public FixedMultiTextureStateShard(List<ShaderTexture> textures) {
+        super(() -> {
+            int i = 0;
 
-			for (ShaderTexture texture : textures) {
-				TextureManager texturemanager = Minecraft.getInstance().getTextureManager();
-				texturemanager.getTexture(texture.location()).setFilter(texture.blur(), texture.mipmap());
-				RenderSystem.setShaderTexture(i, texture.location());
-				if (i == 0) {
-					i = 3;
-				} else {
-					i++;
-				}
-			}
+            for (ShaderTexture texture : textures) {
+                TextureManager texturemanager = Minecraft.getInstance().getTextureManager();
+                texturemanager.getTexture(texture.location()).setFilter(texture.blur(), texture.mipmap());
+                RenderSystem.setShaderTexture(i, texture.location());
+                if (i == 0) {
+                    i = 3;
+                } else {
+                    i++;
+                }
+            }
 
-		}, () -> {
-		});
-		this.cutoutTexture = textures.stream().findFirst().map(ShaderTexture::location);
-	}
+        }, () -> {
+        });
+        this.cutoutTexture = textures.stream().findFirst().map(ShaderTexture::location);
+    }
 
-	protected @NotNull Optional<ResourceLocation> cutoutTexture() {
-		return this.cutoutTexture;
-	}
+    protected @NotNull Optional<ResourceLocation> cutoutTexture() {
+        return this.cutoutTexture;
+    }
 }

@@ -32,6 +32,12 @@ public class EclipseGateBlock extends Block implements EntityBlock {
 
     @Nullable
     @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new EclipseGateBE(pos, state);
+    }
+
+    @Nullable
+    @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide()) {
             return (lvl, pos, blockState, t) -> {
@@ -47,22 +53,14 @@ public class EclipseGateBlock extends Block implements EntityBlock {
         };
     }
 
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new EclipseGateBE(pos, state);
-    }
-
-
-    //These 2 methods after the shadows under the block
-    @Override
-    public boolean propagatesSkylightDown(BlockState p_48740_, BlockGetter p_48741_, BlockPos p_48742_) {
-        return true;
-    }
-
     @Override
     public float getShadeBrightness(BlockState p_48731_, BlockGetter p_48732_, BlockPos p_48733_) {
         return 1.0F;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
+        return Shapes.empty(); // No collision shape
     }
 
     @Override
@@ -70,9 +68,10 @@ public class EclipseGateBlock extends Block implements EntityBlock {
         return Shapes.empty(); // No collision shape
     }
 
+    //These 2 methods after the shadows under the block
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
-        return Shapes.empty(); // No collision shape
+    public boolean propagatesSkylightDown(BlockState p_48740_, BlockGetter p_48741_, BlockPos p_48742_) {
+        return true;
     }
 
 }

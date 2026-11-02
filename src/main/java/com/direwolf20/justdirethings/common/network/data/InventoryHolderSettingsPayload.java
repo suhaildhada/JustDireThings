@@ -18,12 +18,6 @@ public record InventoryHolderSettingsPayload(
         int renderedSlot
 ) implements CustomPacketPayload {
     public static final Type<InventoryHolderSettingsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "inventory_holder_settings"));
-
-    @Override
-    public Type<InventoryHolderSettingsPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, InventoryHolderSettingsPayload> STREAM_CODEC = NeoForgeStreamCodecs.composite(
             ByteBufCodecs.BOOL, InventoryHolderSettingsPayload::compareNBT,
             ByteBufCodecs.BOOL, InventoryHolderSettingsPayload::filtersOnly,
@@ -34,4 +28,9 @@ public record InventoryHolderSettingsPayload(
             ByteBufCodecs.INT, InventoryHolderSettingsPayload::renderedSlot,
             InventoryHolderSettingsPayload::new
     );
+
+    @Override
+    public Type<InventoryHolderSettingsPayload> type() {
+        return TYPE;
+    }
 }

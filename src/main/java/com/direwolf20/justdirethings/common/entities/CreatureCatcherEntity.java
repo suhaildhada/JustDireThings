@@ -28,36 +28,42 @@ import org.joml.Vector3f;
 import static com.direwolf20.justdirethings.common.items.datacomponents.JustDireDataComponents.ENTITIYTYPE;
 
 public class CreatureCatcherEntity extends ThrowableItemProjectile {
-    private static final EntityDataAccessor<Boolean> HAS_HIT = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> CAPTURING = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> SHRINKING_TIME = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean>   HAS_HIT           = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean>   CAPTURING         = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer>   SHRINKING_TIME    = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<ItemStack> RETURN_ITEM_STACK = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.ITEM_STACK);
-    private static final EntityDataAccessor<Vector3f> ENTITY_POSITION = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.VECTOR3);
-    private static final EntityDataAccessor<Float> ENTITY_BODY_ROT = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> ENTITY_HEAD_ROT = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.FLOAT);
-
-    private Mob hitEntity;
-    public int renderTick;
+    private static final EntityDataAccessor<Vector3f>  ENTITY_POSITION   = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<Float>     ENTITY_BODY_ROT   = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float>     ENTITY_HEAD_ROT   = SynchedEntityData.defineId(CreatureCatcherEntity.class, EntityDataSerializers.FLOAT);
+    public               int                           renderTick;
+    private              Mob                           hitEntity;
 
     public CreatureCatcherEntity(EntityType<? extends ThrowableItemProjectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(HAS_HIT, false);
-        builder.define(CAPTURING, false);
-        builder.define(SHRINKING_TIME, 0);
-        builder.define(RETURN_ITEM_STACK, ItemStack.EMPTY);
-        builder.define(ENTITY_POSITION, new Vector3f(0, 0, 0));
-        builder.define(ENTITY_BODY_ROT, 0f);
-        builder.define(ENTITY_HEAD_ROT, 0f);
-
-    }
-
     public CreatureCatcherEntity(Level pLevel, LivingEntity pShooter) {
         super(Registration.CreatureCatcherEntity.get(), pShooter, pLevel);
+    }
+
+    public static Mob getEntityFromItemStack(ItemStack itemStack, Level level) {
+        if (!itemStack.has(ENTITIYTYPE)) {
+            return null;
+        }
+        EntityType<?> type = EntityType.byString(itemStack.get(ENTITIYTYPE)).orElse(null);
+        if (type == null) {
+            return null;
+        }
+        Entity entity = type.create(level);
+        if (!(entity instanceof Mob)) {
+            return null;
+        }
+        if (itemStack.has(DataComponents.ENTITY_DATA)) {
+            entity.load(itemStack.get(DataComponents.ENTITY_DATA).copyTag());
+        } else {
+            entity.load(new CompoundTag());
+        }
+        return (Mob) entity;
     }
 
     public boolean hasHitEntity() {
@@ -97,14 +103,11 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
     }
 
     @Override
-    protected Item getDefaultItem() {
-        return Registration.CreatureCatcher.get();
-    }
-
-    @Override
     public void tick() {
         super.tick();
-        if (!hasHitEntity()) return;
+        if (!hasHitEntity()) {
+            return;
+        }
         if (!level().isClientSide) {
             if (hitEntity != null && !hitEntity.isDeadOrDying() && shrinkingTime() > 1) {
                 if (CreatureCatcher.hasEntity(getReturnStack())) {
@@ -131,7 +134,9 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
     protected void onHitEntity(EntityHitResult pResult) {
         super.onHitEntity(pResult);
         ItemStack itemStack = getItem();
-        if (level().isClientSide || CreatureCatcher.hasEntity(itemStack)) return;
+        if (level().isClientSide || CreatureCatcher.hasEntity(itemStack)) {
+            return;
+        }
         Entity entity = pResult.getEntity();
         if (entity instanceof Mob mob && canCapture(mob)) {
             this.entityData.set(HAS_HIT, true);
@@ -150,7 +155,9 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
      */
     @Override
     protected void onHitBlock(BlockHitResult pResult) {
-        if (level().isClientSide) return;
+        if (level().isClientSide) {
+            return;
+        }
         super.onHitBlock(pResult);
         ItemStack itemStack = getItem();
         if (CreatureCatcher.hasEntity(itemStack)) {
@@ -160,12 +167,6 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
         } else {
             spawnNewItemEntity();
         }
-    }
-
-    protected void captureMob(Mob hitEntity) {
-        if (hitEntity == null) return;
-        this.entityData.set(RETURN_ITEM_STACK, createItemStack(hitEntity));
-        this.hitEntity = hitEntity;
     }
 
     protected void spawnNewItemEntity() {
@@ -184,10 +185,31 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
         return itemEntity;
     }
 
-    protected ItemEntity createItemEntity(ItemStack itemStack) {
-        ItemEntity itemEntity = createItemEntity();
-        itemEntity.setItem(itemStack);
-        return itemEntity;
+    protected boolean canCapture(Entity entity) {
+        if (!entity.isAlive()) {
+            return false;
+        }
+        if (entity.isMultipartEntity()) {
+            return false;
+        }
+        if (entity instanceof PartEntity<?>) {
+            return false;
+        }
+        if (entity.getType().is(Tags.EntityTypes.CAPTURING_NOT_SUPPORTED)) {
+            return false;
+        }
+        if (entity.getType().is(JustDireEntityTags.CREATURE_CATCHER_DENY)) {
+            return false;
+        }
+        return entity.save(new CompoundTag());
+    }
+
+    protected void captureMob(Mob hitEntity) {
+        if (hitEntity == null) {
+            return;
+        }
+        this.entityData.set(RETURN_ITEM_STACK, createItemStack(hitEntity));
+        this.hitEntity = hitEntity;
     }
 
     protected ItemStack createItemStack(Mob entity) {
@@ -199,40 +221,22 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
         return itemStack;
     }
 
-    protected void releaseEntity(ItemStack itemStack) {
-        Entity entity = getEntityFromItemStack(itemStack, this.level());
-        Vec3 location = getPosition(0);
-        entity.moveTo(location);
-        level().addFreshEntity(entity);
+    @Override
+    protected Item getDefaultItem() {
+        return Registration.CreatureCatcher.get();
     }
 
-    public static Mob getEntityFromItemStack(ItemStack itemStack, Level level) {
-        if (!itemStack.has(ENTITIYTYPE)) return null;
-        EntityType<?> type = EntityType.byString(itemStack.get(ENTITIYTYPE)).orElse(null);
-        if (type == null) return null;
-        Entity entity = type.create(level);
-        if (!(entity instanceof Mob)) return null;
-        if (itemStack.has(DataComponents.ENTITY_DATA))
-            entity.load(itemStack.get(DataComponents.ENTITY_DATA).copyTag());
-        else
-            entity.load(new CompoundTag());
-        return (Mob) entity;
-    }
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(HAS_HIT, false);
+        builder.define(CAPTURING, false);
+        builder.define(SHRINKING_TIME, 0);
+        builder.define(RETURN_ITEM_STACK, ItemStack.EMPTY);
+        builder.define(ENTITY_POSITION, new Vector3f(0, 0, 0));
+        builder.define(ENTITY_BODY_ROT, 0f);
+        builder.define(ENTITY_HEAD_ROT, 0f);
 
-    protected boolean canCapture(Entity entity) {
-        if (!entity.isAlive())
-            return false;
-        if (entity.isMultipartEntity())
-            return false;
-        if (entity instanceof PartEntity<?>)
-            return false;
-        if (entity.getType().is(Tags.EntityTypes.CAPTURING_NOT_SUPPORTED))
-            return false;
-        if (entity.getType().is(JustDireEntityTags.CREATURE_CATCHER_DENY))
-            return false;
-        if (!entity.save(new CompoundTag()))
-            return false;
-        return true;
     }
 
     @Override
@@ -265,5 +269,18 @@ public class CreatureCatcherEntity extends ThrowableItemProjectile {
         this.entityData.set(ENTITY_POSITION, position);
         this.entityData.set(ENTITY_BODY_ROT, pCompound.getFloat("EntityBodyRot"));
         this.entityData.set(ENTITY_HEAD_ROT, pCompound.getFloat("EntityHeadRot"));
+    }
+
+    protected ItemEntity createItemEntity(ItemStack itemStack) {
+        ItemEntity itemEntity = createItemEntity();
+        itemEntity.setItem(itemStack);
+        return itemEntity;
+    }
+
+    protected void releaseEntity(ItemStack itemStack) {
+        Entity entity = getEntityFromItemStack(itemStack, this.level());
+        Vec3 location = getPosition(0);
+        entity.moveTo(location);
+        level().addFreshEntity(entity);
     }
 }

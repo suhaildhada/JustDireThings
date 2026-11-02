@@ -16,17 +16,6 @@ public abstract class BasePoweredItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
-        Level level = context.level();
-        if (level == null) {
-            return;
-        }
-
-        appendFEText(stack, tooltip);
-    }
-
-    @Override
     public boolean isBarVisible(ItemStack stack) {
         if (stack.getItem() instanceof PoweredItem poweredItem) {
             return poweredItem.isPowerBarVisible(stack);
@@ -46,11 +35,23 @@ public abstract class BasePoweredItem extends Item {
     public int getBarColor(ItemStack stack) {
         if (stack.getItem() instanceof PoweredItem poweredItem) {
             int color = poweredItem.getPowerBarColor(stack);
-            if (color == -1)
+            if (color == -1) {
                 return super.getBarColor(stack);
+            }
             return color;
         }
         return super.getBarColor(stack);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, context, tooltip, flagIn);
+        Level level = context.level();
+        if (level == null) {
+            return;
+        }
+
+        appendFEText(stack, tooltip);
     }
 
 }

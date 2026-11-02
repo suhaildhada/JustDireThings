@@ -27,7 +27,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @JeiPlugin
 public class JEIIntegration implements IModPlugin {
@@ -36,29 +35,6 @@ public class JEIIntegration implements IModPlugin {
     @Override
     public ResourceLocation getPluginUid() {
         return ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "jei_plugin");
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        IRecipeManager recipeRegistry = jeiRuntime.getRecipeManager();
-        RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-        List<RecipeHolder<CraftingRecipe>> hiddenRecipes = new ArrayList<>();
-        for (var sidedBlock : Registration.SIDEDBLOCKS.getEntries()) {
-            if (sidedBlock.get() instanceof BaseMachineBlock baseMachineBlock) {
-                Optional<RecipeHolder<?>> recipe = recipeManager.byKey(ResourceLocation.parse(sidedBlock.getId() + "_nbtclear"));
-                recipe.ifPresent(recipeHolder -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) recipeHolder));
-            }
-        }
-        for (var sidedBlock : Registration.BLOCKS.getEntries()) {
-            if (sidedBlock.get() instanceof BaseMachineBlock baseMachineBlock) {
-                Optional<RecipeHolder<?>> recipe = recipeManager.byKey(ResourceLocation.parse(sidedBlock.getId() + "_nbtclear"));
-                recipe.ifPresent(recipeHolder -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) recipeHolder));
-            }
-        }
-
-
-        recipeRegistry.hideRecipes(RecipeTypes.CRAFTING, hiddenRecipes);
     }
 
     @Override
@@ -71,6 +47,13 @@ public class JEIIntegration implements IModPlugin {
                 new FluidDropRecipeCategory(guiHelper)
         );
         registration.addRecipeCategories(new OreToResourceCategory(registration.getJeiHelpers().getGuiHelper()));
+    }
+
+    @Override
+    public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
+        IExtendableSmithingRecipeCategory smithingCategory = registration.getSmithingCategory();
+        smithingCategory.addExtension(AbilityRecipe.class, new AbilityRecipeCategory());
+        smithingCategory.addExtension(PaxelRecipe.class, new PaxelRecipeCategory());
     }
 
     @Override
@@ -104,13 +87,6 @@ public class JEIIntegration implements IModPlugin {
     }
 
     @Override
-    public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
-        IExtendableSmithingRecipeCategory smithingCategory = registration.getSmithingCategory();
-        smithingCategory.addExtension(AbilityRecipe.class, new AbilityRecipeCategory());
-        smithingCategory.addExtension(PaxelRecipe.class, new PaxelRecipeCategory());
-    }
-
-    @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registry) {
         registry.addRecipeCatalyst(new ItemStack(Registration.GooBlock_Tier1.get()), GooSpreadRecipeCategory.TYPE);
         registry.addRecipeCatalyst(new ItemStack(Registration.GooBlock_Tier2.get()), GooSpreadRecipeCategory.TYPE);
@@ -126,6 +102,29 @@ public class JEIIntegration implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGhostIngredientHandler(BaseScreen.class, new GhostFilterBasic());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        IRecipeManager recipeRegistry = jeiRuntime.getRecipeManager();
+        RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
+        List<RecipeHolder<CraftingRecipe>> hiddenRecipes = new ArrayList<>();
+        for (var sidedBlock : Registration.SIDEDBLOCKS.getEntries()) {
+            if (sidedBlock.get() instanceof BaseMachineBlock baseMachineBlock) {
+                Optional<RecipeHolder<?>> recipe = recipeManager.byKey(ResourceLocation.parse(sidedBlock.getId() + "_nbtclear"));
+                recipe.ifPresent(recipeHolder -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) recipeHolder));
+            }
+        }
+        for (var sidedBlock : Registration.BLOCKS.getEntries()) {
+            if (sidedBlock.get() instanceof BaseMachineBlock baseMachineBlock) {
+                Optional<RecipeHolder<?>> recipe = recipeManager.byKey(ResourceLocation.parse(sidedBlock.getId() + "_nbtclear"));
+                recipe.ifPresent(recipeHolder -> hiddenRecipes.add((RecipeHolder<CraftingRecipe>) recipeHolder));
+            }
+        }
+
+
+        recipeRegistry.hideRecipes(RecipeTypes.CRAFTING, hiddenRecipes);
     }
 
 }

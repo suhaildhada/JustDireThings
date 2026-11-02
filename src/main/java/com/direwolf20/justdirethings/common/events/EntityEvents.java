@@ -30,9 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EntityEvents {
-    public record FluidInputs(BlockState blockState, Item item) {
-    }
-
     static Map<FluidInputs, BlockState> fluidCraftCache = new HashMap<>();
 
     @SubscribeEvent
@@ -46,9 +43,13 @@ public class EntityEvents {
     public static void entityTick(EntityTickEvent.Post e) {
         Entity entity = e.getEntity();
         Level level = entity.level();
-        if (!(entity instanceof ItemEntity itemEntity)) return;
+        if (!(entity instanceof ItemEntity itemEntity)) {
+            return;
+        }
         BlockState blockState = entity.getInBlockState();
-        if (!(blockState.getBlock() instanceof LiquidBlock)) return;
+        if (!(blockState.getBlock() instanceof LiquidBlock)) {
+            return;
+        }
         BlockState fluidDropOutput = findRecipe(blockState, itemEntity);
         if (fluidDropOutput != null && !fluidDropOutput.isAir()) {
             BlockPos blockPos = entity.blockPosition();
@@ -60,8 +61,9 @@ public class EntityEvents {
                     level.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
                     fluidType.onVaporize(null, level, blockPos, fluidStack);
                 } else {
-                    if (!level.isClientSide)
+                    if (!level.isClientSide) {
                         level.playSound(null, blockPos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    }
                 }
             }
         }
@@ -70,28 +72,30 @@ public class EntityEvents {
     @Nullable
     private static BlockState findRecipe(BlockState blockState, ItemEntity entity) {
         FluidInputs fluidInputs = new FluidInputs(blockState, entity.getItem().getItem());
-        if (fluidCraftCache.containsKey(fluidInputs))
+        if (fluidCraftCache.containsKey(fluidInputs)) {
             return fluidCraftCache.get(fluidInputs);
+        }
         RecipeManager recipeManager = entity.level().getRecipeManager();
 
         for (RecipeHolder<?> recipe : recipeManager.getAllRecipesFor(Registration.FLUID_DROP_RECIPE_TYPE.get())) {
             if (recipe.value() instanceof FluidDropRecipe fluidDropRecipe && fluidDropRecipe.matches(blockState, entity.getItem())) {
-                fluidCraftCache.put(fluidInputs, fluidDropRecipe.getOutput());
+                fluidCraftCache.put(fluidInputs, fluidDropRecipe.output());
                 break;
             }
         }
-        if (!fluidCraftCache.containsKey(fluidInputs))
+        if (!fluidCraftCache.containsKey(fluidInputs)) {
             fluidCraftCache.put(fluidInputs, Blocks.AIR.defaultBlockState());
+        }
         return fluidCraftCache.get(fluidInputs);
-    }
-
-    private static void clearCache() {
-        fluidCraftCache.clear();
     }
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent e) {
         clearCache();
+    }
+
+    private static void clearCache() {
+        fluidCraftCache.clear();
     }
 
     @SubscribeEvent
@@ -102,5 +106,8 @@ public class EntityEvents {
     @SubscribeEvent
     public static void onClientRecipesUpdated(RecipesUpdatedEvent e) {
         clearCache();
+    }
+
+    public record FluidInputs(BlockState blockState, Item item) {
     }
 }

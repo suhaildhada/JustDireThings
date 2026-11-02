@@ -8,5 +8,5 @@ public interface SensorScreenInterface {
 
     void setPropertyValue(Property<?> property, Comparable<?> comparable, boolean isAny);
 
-    public Font getFontRenderer();
+    Font getFontRenderer();
 }

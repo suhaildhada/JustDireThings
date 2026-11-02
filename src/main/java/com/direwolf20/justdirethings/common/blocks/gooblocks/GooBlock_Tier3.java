@@ -16,15 +16,15 @@ public class GooBlock_Tier3 extends GooBlock_Base implements EntityBlock {
         super();
     }
 
+    @Override
+    protected boolean validRevivalItem(ItemStack itemStack) {
+        return itemStack.is(JustDireItemTags.GOO_REVIVE_TIER_3);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new GooBlockBE_Tier3(pos, state);
-    }
-
-    @Override
-    protected boolean validRevivalItem(ItemStack itemStack) {
-        return itemStack.is(JustDireItemTags.GOO_REVIVE_TIER_3);
     }
 
 }

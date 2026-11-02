@@ -16,50 +16,29 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ClickerT1Screen extends BaseMachineScreen<ClickerT1Container> {
-    public int clickType;
-    public int clickTarget;
-    public boolean sneaking;
-    public boolean showFakePlayer;
-    public int maxHoldTicks;
+    public int          clickType;
+    public int          clickTarget;
+    public boolean      sneaking;
+    public boolean      showFakePlayer;
+    public int          maxHoldTicks;
     public NumberButton maxHoldTicksButton;
     public NumberButton tickSpeedButton;
 
     public ClickerT1Screen(ClickerT1Container container, Inventory inv, Component name) {
         super(container, inv, name);
         if (baseMachineBE instanceof ClickerT1BE clicker) {
-            clickType = clicker.clickType;
-            clickTarget = clicker.clickTarget.ordinal();
-            sneaking = clicker.sneaking;
+            clickType      = clicker.clickType;
+            clickTarget    = clicker.clickTarget.ordinal();
+            sneaking       = clicker.sneaking;
             showFakePlayer = clicker.showFakePlayer;
-            maxHoldTicks = clicker.maxHoldTicks;
+            maxHoldTicks   = clicker.maxHoldTicks;
         }
-    }
-
-    public void showHoldClicksButton() {
-        if (clickType == 2)
-            widgetsToAdd.add(maxHoldTicksButton);
-        else
-            widgetsToRemove.add(maxHoldTicksButton);
-        renderablesChanged = true;
     }
 
     @Override
-    public void addTickSpeedButton() {
-        if (tickSpeedButton != null && renderables.contains(tickSpeedButton))
-            widgetsToRemove.add(tickSpeedButton);
-        if (clickType == 2) {
-            tickSpeedButton = ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, maxHoldTicks + 1, b -> {
-                tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
-                PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
-            });
-        } else {
-            tickSpeedButton = ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, b -> {
-                tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
-                PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
-            });
-        }
-        widgetsToAdd.add(tickSpeedButton);
-        renderablesChanged = true;
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 0;
     }
 
     @Override
@@ -111,10 +90,33 @@ public class ClickerT1Screen extends BaseMachineScreen<ClickerT1Container> {
         }));
     }
 
+    public void showHoldClicksButton() {
+        if (clickType == 2) {
+            widgetsToAdd.add(maxHoldTicksButton);
+        } else {
+            widgetsToRemove.add(maxHoldTicksButton);
+        }
+        renderablesChanged = true;
+    }
+
     @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 0;
+    public void addTickSpeedButton() {
+        if (tickSpeedButton != null && renderables.contains(tickSpeedButton)) {
+            widgetsToRemove.add(tickSpeedButton);
+        }
+        if (clickType == 2) {
+            tickSpeedButton = ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, maxHoldTicks + 1, b -> {
+                tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
+                PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
+            });
+        } else {
+            tickSpeedButton = ToggleButtonFactory.TICKSPEEDBUTTON(getGuiLeft() + 144, topSectionTop + 40, tickSpeed, b -> {
+                tickSpeed = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
+                PacketDistributor.sendToServer(new TickSpeedPayload(tickSpeed));
+            });
+        }
+        widgetsToAdd.add(tickSpeedButton);
+        renderablesChanged = true;
     }
 
     @Override

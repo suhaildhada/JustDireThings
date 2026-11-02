@@ -26,12 +26,12 @@ import java.util.UUID;
 public class DecoyEntity extends LivingEntity {
     private static final EntityDataAccessor<Optional<UUID>> PLAYER_UUID = SynchedEntityData.defineId(DecoyEntity.class, EntityDataSerializers.OPTIONAL_UUID);
 
-    public DecoyEntity(EntityType<? extends LivingEntity> entityType, Level level) {
-        super(entityType, level);
-    }
-
     public DecoyEntity(Level level) {
         this(Registration.DecoyEntity.get(), level);
+    }
+
+    public DecoyEntity(EntityType<? extends LivingEntity> entityType, Level level) {
+        super(entityType, level);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -40,29 +40,6 @@ public class DecoyEntity extends LivingEntity {
                 .add(Attributes.MOVEMENT_SPEED, 0.0F)
                 .add(Attributes.ATTACK_DAMAGE, 0.0)
                 .add(Attributes.ARMOR, 0.0);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        if (!level().isClientSide) {
-            if (tickCount % 10 == 0)
-                aggroMobs();
-            if (tickCount >= 200)
-                this.remove(RemovalReason.DISCARDED);
-        }
-    }
-
-    public void aggroMobs() {
-        int radius = 10;
-        AABB aabb = new AABB(getX() - radius, getY() - radius, getZ() - radius,
-                getX() + radius, getY() + radius, getZ() + radius);
-
-        List<Mob> aggroList = new ArrayList<>(level().getEntitiesOfClass(Mob.class, aabb, AbilityMethods::isValidStompEntity));
-
-        for (Mob mob : aggroList) {
-            mob.setTarget(this);
-        }
     }
 
     public void setSummonerName(String playerName) {
@@ -78,19 +55,25 @@ public class DecoyEntity extends LivingEntity {
     }
 
     @Override
-    public HumanoidArm getMainArm() {
-        return null;
-    }
-
-    @Override
-    public boolean isInvulnerableTo(DamageSource damageSource) {
-        return !damageSource.is(DamageTypes.GENERIC_KILL);
-    }
-
-    @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(PLAYER_UUID, Optional.empty());
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        if (this.entityData.get(PLAYER_UUID).isPresent()) {
+            compound.putUUID("player_uuid", this.entityData.get(PLAYER_UUID).get());
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.contains("player_uuid")) {
+            this.entityData.set(PLAYER_UUID, Optional.of(compound.getUUID("player_uuid")));
+        }
     }
 
     @Override
@@ -105,20 +88,40 @@ public class DecoyEntity extends LivingEntity {
 
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-        return;
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains("player_uuid"))
-            this.entityData.set(PLAYER_UUID, Optional.of(compound.getUUID("player_uuid")));
+    public void tick() {
+        super.tick();
+        if (!level().isClientSide) {
+            if (tickCount % 10 == 0) {
+                aggroMobs();
+            }
+            if (tickCount >= 200) {
+                this.remove(RemovalReason.DISCARDED);
+            }
+        }
+    }
+
+    public void aggroMobs() {
+        int radius = 10;
+        AABB aabb = new AABB(getX() - radius, getY() - radius, getZ() - radius,
+                getX() + radius, getY() + radius, getZ() + radius);
+
+        List<Mob> aggroList = new ArrayList<>(level().getEntitiesOfClass(Mob.class, aabb, AbilityMethods::isValidStompEntity));
+
+        for (Mob mob : aggroList) {
+            mob.setTarget(this);
+        }
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag compound) {
-        super.addAdditionalSaveData(compound);
-        if (this.entityData.get(PLAYER_UUID).isPresent())
-            compound.putUUID("player_uuid", this.entityData.get(PLAYER_UUID).get());
+    public HumanoidArm getMainArm() {
+        return null;
+    }
+
+    @Override
+    public boolean isInvulnerableTo(DamageSource damageSource) {
+        return !damageSource.is(DamageTypes.GENERIC_KILL);
     }
 }

@@ -13,11 +13,11 @@ public interface PoweredMachineBE {
 
     ContainerData getContainerData();
 
-    MachineEnergyStorage getEnergyStorage();
-
     default int getEnergyStored() {
         return getEnergyStorage().getEnergyStored();
     }
+
+    MachineEnergyStorage getEnergyStorage();
 
     default void setEnergyStored(int value) {
         getEnergyStorage().setEnergy(value);

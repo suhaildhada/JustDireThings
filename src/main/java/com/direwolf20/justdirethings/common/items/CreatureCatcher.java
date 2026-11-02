@@ -23,6 +23,10 @@ public class CreatureCatcher extends Item {
         super(new Properties());
     }
 
+    public static boolean hasEntity(ItemStack itemStack) {
+        return itemStack.has(ENTITIYTYPE);
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
         ItemStack itemStack = pPlayer.getItemInHand(pHand);
@@ -51,10 +55,6 @@ public class CreatureCatcher extends Item {
         return InteractionResultHolder.sidedSuccess(itemStack, pLevel.isClientSide());
     }
 
-    public static boolean hasEntity(ItemStack itemStack) {
-        return itemStack.has(ENTITIYTYPE);
-    }
-
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, context, tooltip, flagIn);
@@ -64,7 +64,9 @@ public class CreatureCatcher extends Item {
         }
 
         Mob mob = CreatureCatcherEntity.getEntityFromItemStack(stack, level);
-        if (mob == null) return;
+        if (mob == null) {
+            return;
+        }
 
         tooltip.add(Component.translatable("justdirethings.creature")
                 .withStyle(ChatFormatting.DARK_GRAY)

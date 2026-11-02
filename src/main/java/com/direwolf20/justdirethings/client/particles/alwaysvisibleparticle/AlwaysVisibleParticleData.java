@@ -10,7 +10,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 
 public class AlwaysVisibleParticleData implements ParticleOptions {
-    public static final MapCodec<AlwaysVisibleParticleData> MAP_CODEC = RecordCodecBuilder.mapCodec(
+    public static final MapCodec<AlwaysVisibleParticleData>                             MAP_CODEC    = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                             ResourceLocation.CODEC.fieldOf("resourceLocation").forGetter(AlwaysVisibleParticleData::getResourceLocation)
                     )

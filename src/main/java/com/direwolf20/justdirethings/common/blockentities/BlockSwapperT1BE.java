@@ -39,38 +39,19 @@ import java.util.List;
 import java.util.Random;
 
 public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlledBE {
-    public RedstoneControlData redstoneControlData = getDefaultRedstoneData();
-    List<BlockPos> positions = new ArrayList<>();
-    public GlobalPos boundTo;
-    public final ContainerData swapperData;
-    public boolean doesPartnerExist;
-    public List<BlockPos> thisValidationList = new ArrayList<>();
-    public List<BlockPos> thatValidationList = new ArrayList<>();
-    public boolean swapBlocks = true;
-    public SWAP_ENTITY_TYPE swap_entity_type = SWAP_ENTITY_TYPE.NONE;
-    public List<Entity> entities = new ArrayList<>();
+    public final ContainerData       swapperData;
+    public       RedstoneControlData redstoneControlData = getDefaultRedstoneData();
+    public       GlobalPos           boundTo;
+    public       boolean             doesPartnerExist;
+    public       List<BlockPos>      thisValidationList  = new ArrayList<>();
+    public       List<BlockPos>      thatValidationList  = new ArrayList<>();
+    public       boolean             swapBlocks          = true;
+    public       SWAP_ENTITY_TYPE    swap_entity_type    = SWAP_ENTITY_TYPE.NONE;
+    public       List<Entity>        entities            = new ArrayList<>();
+    public       List<BlockPos>      positions           = new ArrayList<>();
 
-    public enum SWAP_ENTITY_TYPE {
-        NONE,
-        HOSTILE,
-        PASSIVE,
-        ADULT,
-        CHILD,
-        PLAYER,
-        LIVING,
-        ITEM,
-        ALL;
-
-        public SWAP_ENTITY_TYPE next() {
-            SWAP_ENTITY_TYPE[] values = values();
-            int nextOrdinal = (this.ordinal() + 1) % values.length;
-            return values[nextOrdinal];
-        }
-    }
-
-    @Override
-    public RedstoneControlData getDefaultRedstoneData() {
-        return new RedstoneControlData(MiscHelpers.RedstoneMode.PULSE);
+    public BlockSwapperT1BE(BlockPos pPos, BlockState pBlockState) {
+        this(Registration.BlockSwapperT1BE.get(), pPos, pBlockState);
     }
 
     public BlockSwapperT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
@@ -100,38 +81,81 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         };
     }
 
-    public BlockSwapperT1BE(BlockPos pPos, BlockState pBlockState) {
-        this(Registration.BlockSwapperT1BE.get(), pPos, pBlockState);
+    public void doesPartnerExist() {
+        if (boundTo == null || level == null || level.isClientSide) { //Don't do anything if this wasn't bound to something already
+            return;
+        }
+        BlockSwapperT1BE blockSwapperT1BE = getPartnerBE();
+        doesPartnerExist = blockSwapperT1BE != null;
+    }
+
+    public boolean setPartnerExist(int value) {
+        return doesPartnerExist = (value == 1);
+    }
+
+    public BlockSwapperT1BE getPartnerBE() {
+        if (boundTo == null) {
+            return null;
+        }
+        ServerLevel partnerLevel = getPartnerLevel();
+        if (partnerLevel == null) {
+            return null;
+        }
+        BlockEntity partnerBE = partnerLevel.getBlockEntity(boundTo.pos());
+        if (!(partnerBE instanceof BlockSwapperT1BE blockSwapperT1BE)) {
+            return null;
+        }
+        return blockSwapperT1BE;
+    }
+
+    public ServerLevel getPartnerLevel() {
+        if (boundTo == null) {
+            return null;
+        }
+        if (level == null) {
+            return null;
+        }
+        return level.getServer().getLevel(boundTo.dimension());
+    }
+
+    public static void teleportParticles(ServerLevel level, BlockPos pos) {
+        Random random = new Random();
+        for (int i = 0; i < 5; i++) {
+            double d0 = pos.getX() + random.nextDouble();
+            double d1 = pos.getY() - 0.5d + random.nextDouble();
+            double d2 = pos.getZ() + random.nextDouble();
+            level.sendParticles(ParticleTypes.PORTAL, d0, d1, d2, 1, 0.0, 0.0, 0.0, 0);
+        }
     }
 
     public void setSwapperSettings(boolean swapBlocks, int swap_entity_type) {
-        this.swapBlocks = swapBlocks;
+        this.swapBlocks       = swapBlocks;
         this.swap_entity_type = SWAP_ENTITY_TYPE.values()[swap_entity_type];
         markDirtyClient();
     }
 
-    public boolean isPartnerNodeConnected(GlobalPos globalPos) {
-        return globalPos != null && globalPos.equals(boundTo);
-    }
-
-    public void setBoundTo(GlobalPos globalPos) {
-        this.boundTo = globalPos;
-        markDirtyClient();
-    }
-
-    public ServerLevel getPartnerLevel() {
-        if (boundTo == null) return null;
-        if (level == null) return null;
-        return level.getServer().getLevel(boundTo.dimension());
-    }
-
-    public BlockSwapperT1BE getPartnerBE() {
-        if (boundTo == null) return null;
-        ServerLevel partnerLevel = getPartnerLevel();
-        if (partnerLevel == null) return null;
-        BlockEntity partnerBE = partnerLevel.getBlockEntity(boundTo.pos());
-        if (!(partnerBE instanceof BlockSwapperT1BE blockSwapperT1BE)) return null;
-        return blockSwapperT1BE;
+    public boolean handleConnection(GlobalPos globalPos) {
+        if (level == null) {
+            return false;
+        }
+        if (globalPos.equals(getGlobalPos())) {
+            return false;
+        }
+        ServerLevel partnerLevel = level.getServer().getLevel(globalPos.dimension());
+        BlockEntity partnerBE = partnerLevel.getBlockEntity(globalPos.pos());
+        if (!isValidPartner(partnerBE)) {
+            return false;
+        }
+        if (!(partnerBE instanceof BlockSwapperT1BE blockSwapperT1BE)) {
+            return false;
+        }
+        if (isPartnerNodeConnected(globalPos)) { //If these nodes are already connected, disconnect them
+            removePartnerConnection();
+            return false;
+        } else {
+            addPartnerConnection(globalPos, blockSwapperT1BE);
+            return true;
+        }
     }
 
     public GlobalPos getGlobalPos() {
@@ -142,24 +166,24 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         return blockEntity.getClass() == this.getClass();
     }
 
-    public boolean handleConnection(GlobalPos globalPos) {
-        if (level == null) return false;
-        if (globalPos.equals(getGlobalPos())) return false;
-        ServerLevel partnerLevel = level.getServer().getLevel(globalPos.dimension());
-        BlockEntity partnerBE = partnerLevel.getBlockEntity(globalPos.pos());
-        if (!isValidPartner(partnerBE)) return false;
-        if (!(partnerBE instanceof BlockSwapperT1BE blockSwapperT1BE)) return false;
-        if (isPartnerNodeConnected(globalPos)) { //If these nodes are already connected, disconnect them
-            removePartnerConnection();
-            return false;
-        } else {
-            addPartnerConnection(globalPos, blockSwapperT1BE);
-            return true;
-        }
+    public boolean isPartnerNodeConnected(GlobalPos globalPos) {
+        return globalPos != null && globalPos.equals(boundTo);
     }
 
-    public GlobalPos getBoundTo() {
-        return boundTo;
+    /**
+     * Disconnects This Pos from Target Pos, and disconnects Target Pos from This pos
+     */
+
+    public void removePartnerConnection() {
+        GlobalPos partnerPos = getBoundTo();
+        if (partnerPos != null) {
+            ServerLevel partnerLevel = level.getServer().getLevel(partnerPos.dimension());
+            BlockEntity partnerBE = partnerLevel.getBlockEntity(partnerPos.pos());
+            if (partnerBE instanceof BlockSwapperT1BE be) {
+                be.setBoundTo(null); // Remove this from that one
+            }
+        }
+        setBoundTo(null); // Remove that from this one
     }
 
     /**
@@ -179,50 +203,13 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         be.setBoundTo(getGlobalPos()); // Add this to that one
     }
 
-    /**
-     * Disconnects This Pos from Target Pos, and disconnects Target Pos from This pos
-     */
-
-    public void removePartnerConnection() {
-        GlobalPos partnerPos = getBoundTo();
-        if (partnerPos != null) {
-            ServerLevel partnerLevel = level.getServer().getLevel(partnerPos.dimension());
-            BlockEntity partnerBE = partnerLevel.getBlockEntity(partnerPos.pos());
-            if (partnerBE instanceof BlockSwapperT1BE be) {
-                be.setBoundTo(null); // Remove this from that one
-            }
-        }
-        setBoundTo(null); // Remove that from this one
+    public GlobalPos getBoundTo() {
+        return boundTo;
     }
 
-    /** Validates the connections are still valid -- for use if a block is moved **/
-    public void validateConnections() {
-        //If we got here, it means the Block Swapper was moved, and so we assume it needs to update its partner
-        if (boundTo == null || level == null || level.isClientSide) { //Don't do anything if this wasn't bound to something already
-            return;
-        }
-        //System.out.println("Validating Connections!");
-        BlockSwapperT1BE blockSwapperT1BE = getPartnerBE();
-        if (blockSwapperT1BE != null) {
-            addPartnerConnection(boundTo, blockSwapperT1BE); //If the partner still exists at the old spot, connect them, else remove
-        } else {
-            //removePartnerConnection();
-        }
-    }
-
-    public boolean setPartnerExist(int value) {
-        return doesPartnerExist = (value == 1);
-    }
-
-    public void doesPartnerExist() {
-        if (boundTo == null || level == null || level.isClientSide) { //Don't do anything if this wasn't bound to something already
-            return;
-        }
-        BlockSwapperT1BE blockSwapperT1BE = getPartnerBE();
-        if (blockSwapperT1BE != null)
-            doesPartnerExist = true;
-        else
-            doesPartnerExist = false;
+    public void setBoundTo(GlobalPos globalPos) {
+        this.boundTo = globalPos;
+        markDirtyClient();
     }
 
     @Override
@@ -245,6 +232,71 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         doSwap();
     }
 
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        if (tag.contains("boundTo")) {
+            GlobalPos newBoundTo = NBTHelpers.nbtToGlobalPos(tag.getCompound("boundTo"));
+            boolean same = newBoundTo.equals(boundTo);
+            this.boundTo = newBoundTo;
+            if (!same) {
+                validateConnections();
+            }
+        } else {
+            this.boundTo = null;
+        }
+        if (tag.contains("swapBlocks")) {
+            swapBlocks = tag.getBoolean("swapBlocks");
+        }
+        swap_entity_type = SWAP_ENTITY_TYPE.values()[tag.getInt("swap_entity_type")];
+    }
+
+    /**
+     * Validates the connections are still valid -- for use if a block is moved
+     **/
+    public void validateConnections() {
+        //If we got here, it means the Block Swapper was moved, and so we assume it needs to update its partner
+        if (boundTo == null || level == null || level.isClientSide) { //Don't do anything if this wasn't bound to something already
+            return;
+        }
+        //System.out.println("Validating Connections!");
+        BlockSwapperT1BE blockSwapperT1BE = getPartnerBE();
+        if (blockSwapperT1BE != null) {
+            addPartnerConnection(boundTo, blockSwapperT1BE); //If the partner still exists at the old spot, connect them, else remove
+        } else {
+            //removePartnerConnection();
+        }
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        if (boundTo != null) {
+            tag.put("boundTo", NBTHelpers.globalPosToNBT(boundTo));
+        }
+        tag.putBoolean("swapBlocks", swapBlocks);
+        tag.putInt("swap_entity_type", swap_entity_type.ordinal());
+    }
+
+    @Override
+    public boolean isDefaultSettings() {
+        if (!super.isDefaultSettings()) {
+            return false;
+        }
+        if (boundTo != null) {
+            return false;
+        }
+        if (!swapBlocks) {
+            return false;
+        }
+        return swap_entity_type.equals(SWAP_ENTITY_TYPE.NONE);
+    }
+
+    @Override
+    public RedstoneControlData getDefaultRedstoneData() {
+        return new RedstoneControlData(MiscHelpers.RedstoneMode.PULSE);
+    }
+
     public boolean canSwap() {
         return true;
     }
@@ -254,23 +306,36 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
     }
 
     public void doSwap() {
-        if (!(isActiveRedstone() && canRun())) return;
-        if (!canSwap()) return;
-        if (level == null) return;
+        if (!(isActiveRedstone() && canRun())) {
+            return;
+        }
+        if (!canSwap()) {
+            return;
+        }
+        if (level == null) {
+            return;
+        }
 
         BlockSwapperT1BE remoteSwapper = getPartnerBE();
-        if (remoteSwapper == null) return;
+        if (remoteSwapper == null) {
+            return;
+        }
         ServerLevel partnerLevel = getPartnerLevel();
-        if (partnerLevel == null) return;
+        if (partnerLevel == null) {
+            return;
+        }
         FakePlayer fakePlayer = getFakePlayer((ServerLevel) level);
         FakePlayer partnerFakePlayer = getFakePlayer(partnerLevel);
 
-        if (swapBlocks)
+        if (swapBlocks) {
             positions = findSpotsToSwap();
-        if (!swap_entity_type.equals(SWAP_ENTITY_TYPE.NONE))
+        }
+        if (!swap_entity_type.equals(SWAP_ENTITY_TYPE.NONE)) {
             entities = findEntitiesToSwap(getAABB());
-        if (positions.isEmpty() && entities.isEmpty())
+        }
+        if (positions.isEmpty() && entities.isEmpty()) {
             return;
+        }
 
         for (BlockPos blockPos : positions) {
             swapBlock(blockPos, remoteSwapper, partnerLevel, fakePlayer, partnerFakePlayer);
@@ -316,46 +381,58 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         return level.equals(getPartnerBE().getLevel());
     }
 
-
     public boolean isValidEntity(Entity entity) {
-        if (entity.isMultipartEntity())
+        if (entity.isMultipartEntity()) {
             return false;
-        if (entity instanceof PartEntity<?>)
+        }
+        if (entity instanceof PartEntity<?>) {
             return false;
-        if (!entity.canChangeDimensions(level, getPartnerBE().level) && !isSameLevel())
+        }
+        if (!entity.canChangeDimensions(level, getPartnerBE().level) && !isSameLevel()) {
             return false;
-        if (entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED))
+        }
+        if (entity.getType().is(Tags.EntityTypes.TELEPORTING_NOT_SUPPORTED)) {
             return false;
-        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.HOSTILE) && !(entity instanceof Monster))
+        }
+        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.HOSTILE) && !(entity instanceof Monster)) {
             return false;
-        if (((swap_entity_type.equals(SWAP_ENTITY_TYPE.PASSIVE)) || (swap_entity_type.equals(SWAP_ENTITY_TYPE.ADULT)) || (swap_entity_type.equals(SWAP_ENTITY_TYPE.CHILD))) && !(entity instanceof Animal))
+        }
+        if (((swap_entity_type.equals(SWAP_ENTITY_TYPE.PASSIVE)) || (swap_entity_type.equals(SWAP_ENTITY_TYPE.ADULT)) || (swap_entity_type.equals(SWAP_ENTITY_TYPE.CHILD))) && !(entity instanceof Animal)) {
             return false;
-        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.ADULT) && (entity instanceof Animal animal) && (animal.isBaby()))
+        }
+        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.ADULT) && (entity instanceof Animal animal) && (animal.isBaby())) {
             return false;
-        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.CHILD) && (entity instanceof Animal animal) && !(animal.isBaby()))
+        }
+        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.CHILD) && (entity instanceof Animal animal) && !(animal.isBaby())) {
             return false;
-        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.PLAYER) && !(entity instanceof Player))
+        }
+        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.PLAYER) && !(entity instanceof Player)) {
             return false;
-        if (swap_entity_type.equals(SWAP_ENTITY_TYPE.ITEM) && !(entity instanceof ItemEntity))
-            return false;
-        return true;
+        }
+        return !swap_entity_type.equals(SWAP_ENTITY_TYPE.ITEM) || entity instanceof ItemEntity;
     }
 
     public void swapBlock(BlockPos blockPos, BlockSwapperT1BE remoteSwapper, ServerLevel partnerLevel, FakePlayer fakePlayer, FakePlayer partnerFakePlayer) {
         BlockPos remoteSwapPos = remoteSwapper.getWorldPos(getRelativePos(blockPos));
 
-        if (!isBlockPosValid(partnerLevel, remoteSwapPos)) return;
+        if (!isBlockPosValid(partnerLevel, remoteSwapPos)) {
+            return;
+        }
 
-        if (!canBreakAndPlaceAt(level, blockPos, fakePlayer))
+        if (!canBreakAndPlaceAt(level, blockPos, fakePlayer)) {
             return;
-        if (!canBreakAndPlaceAt(partnerLevel, remoteSwapPos, partnerFakePlayer))
+        }
+        if (!canBreakAndPlaceAt(partnerLevel, remoteSwapPos, partnerFakePlayer)) {
             return;
+        }
 
 
         BlockState thisBlock = level.getBlockState(blockPos);
         BlockState thatBlock = partnerLevel.getBlockState(remoteSwapPos);
 
-        if (thisBlock.isAir() && thatBlock.isAir()) return;
+        if (thisBlock.isAir() && thatBlock.isAir()) {
+            return;
+        }
 
         BlockEntity thisBE = level.getBlockEntity(blockPos);
         BlockEntity thatBE = partnerLevel.getBlockEntity(remoteSwapPos);
@@ -417,33 +494,24 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         }
         BlockState adjustedBlockState = Block.updateFromNeighbourShapes(blockState, level, blockPos); //Ensure double chests are placed as single chests if only 1 chest available in copy/paste, for example, or fixes fences
         if (!adjustedBlockState.equals(blockState)) //SetBlockAndUpdate does the markAndNotify (below)
+        {
             level.setBlockAndUpdate(blockPos, adjustedBlockState);
-        else { //Do this to ensure buttons/torches pop off if we swapped air into a spot
+        } else { //Do this to ensure buttons/torches pop off if we swapped air into a spot
             LevelChunk levelchunk = level.getChunkAt(blockPos);
             level.markAndNotifyBlock(blockPos, levelchunk, blockState, blockState, 3, 512);
         }
     }
 
-    public static void teleportParticles(ServerLevel level, BlockPos pos) {
-        Random random = new Random();
-        for (int i = 0; i < 5; i++) {
-            double d0 = pos.getX() + random.nextDouble();
-            double d1 = pos.getY() - 0.5d + random.nextDouble();
-            double d2 = pos.getZ() + random.nextDouble();
-            level.sendParticles(ParticleTypes.PORTAL, d0, d1, d2, 1, 0.0, 0.0, 0.0, 0);
-        }
-    }
-
     public boolean isBlockPosValid(ServerLevel serverLevel, BlockPos blockPos) {
         BlockState blockState = serverLevel.getBlockState(blockPos);
-        if (blockState.is(Tags.Blocks.RELOCATION_NOT_SUPPORTED) || blockState.is(JustDireBlockTags.SWAPPERDENY))
+        if (blockState.is(Tags.Blocks.RELOCATION_NOT_SUPPORTED) || blockState.is(JustDireBlockTags.SWAPPERDENY)) {
             return false;
-        if (blockState.getDestroySpeed(serverLevel, blockPos) < 0)
+        }
+        if (blockState.getDestroySpeed(serverLevel, blockPos) < 0) {
             return false;
+        }
         GlobalPos targetGlobalPos = GlobalPos.of(serverLevel.dimension(), blockPos);
-        if (targetGlobalPos.equals(getGlobalPos()) || targetGlobalPos.equals(boundTo))
-            return false;
-        return true;
+        return !targetGlobalPos.equals(getGlobalPos()) && !targetGlobalPos.equals(boundTo);
     }
 
     public BlockPos getStartingPoint() {
@@ -453,12 +521,15 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
     public List<BlockPos> findSpotsToSwap() {
         List<BlockPos> returnList = new ArrayList<>();
         BlockPos blockPos = getBlockPos().relative(getBlockState().getValue(BlockStateProperties.FACING));
-        if (isBlockPosValid((ServerLevel) level, blockPos))
+        if (isBlockPosValid((ServerLevel) level, blockPos)) {
             returnList.add(blockPos);
+        }
         return returnList;
     }
 
-    /** Helpers to translate between relative/world pos */
+    /**
+     * Helpers to translate between relative/world pos
+     */
     public BlockPos getWorldPos(BlockPos relativePos) {
         return getStartingPoint().offset(relativePos);
     }
@@ -475,42 +546,21 @@ public class BlockSwapperT1BE extends BaseMachineBE implements RedstoneControlle
         return new Vec3(worldPos.x - getStartingPoint().getX(), worldPos.y - getStartingPoint().getY(), worldPos.z - getStartingPoint().getZ());
     }
 
-    @Override
-    public boolean isDefaultSettings() {
-        if (!super.isDefaultSettings())
-            return false;
-        if (boundTo != null)
-            return false;
-        if (!swapBlocks)
-            return false;
-        if (!swap_entity_type.equals(SWAP_ENTITY_TYPE.NONE))
-            return false;
-        return true;
-    }
+    public enum SWAP_ENTITY_TYPE {
+        NONE,
+        HOSTILE,
+        PASSIVE,
+        ADULT,
+        CHILD,
+        PLAYER,
+        LIVING,
+        ITEM,
+        ALL;
 
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        if (boundTo != null)
-            tag.put("boundTo", NBTHelpers.globalPosToNBT(boundTo));
-        tag.putBoolean("swapBlocks", swapBlocks);
-        tag.putInt("swap_entity_type", swap_entity_type.ordinal());
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        if (tag.contains("boundTo")) {
-            GlobalPos newBoundTo = NBTHelpers.nbtToGlobalPos(tag.getCompound("boundTo"));
-            boolean same = newBoundTo.equals(boundTo);
-            this.boundTo = newBoundTo;
-            if (!same)
-                validateConnections();
-        } else {
-            this.boundTo = null;
+        public SWAP_ENTITY_TYPE next() {
+            SWAP_ENTITY_TYPE[] values = values();
+            int nextOrdinal = (this.ordinal() + 1) % values.length;
+            return values[nextOrdinal];
         }
-        if (tag.contains("swapBlocks"))
-            swapBlocks = tag.getBoolean("swapBlocks");
-        swap_entity_type = SWAP_ENTITY_TYPE.values()[tag.getInt("swap_entity_type")];
     }
 }

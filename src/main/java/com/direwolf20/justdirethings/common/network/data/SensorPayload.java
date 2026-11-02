@@ -14,12 +14,6 @@ public record SensorPayload(
         int equality
 ) implements CustomPacketPayload {
     public static final Type<SensorPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "sensor_packet"));
-
-    @Override
-    public Type<SensorPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, SensorPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, SensorPayload::senseTarget,
             ByteBufCodecs.BOOL, SensorPayload::strongSignal,
@@ -27,4 +21,9 @@ public record SensorPayload(
             ByteBufCodecs.VAR_INT, SensorPayload::equality,
             SensorPayload::new
     );
+
+    @Override
+    public Type<SensorPayload> type() {
+        return TYPE;
+    }
 }

@@ -16,10 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 
 public class PlayerAccessorBE extends BaseMachineBE {
-    public ServerPlayer serverPlayer;
-    public HashMap<Direction, PlayerHandler> playerHandlers = new HashMap<>();
-    public HashMap<Direction, Integer> sidedInventoryTypes = new HashMap<>();
+    public ServerPlayer                      serverPlayer;
+    public HashMap<Direction, PlayerHandler> playerHandlers      = new HashMap<>();
+    public HashMap<Direction, Integer>       sidedInventoryTypes = new HashMap<>();
     boolean checkedPlayer = false;
+
+    public PlayerAccessorBE(BlockPos pPos, BlockState pBlockState) {
+        this(Registration.PlayerAccessorBE.get(), pPos, pBlockState);
+    }
 
     public PlayerAccessorBE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
@@ -35,14 +39,40 @@ public class PlayerAccessorBE extends BaseMachineBE {
         }
     }
 
+    @Override
+    public void markDirtyClient() {
+        //System.out.println("Marking Dirty Client!");
+        if (level != null) {
+            level.invalidateCapabilities(getBlockPos());
+        }
+        super.markDirtyClient();
+    }
+
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        for (Direction direction : Direction.values()) {
+            sidedInventoryTypes.put(direction, tag.getInt("sidedInventory_" + direction.ordinal()));
+        }
+        super.loadAdditional(tag, provider);
+    }
+
+    @Override
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        for (Direction direction : Direction.values()) {
+            tag.putInt("sidedInventory_" + direction.ordinal(), sidedInventoryTypes.getOrDefault(direction, 0));
+        }
+    }
+
+    @Override
+    public boolean isDefaultSettings() {
+        return true;
+    }
+
     public void updateSidedInventory(Direction direction, int type) {
         sidedInventoryTypes.put(direction, type);
         clearCache();
         markDirtyClient();
-    }
-
-    public PlayerAccessorBE(BlockPos pPos, BlockState pBlockState) {
-        this(Registration.PlayerAccessorBE.get(), pPos, pBlockState);
     }
 
     public void clearCache() {
@@ -52,36 +82,6 @@ public class PlayerAccessorBE extends BaseMachineBE {
             updateServerPlayer(); //Since we cleared out the old player, check to see if they still exist, like a dimension change or something
         }
         markDirtyClient();
-    }
-
-    /**
-     * Check if the player is in an invalid dimension.
-     */
-    public boolean isValidDim(ServerPlayer serverPlayer) {
-        if (serverPlayer == null || serverPlayer.isRemoved())
-            return false;
-        if (Config.PLAYER_ACCESSOR_DIMENSIONAL_BLACKLISTING.isFalse())
-            return true;
-        List<? extends String> blacklist = Config.PLAYER_ACCESSOR_BLACKLISTED_DIMENSIONS.get();
-        return !blacklist.contains(serverPlayer.level().dimension().location().toString());
-    }
-
-    /**
-     * Clear the caches, and re-locate the player object if necessary (Like player logged out, etc)
-     */
-    public void validatePlayer() {
-        if (getServerPlayer() != null && (serverPlayer.isRemoved() || !isValidDim(serverPlayer))) {
-            clearCache();
-        }
-    }
-
-    /**
-     * If we have a cached player, return it, otherwise look for the player object on the server
-     */
-    public ServerPlayer getServerPlayer() {
-        if (serverPlayer == null && !checkedPlayer) //Only allow this to recheck every 100 ticks
-            updateServerPlayer();
-        return serverPlayer;
     }
 
     /**
@@ -101,9 +101,44 @@ public class PlayerAccessorBE extends BaseMachineBE {
         if (serverPlayer == null || serverPlayer.isRemoved()) {
             boolean wasNull = serverPlayer == null;
             serverPlayer = level.getServer().getPlayerList().getPlayer(this.placedByUUID);
-            if ((wasNull && serverPlayer != null) || (!wasNull && serverPlayer == null))
+            if ((wasNull && serverPlayer != null) || (!wasNull && serverPlayer == null)) {
                 markDirtyClient();
+            }
         }
+    }
+
+    /**
+     * Check if the player is in an invalid dimension.
+     */
+    public boolean isValidDim(ServerPlayer serverPlayer) {
+        if (serverPlayer == null || serverPlayer.isRemoved()) {
+            return false;
+        }
+        if (Config.PLAYER_ACCESSOR_DIMENSIONAL_BLACKLISTING.isFalse()) {
+            return true;
+        }
+        List<? extends String> blacklist = Config.PLAYER_ACCESSOR_BLACKLISTED_DIMENSIONS.get();
+        return !blacklist.contains(serverPlayer.level().dimension().location().toString());
+    }
+
+    /**
+     * Clear the caches, and re-locate the player object if necessary (Like player logged out, etc)
+     */
+    public void validatePlayer() {
+        if (getServerPlayer() != null && (serverPlayer.isRemoved() || !isValidDim(serverPlayer))) {
+            clearCache();
+        }
+    }
+
+    /**
+     * If we have a cached player, return it, otherwise look for the player object on the server
+     */
+    public ServerPlayer getServerPlayer() {
+        if (serverPlayer == null && !checkedPlayer) //Only allow this to recheck every 100 ticks
+        {
+            updateServerPlayer();
+        }
+        return serverPlayer;
     }
 
     /**
@@ -111,47 +146,20 @@ public class PlayerAccessorBE extends BaseMachineBE {
      */
     public PlayerHandler getPlayerHandler(Direction side) {
         if (getServerPlayer() == null) //If our player does not exist
+        {
             return null;
+        }
         if (!playerHandlers.containsKey(side)) { //If we don't have a cache of the side, create one using the player we have cached
             playerHandlers.put(side, new PlayerHandler(serverPlayer, PlayerHandler.InventoryType.values()[sidedInventoryTypes.getOrDefault(side, 0)]));
         } else {
             if (playerHandlers.get(side).player.isRemoved()) { //If the player handler's player has been removed (Logged off) re-validate
                 validatePlayer();
-                if (serverPlayer == null)
+                if (serverPlayer == null) {
                     return null;
+                }
                 playerHandlers.put(side, new PlayerHandler(serverPlayer, PlayerHandler.InventoryType.values()[sidedInventoryTypes.getOrDefault(side, 0)]));
             }
         }
         return playerHandlers.get(side);
-    }
-
-    @Override
-    public boolean isDefaultSettings() {
-        return true;
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        for (Direction direction : Direction.values()) {
-            tag.putInt("sidedInventory_" + direction.ordinal(), sidedInventoryTypes.getOrDefault(direction, 0));
-        }
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        for (Direction direction : Direction.values()) {
-            sidedInventoryTypes.put(direction, tag.getInt("sidedInventory_" + direction.ordinal()));
-        }
-        super.loadAdditional(tag, provider);
-    }
-
-    @Override
-    public void markDirtyClient() {
-        //System.out.println("Marking Dirty Client!");
-        if (level != null) {
-            level.invalidateCapabilities(getBlockPos());
-        }
-        super.markDirtyClient();
     }
 }

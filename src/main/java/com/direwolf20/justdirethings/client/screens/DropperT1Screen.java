@@ -16,12 +16,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public class DropperT1Screen extends BaseMachineScreen<DropperT1Container> {
     protected int dropCount;
     protected int pickupDelay;
+
     public DropperT1Screen(DropperT1Container container, Inventory inv, Component name) {
         super(container, inv, name);
         if (baseMachineBE instanceof DropperT1BE dropper) {
-            this.dropCount = dropper.dropCount;
+            this.dropCount   = dropper.dropCount;
             this.pickupDelay = dropper.pickupDelay;
         }
+    }
+
+    @Override
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 0;
     }
 
     @Override
@@ -41,12 +48,6 @@ public class DropperT1Screen extends BaseMachineScreen<DropperT1Container> {
             pickupDelay = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
             saveSettings();
         }));
-    }
-
-    @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 0;
     }
 
     @Override

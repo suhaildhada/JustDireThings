@@ -42,10 +42,17 @@ public class ParadoxMachineBER extends AreaAffectingBER {
 
     }
 
+    protected static void scaleEntity(LivingEntity entity, PoseStack matrixStackIn) {
+        float scale = 1F; // Adjust scale if needed
+        matrixStackIn.scale(scale, scale, scale);
+    }
+
     @Override
     public void render(BlockEntity blockentity, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedLightsIn, int combinedOverlayIn) {
         super.render(blockentity, partialTicks, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn);
-        if (!(blockentity instanceof ParadoxMachineBE paradoxMachineBE)) return;
+        if (!(blockentity instanceof ParadoxMachineBE paradoxMachineBE)) {
+            return;
+        }
         // Render blocks
         if (paradoxMachineBE.isRunning) {
             float alpha = Mth.clamp(0.05f + (paradoxMachineBE.timeRunning / (float) paradoxMachineBE.getRunTime()) * 0.95f, 0.05f, 1.0f);
@@ -53,20 +60,24 @@ public class ParadoxMachineBER extends AreaAffectingBER {
             renderBlocks(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, alpha, paradoxMachineBE.restoringBlocks);
             renderEntities(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, intAlpha);
         } else {
-        if (paradoxMachineBE.renderParadox) {
-            int targetType = paradoxMachineBE.targetType;
-            if (targetType == 0 || targetType == 1)
-                renderBlocks(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, 0.5f, paradoxMachineBE.getBlocksFromNBT());
-            if (targetType == 0 || targetType == 2)
-                renderEntities(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, 175);
-        }
+            if (paradoxMachineBE.renderParadox) {
+                int targetType = paradoxMachineBE.targetType;
+                if (targetType == 0 || targetType == 1) {
+                    renderBlocks(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, 0.5f, paradoxMachineBE.getBlocksFromNBT());
+                }
+                if (targetType == 0 || targetType == 2) {
+                    renderEntities(paradoxMachineBE, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn, 175);
+                }
+            }
         }
     }
 
     private void renderBlocks(ParadoxMachineBE paradoxMachineBE, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedLightsIn, int combinedOverlayIn, float alpha, Map<BlockPos, BlockState> blocksToRestore) {
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         Level level = paradoxMachineBE.getLevel();
-        if (level == null) return;
+        if (level == null) {
+            return;
+        }
         BlockColors blockColors = Minecraft.getInstance().getBlockColors();
         ModelBlockRenderer modelBlockRenderer = new ModelBlockRenderer(blockColors);
         BlockRenderDispatcher blockrendererdispatcher = Minecraft.getInstance().getBlockRenderer();
@@ -75,8 +86,9 @@ public class ParadoxMachineBER extends AreaAffectingBER {
             BlockPos blockPos = entry.getKey();
             BlockState renderState = entry.getValue();
 
-            if (!level.getBlockState(blockPos).canBeReplaced())
+            if (!level.getBlockState(blockPos).canBeReplaced()) {
                 continue;
+            }
 
             float[] afloat = new float[Direction.values().length * 2];
             BitSet bitset = new BitSet(3);
@@ -103,8 +115,9 @@ public class ParadoxMachineBER extends AreaAffectingBER {
                     boolean renderAdjacent = true;
                     if (blocksToRestore.containsKey(testPos)) {
                         BlockState otherState = blocksToRestore.get(testPos);
-                        if (otherState.isSolidRender(level, testPos))
+                        if (otherState.isSolidRender(level, testPos)) {
                             renderAdjacent = false;
+                        }
                     }
                     if (renderAdjacent) {
                         modelBlockRenderer.renderModelFaceAO(level, renderState, blockPos, matrixStackIn, direVertexConsumer, list, afloat, bitset, modelblockrenderer$ambientocclusionface, combinedOverlayIn);
@@ -123,12 +136,15 @@ public class ParadoxMachineBER extends AreaAffectingBER {
 
     private void renderEntities(ParadoxMachineBE paradoxMachineBE, PoseStack matrixStackIn, MultiBufferSource bufferIn, float partialTicks, int combinedLightsIn, int alpha) {
         Level level = paradoxMachineBE.getLevel();
-        if (level == null) return;
+        if (level == null) {
+            return;
+        }
 
         for (Map.Entry<Vec3, LivingEntity> entry : paradoxMachineBE.getEntitiesFromNBT().entrySet()) {
             Vec3 entityPos = entry.getKey();
-            if (paradoxMachineBE.isRunning && !paradoxMachineBE.restoringEntites.contains(entityPos))
+            if (paradoxMachineBE.isRunning && !paradoxMachineBE.restoringEntites.contains(entityPos)) {
                 continue;
+            }
             LivingEntity entity = entry.getValue();
 
             // Apply transformations and translate to entity position
@@ -150,7 +166,9 @@ public class ParadoxMachineBER extends AreaAffectingBER {
 
         // Set up render type for transparency
         ResourceLocation resourceLocation = renderer.getTextureLocation(entity);
-        if (resourceLocation == null) return; //Caused soaryn to crash without this
+        if (resourceLocation == null) {
+            return; //Caused soaryn to crash without this
+        }
         RenderType renderType = RenderType.itemEntityTranslucentCull(resourceLocation);
         VertexConsumer vertexconsumer = bufferIn.getBuffer(renderType);
 
@@ -176,8 +194,8 @@ public class ParadoxMachineBER extends AreaAffectingBER {
         if (renderer instanceof LivingEntityRenderer<?, ?> livingRenderer) {
             EntityModel<LivingEntity> entityModel = (EntityModel<LivingEntity>) livingRenderer.getModel();
             entityModel.attackTime = 0f;
-            entityModel.riding = false;
-            entityModel.young = entity.isBaby();
+            entityModel.riding     = false;
+            entityModel.young      = entity.isBaby();
             entityModel.prepareMobModel(entity, f4, f8, partialTicks);
             entityModel.setupAnim(entity, f4, f8, f7, f2, f5);
             entityModel.renderToBuffer(matrixStackIn, vertexconsumer, combinedLightsIn, overlayCoords, packedARGB);
@@ -188,10 +206,5 @@ public class ParadoxMachineBER extends AreaAffectingBER {
         if (!pEntityLiving.hasPose(Pose.SLEEPING)) {
             pPoseStack.mulPose(Axis.YP.rotationDegrees(180.0F - pRotationYaw));
         }
-    }
-
-    protected static void scaleEntity(LivingEntity entity, PoseStack matrixStackIn) {
-        float scale = 1F; // Adjust scale if needed
-        matrixStackIn.scale(scale, scale, scale);
     }
 }

@@ -86,13 +86,6 @@ public class JustDireBlockStates extends BlockStateProvider {
         });
     }
 
-    private void timeCrystalCluster(DeferredHolder<Block, ? extends TimeCrystalCluster> block) {
-        var texturePath = block.getId().getPath();
-        var texture = modLoc("block/" + texturePath);
-        var model = models().cross(texturePath, texture).renderType("cutout");
-        directionalBlock(block.get(), model);
-    }
-
     private void gooBlocks(DeferredHolder<Block, ? extends GooBlock_Base> block) {
         getVariantBuilder(block.get()).forAllStates(state -> {
             boolean alive = state.getValue(GooBlock_Base.ALIVE);
@@ -101,6 +94,123 @@ public class JustDireBlockStates extends BlockStateProvider {
                     .modelFile(models().cubeAll(texturePath, modLoc("block/" + texturePath)))
                     .build();
         });
+    }
+
+    private void timeCrystalCluster(DeferredHolder<Block, ? extends TimeCrystalCluster> block) {
+        var texturePath = block.getId().getPath();
+        var texture = modLoc("block/" + texturePath);
+        var model = models().cross(texturePath, texture).renderType("cutout");
+        directionalBlock(block.get(), model);
+    }
+
+    private void soilBlocks(DeferredHolder<Block, ?> soil) {
+        getVariantBuilder(soil.get()).forAllStates(s -> {
+            int Moisture = s.getValue(BlockStateProperties.MOISTURE);
+            return ConfiguredModel.builder()
+                    .modelFile(models()
+                            .withExistingParent(soil.getId().getPath() + (Moisture == 7 ? "_moist" : ""),
+                                    ResourceLocation.parse("minecraft:block/template_farmland"))
+                            .texture("dirt",
+                                    modLoc("block/goosoilside_tier"
+                                            + soil.getId().toString().replace(MODID + ":goosoil_tier", "")))
+                            .texture("top",
+                                    modLoc("block/goofarmland_tier"
+                                            + soil.getId().toString().replace(MODID + ":goosoil_tier", ""))
+                                            + (Moisture == 7 ? "_moist" : "")))
+                    .build();
+        });
+    }
+
+    private void oreBlocks(DeferredHolder<Block, ?> block) {
+        directionalBlock(block.get(), models()
+                .withExistingParent(block.getId().getPath(), MODID + ":block/raw_ore_template")
+                .texture("palette", block.getId().toString().replace(":", ":block/")));
+    }
+
+    private void patternBlock() {
+        getVariantBuilder(Registration.GooPatternBlock.get()).forAllStates(s -> {
+            int stage = s.getValue(GooPatternBlock.GOOSTAGE);
+            ModelFile model;
+            if (stage == 11) {
+                model = models().orientableWithBottom(
+                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "11",
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full")
+                ).renderType("cutout");
+            } else if (stage == 10) {
+                model = models().orientableWithBottom(
+                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "10",
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full")
+                ).renderType("cutout");
+            } else if (stage == 9) {
+                model = models().orientableWithBottom(
+                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "9",
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goopatterblock_top")
+                ).renderType("cutout");
+            } else {
+                model = models().orientableWithBottom(
+                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + stage,
+                        modLoc("block/goopatterns/goorender_side" + stage),
+                        modLoc("block/goopatterns/goorender_side" + stage),
+                        modLoc("block/goopatterns/goorender_full"),
+                        modLoc("block/goopatterns/goorender_blank")
+                ).renderType("cutout");
+            }
+            return ConfiguredModel.builder()
+                    .modelFile(model).build();
+        });
+    }
+
+    private void sidedBlocks() {
+        for (var sidedBlock : Registration.SIDEDBLOCKS.getEntries()) {
+            if (sidedBlock.equals(Registration.BlockBreakerT1)) {
+                getVariantBuilder(Registration.BlockBreakerT1.get()).forAllStates(s -> {
+                    ModelFile model;
+                    boolean active = s.getValue(BlockBreakerT1.ACTIVE);
+                    Direction dir = s.getValue(BlockStateProperties.FACING);
+                    if (active) { //Active
+                        model = models().orientableWithBottom(
+                                Objects.requireNonNull(sidedBlock.getId()).getPath() + "_active",
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_top_active")
+                        ).renderType("solid");
+                    } else {
+                        model = models().orientableWithBottom(
+                                Objects.requireNonNull(sidedBlock.getId()).getPath(),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
+                                modLoc("block/" + sidedBlock.getId().getPath() + "_top")
+                        ).renderType("solid");
+                    }
+                    return ConfiguredModel.builder()
+                            .modelFile(model)
+                            .rotationX(dir == Direction.DOWN ? 180 : dir.getAxis().isHorizontal() ? 90 : 0)
+                            .rotationY(dir.getAxis().isVertical() ? 0 : (((int) dir.toYRot()) + 180) % 360)
+                            .build();
+                });
+            } else {
+                ModelFile model = models().orientableWithBottom(
+                        Objects.requireNonNull(sidedBlock.getId()).getPath(),
+                        modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                        modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
+                        modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
+                        modLoc("block/" + sidedBlock.getId().getPath() + "_top")
+                ).renderType("solid");
+
+                directionalBlock(sidedBlock.get(), model);
+            }
+        }
     }
 
     private void fluidBlocks() {
@@ -150,118 +260,6 @@ public class JustDireBlockStates extends BlockStateProvider {
                 modLoc("block/" + Registration.FluidCollectorT2.getId().getPath() + "_side"),
                 modLoc("block/" + Registration.FluidCollectorT2.getId().getPath() + "_bottom"),
                 modLoc("block/" + Registration.FluidCollectorT2.getId().getPath() + "_top")));
-    }
-
-    private void sidedBlocks() {
-        for (var sidedBlock : Registration.SIDEDBLOCKS.getEntries()) {
-            if (sidedBlock.equals(Registration.BlockBreakerT1)) {
-                getVariantBuilder(Registration.BlockBreakerT1.get()).forAllStates(s -> {
-                    ModelFile model;
-                    boolean active = s.getValue(BlockBreakerT1.ACTIVE);
-                    Direction dir = s.getValue(BlockStateProperties.FACING);
-                    if (active) { //Active
-                        model = models().orientableWithBottom(
-                                Objects.requireNonNull(sidedBlock.getId()).getPath() + "_active",
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_top_active")
-                        ).renderType("solid");
-                    } else {
-                        model = models().orientableWithBottom(
-                                Objects.requireNonNull(sidedBlock.getId()).getPath(),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
-                                modLoc("block/" + sidedBlock.getId().getPath() + "_top")
-                        ).renderType("solid");
-                    }
-                    return ConfiguredModel.builder()
-                            .modelFile(model)
-                            .rotationX(dir == Direction.DOWN ? 180 : dir.getAxis().isHorizontal() ? 90 : 0)
-                            .rotationY(dir.getAxis().isVertical() ? 0 : (((int) dir.toYRot()) + 180) % 360)
-                            .build();
-                });
-            } else {
-                ModelFile model = models().orientableWithBottom(
-                        Objects.requireNonNull(sidedBlock.getId()).getPath(),
-                        modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                        modLoc("block/" + sidedBlock.getId().getPath() + "_side"),
-                        modLoc("block/" + sidedBlock.getId().getPath() + "_bottom"),
-                        modLoc("block/" + sidedBlock.getId().getPath() + "_top")
-                ).renderType("solid");
-
-                directionalBlock(sidedBlock.get(), model);
-            }
-        }
-    }
-
-
-    private void patternBlock() {
-        getVariantBuilder(Registration.GooPatternBlock.get()).forAllStates(s -> {
-            int stage = s.getValue(GooPatternBlock.GOOSTAGE);
-            ModelFile model;
-            if (stage == 11) {
-                model = models().orientableWithBottom(
-                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "11",
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full")
-                ).renderType("cutout");
-            } else if (stage == 10) {
-                model = models().orientableWithBottom(
-                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "10",
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full")
-                ).renderType("cutout");
-            } else if (stage == 9) {
-                model = models().orientableWithBottom(
-                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + "9",
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goopatterblock_top")
-                ).renderType("cutout");
-            } else {
-                model = models().orientableWithBottom(
-                        Objects.requireNonNull(Registration.GooPatternBlock.getId()).getPath() + stage,
-                        modLoc("block/goopatterns/goorender_side" + stage),
-                        modLoc("block/goopatterns/goorender_side" + stage),
-                        modLoc("block/goopatterns/goorender_full"),
-                        modLoc("block/goopatterns/goorender_blank")
-                ).renderType("cutout");
-            }
-            return ConfiguredModel.builder()
-                    .modelFile(model).build();
-        });
-    }
-
-    private void soilBlocks(DeferredHolder<Block, ?> soil) {
-        getVariantBuilder(soil.get()).forAllStates(s -> {
-            int Moisture = s.getValue(BlockStateProperties.MOISTURE);
-            return ConfiguredModel.builder()
-                    .modelFile(models()
-                            .withExistingParent(soil.getId().getPath() + (Moisture == 7 ? "_moist" : ""),
-                                    ResourceLocation.parse("minecraft:block/template_farmland"))
-                            .texture("dirt",
-                                    modLoc("block/goosoilside_tier"
-                                            + soil.getId().toString().replace(MODID+":goosoil_tier", "")))
-                            .texture("top",
-                                    modLoc("block/goofarmland_tier"
-                                            + soil.getId().toString().replace(MODID+":goosoil_tier", ""))
-                                            + (Moisture == 7 ? "_moist" : "")))
-                    .build();
-        });
-    }
-
-
-    private void oreBlocks(DeferredHolder<Block, ?> block){
-        directionalBlock(block.get(),models()
-        .withExistingParent(block.getId().getPath(), MODID+":block/raw_ore_template")
-        .texture("palette", block.getId().toString().replace(":", ":block/")));
     }
 
 

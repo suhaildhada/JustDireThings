@@ -11,18 +11,16 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 
-public class GooExplodeParticleData implements ParticleOptions {
-    public static final MapCodec<GooExplodeParticleData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
+public record GooExplodeParticleData(ItemStack itemStack) implements ParticleOptions {
+    public static final MapCodec<GooExplodeParticleData>                             MAP_CODEC    = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    ItemStack.CODEC.fieldOf("itemStack").forGetter(GooExplodeParticleData::getItemStack)
+                    ItemStack.CODEC.fieldOf("itemStack").forGetter(GooExplodeParticleData::itemStack)
             ).apply(instance, GooExplodeParticleData::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, GooExplodeParticleData> STREAM_CODEC = StreamCodec.composite(
             ItemStack.STREAM_CODEC,
-            GooExplodeParticleData::getItemStack,
+            GooExplodeParticleData::itemStack,
             GooExplodeParticleData::new
     );
-
-    private final ItemStack itemStack;
 
     public GooExplodeParticleData(ItemStack itemStack) {
         this.itemStack = itemStack.copy(); //Forge: Fix stack updating after the fact causing particle changes.
@@ -32,10 +30,6 @@ public class GooExplodeParticleData implements ParticleOptions {
     @Override
     public ParticleType<GooExplodeParticleData> getType() {
         return ModParticles.GOOEXPLODEPARTICLE.get();
-    }
-
-    public ItemStack getItemStack() {
-        return this.itemStack;
     }
 }
 

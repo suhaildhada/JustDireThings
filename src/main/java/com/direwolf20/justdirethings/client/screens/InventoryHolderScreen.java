@@ -24,31 +24,32 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class InventoryHolderScreen extends BaseMachineScreen<InventoryHolderContainer> {
     private InventoryHolderBE inventoryHolderBE;
-    private boolean compareNBT;
-    private boolean filtersOnly;
-    private boolean compareCounts;
-    private boolean automatedFiltersOnly;
-    private boolean automatedCompareCounts;
-    private boolean renderPlayer;
-    private int renderedSlot;
+    private boolean           compareNBT;
+    private boolean           filtersOnly;
+    private boolean           compareCounts;
+    private boolean           automatedFiltersOnly;
+    private boolean           automatedCompareCounts;
+    private boolean           renderPlayer;
+    private int               renderedSlot;
 
     public InventoryHolderScreen(InventoryHolderContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof InventoryHolderBE inventoryHolderBE) {
-            this.inventoryHolderBE = inventoryHolderBE;
-            this.compareNBT = inventoryHolderBE.compareNBT;
-            this.filtersOnly = inventoryHolderBE.filtersOnly;
-            this.compareCounts = inventoryHolderBE.compareCounts;
-            this.automatedFiltersOnly = inventoryHolderBE.automatedFiltersOnly;
+            this.inventoryHolderBE      = inventoryHolderBE;
+            this.compareNBT             = inventoryHolderBE.compareNBT;
+            this.filtersOnly            = inventoryHolderBE.filtersOnly;
+            this.compareCounts          = inventoryHolderBE.compareCounts;
+            this.automatedFiltersOnly   = inventoryHolderBE.automatedFiltersOnly;
             this.automatedCompareCounts = inventoryHolderBE.automatedCompareCounts;
-            this.renderPlayer = inventoryHolderBE.renderPlayer;
-            this.renderedSlot = inventoryHolderBE.renderedSlot;
+            this.renderPlayer           = inventoryHolderBE.renderPlayer;
+            this.renderedSlot           = inventoryHolderBE.renderedSlot;
         }
     }
 
     @Override
-    public void addTickSpeedButton() {
-        //No-Op
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 24;
     }
 
     @Override
@@ -97,14 +98,53 @@ public class InventoryHolderScreen extends BaseMachineScreen<InventoryHolderCont
     }
 
     @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 24;
+    public void addTickSpeedButton() {
+        //No-Op
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
+    }
+
+    public void renderInventorySection(GuiGraphics guiGraphics, int relX, int relY) {
+        guiGraphics.blitSprite(SOCIALBACKGROUND, relX, relY + 83 - 8, this.imageWidth, this.imageHeight - 55); //Inventory Section
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics guiGraphics, int x, int y) {
+        Slot slot = this.hoveredSlot;
+        if (slot instanceof InventoryHolderSlot && slot.getItem().isEmpty() && !inventoryHolderBE.filterBasicHandler.getStackInSlot(slot.getSlotIndex()).isEmpty()) {
+            ItemStack itemstack = inventoryHolderBE.filterBasicHandler.getStackInSlot(slot.getSlotIndex());
+            guiGraphics.renderTooltip(this.font, this.getTooltipFromContainerItem(itemstack), itemstack.getTooltipImage(), itemstack, x, y);
+        } else {
+            super.renderTooltip(guiGraphics, x, y);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int btn) {
+        if (btn == 0 && Screen.hasControlDown() && hoveredSlot != null && hoveredSlot instanceof InventoryHolderSlot) {
+            if (Screen.hasShiftDown()) {
+                if (hoveredSlot.getSlotIndex() >= 27 && hoveredSlot.getSlotIndex() <= 35) {
+                    renderedSlot = hoveredSlot.getSlotIndex();
+                    saveSettings();
+                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    return true;
+                }
+            } else {
+                PacketDistributor.sendToServer(new InventoryHolderSaveSlotPayload(hoveredSlot.getSlotIndex()));
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                return true;
+            }
+        }
+        return super.mouseClicked(x, y, btn);
+    }
+
+    @Override
+    public void saveSettings() {
+        super.saveSettings();
+        PacketDistributor.sendToServer(new InventoryHolderSettingsPayload(compareNBT, filtersOnly, compareCounts, automatedFiltersOnly, automatedCompareCounts, renderPlayer, renderedSlot));
     }
 
     @Override
@@ -135,45 +175,5 @@ public class InventoryHolderScreen extends BaseMachineScreen<InventoryHolderCont
             // Right border
             guiGraphics.fill(slot.x + 15, slot.y, slot.x + 16, slot.y + 16, 0xFFFF0000);
         }
-    }
-
-    @Override
-    protected void renderTooltip(GuiGraphics guiGraphics, int x, int y) {
-        Slot slot = this.hoveredSlot;
-        if (slot instanceof InventoryHolderSlot && slot.getItem().isEmpty() && !inventoryHolderBE.filterBasicHandler.getStackInSlot(slot.getSlotIndex()).isEmpty()) {
-            ItemStack itemstack = inventoryHolderBE.filterBasicHandler.getStackInSlot(slot.getSlotIndex());
-            guiGraphics.renderTooltip(this.font, this.getTooltipFromContainerItem(itemstack), itemstack.getTooltipImage(), itemstack, x, y);
-        } else {
-            super.renderTooltip(guiGraphics, x, y);
-        }
-    }
-
-    @Override
-    public void saveSettings() {
-        super.saveSettings();
-        PacketDistributor.sendToServer(new InventoryHolderSettingsPayload(compareNBT, filtersOnly, compareCounts, automatedFiltersOnly, automatedCompareCounts, renderPlayer, renderedSlot));
-    }
-
-    public void renderInventorySection(GuiGraphics guiGraphics, int relX, int relY) {
-        guiGraphics.blitSprite(SOCIALBACKGROUND, relX, relY + 83 - 8, this.imageWidth, this.imageHeight - 55); //Inventory Section
-    }
-
-    @Override
-    public boolean mouseClicked(double x, double y, int btn) {
-        if (btn == 0 && Screen.hasControlDown() && hoveredSlot != null && hoveredSlot instanceof InventoryHolderSlot) {
-            if (Screen.hasShiftDown()) {
-                if (hoveredSlot.getSlotIndex() >= 27 && hoveredSlot.getSlotIndex() <= 35) {
-                    renderedSlot = hoveredSlot.getSlotIndex();
-                    saveSettings();
-                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                    return true;
-                }
-            } else {
-                PacketDistributor.sendToServer(new InventoryHolderSaveSlotPayload(hoveredSlot.getSlotIndex()));
-                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                return true;
-            }
-        }
-        return super.mouseClicked(x, y, btn);
     }
 }

@@ -9,14 +9,13 @@ import net.minecraft.resources.ResourceLocation;
 public record ToolSettingsGUIPayload(
 
 ) implements CustomPacketPayload {
-    public static final ToolSettingsGUIPayload INSTANCE = new ToolSettingsGUIPayload();
-    public static final Type<ToolSettingsGUIPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "tool_settings_gui"));
+    public static final ToolSettingsGUIPayload       INSTANCE = new ToolSettingsGUIPayload();
+    public static final Type<ToolSettingsGUIPayload> TYPE     = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "tool_settings_gui"));
+    public static final StreamCodec<ByteBuf, ToolSettingsGUIPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     @Override
     public Type<ToolSettingsGUIPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<ByteBuf, ToolSettingsGUIPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 }
 

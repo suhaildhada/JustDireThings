@@ -46,6 +46,11 @@ public class GeneratorT1 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof GeneratorT1BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new GeneratorT1Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
@@ -54,13 +59,8 @@ public class GeneratorT1 extends BaseMachineBlock {
     }
 
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof GeneratorT1BE;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state;
     }
 
     //Override BaseMachineBlock being rotatable
@@ -74,12 +74,12 @@ public class GeneratorT1 extends BaseMachineBlock {
     }
 
     @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state;
+    public BlockState direRotate(BlockState blockState, LevelAccessor level, BlockPos pos, Rotation direction) {
+        return blockState;
     }
 
     @Override
-    public BlockState direRotate(BlockState blockState, LevelAccessor level, BlockPos pos, Rotation direction) {
-        return blockState;
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 }

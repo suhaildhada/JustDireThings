@@ -42,20 +42,16 @@ public class ParadoxMachine extends BaseMachineBlock {
     }
 
     @Override
-    public void openMenu(Player player, BlockPos blockPos) {
-        player.openMenu(new SimpleMenuProvider(
-                (windowId, playerInventory, playerEntity) -> new ParadoxMachineContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
-            buf.writeBlockPos(blockPos);
-        }));
-    }
-
-    @Override
     protected ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
-        if (level.isClientSide) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (level.isClientSide) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         IFluidHandlerItem fluidHandlerItem = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         if (fluidHandlerItem != null) {
             IFluidHandler cap = level.getCapability(Capabilities.FluidHandler.BLOCK, blockPos, blockHitResult.getDirection());
-            if (cap == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (cap == null) {
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            }
             if (fluidHandlerItem.getFluidInTank(0).getAmount() < fluidHandlerItem.getTankCapacity(0) && !cap.getFluidInTank(0).isEmpty()) {
                 FluidStack testStack = cap.drain(fluidHandlerItem.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE);
                 if (testStack.getAmount() > 0) {
@@ -63,8 +59,9 @@ public class ParadoxMachine extends BaseMachineBlock {
                     if (amtFit > 0) {
                         FluidStack extractedStack = cap.drain(amtFit, IFluidHandler.FluidAction.EXECUTE);
                         fluidHandlerItem.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -76,8 +73,9 @@ public class ParadoxMachine extends BaseMachineBlock {
                     FluidStack extractedStack = fluidHandlerItem.drain(insertAmt, IFluidHandler.FluidAction.EXECUTE);
                     if (!extractedStack.isEmpty()) {
                         cap.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -90,5 +88,13 @@ public class ParadoxMachine extends BaseMachineBlock {
     @Override
     public boolean isValidBE(BlockEntity blockEntity) {
         return blockEntity instanceof ParadoxMachineBE;
+    }
+
+    @Override
+    public void openMenu(Player player, BlockPos blockPos) {
+        player.openMenu(new SimpleMenuProvider(
+                (windowId, playerInventory, playerEntity) -> new ParadoxMachineContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
+            buf.writeBlockPos(blockPos);
+        }));
     }
 }

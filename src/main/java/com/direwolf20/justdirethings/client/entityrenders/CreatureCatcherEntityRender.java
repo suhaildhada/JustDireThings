@@ -16,14 +16,14 @@ import org.joml.Vector3f;
 
 public class CreatureCatcherEntityRender extends ThrownItemRenderer<CreatureCatcherEntity> {
     private final ItemRenderer itemRenderer;
-    private final float scale;
-    private final boolean fullBright;
+    private final float        scale;
+    private final boolean      fullBright;
 
     public CreatureCatcherEntityRender(EntityRendererProvider.Context pContext) {
         super(pContext);
         this.itemRenderer = pContext.getItemRenderer();
-        this.scale = 1f;
-        this.fullBright = false;
+        this.scale        = 1f;
+        this.fullBright   = false;
     }
 
     @Override
@@ -63,14 +63,17 @@ public class CreatureCatcherEntityRender extends ThrownItemRenderer<CreatureCatc
             pPoseStack.popPose();
             ItemStack returnStack = pEntity.getReturnStack();
             Mob mob;
-            if (!capturing)
-                mob = pEntity.getEntityFromItemStack(pEntity.getItem(), pEntity.level());
-            else
-                mob = pEntity.getEntityFromItemStack(returnStack, pEntity.level());
-            if (mob == null) return;
-            mob.yBodyRot = pEntity.getBodyRot();
+            if (!capturing) {
+                mob = CreatureCatcherEntity.getEntityFromItemStack(pEntity.getItem(), pEntity.level());
+            } else {
+                mob = CreatureCatcherEntity.getEntityFromItemStack(returnStack, pEntity.level());
+            }
+            if (mob == null) {
+                return;
+            }
+            mob.yBodyRot  = pEntity.getBodyRot();
             mob.yBodyRotO = pEntity.getBodyRot();
-            mob.yHeadRot = pEntity.getHeadRot();
+            mob.yHeadRot  = pEntity.getHeadRot();
             mob.yHeadRotO = pEntity.getHeadRot();
             pPoseStack.pushPose();
             // Calculate the interpolated position
@@ -83,10 +86,10 @@ public class CreatureCatcherEntityRender extends ThrownItemRenderer<CreatureCatc
             float interpolatedShrinkingTime = Mth.lerp(pPartialTicks, lastShrinkingTime, currentShrinkingTime);
 
             if (capturing) { //Capturing
-                fraction = interpolatedShrinkingTime / (float) pEntity.getAnimationTicks();
+                fraction         = interpolatedShrinkingTime / (float) pEntity.getAnimationTicks();
                 originalPosition = new Vector3f(pEntity.getMobPosition());
             } else { //Releasing
-                fraction = (pEntity.getAnimationTicks() - interpolatedShrinkingTime) / (float) pEntity.getAnimationTicks();
+                fraction         = (pEntity.getAnimationTicks() - interpolatedShrinkingTime) / (float) pEntity.getAnimationTicks();
                 originalPosition = new Vector3f(entityPosition);
             }
             // Flattens the shrinkage rate when near 0

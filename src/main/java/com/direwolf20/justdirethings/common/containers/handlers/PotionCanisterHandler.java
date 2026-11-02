@@ -17,14 +17,14 @@ public class PotionCanisterHandler extends ComponentItemHandler {
     }
 
     @Override
+    public boolean isItemValid(int slot, ItemStack stack) {
+        return stack.getItem() instanceof PotionItem || stack.getItem() instanceof BottleItem || stack.isEmpty();
+    }
+
+    @Override
     protected void onContentsChanged(int slot, ItemStack oldStack, ItemStack newStack) {
         if (!newStack.isEmpty() && newStack.getItem() instanceof PotionItem) {
             PotionCanister.attemptFill(potionStack);
         }
-    }
-
-    @Override
-    public boolean isItemValid(int slot, ItemStack stack) {
-        return stack.getItem() instanceof PotionItem || stack.getItem() instanceof BottleItem || stack.isEmpty();
     }
 }

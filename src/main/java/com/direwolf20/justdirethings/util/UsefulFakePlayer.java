@@ -30,11 +30,6 @@ public class UsefulFakePlayer extends FakePlayer {
     }
 
     @Override
-    public OptionalInt openMenu(MenuProvider p_9033_) {
-        return OptionalInt.empty();
-    }
-
-    @Override
     public OptionalInt openMenu(@Nullable MenuProvider menu, @Nullable Consumer<RegistryFriendlyByteBuf> extraDataWriter) {
         return OptionalInt.empty();
     }
@@ -59,6 +54,18 @@ public class UsefulFakePlayer extends FakePlayer {
         return createPlayer(dimensionTransition.newLevel(), this.getGameProfile());
     }
 
+    @Override
+    public OptionalInt openMenu(MenuProvider p_9033_) {
+        return OptionalInt.empty();
+    }
+
+    /**
+     * Creates a new UsefulFakePlayer.
+     */
+    public static UsefulFakePlayer createPlayer(Level world, GameProfile profile) {
+        return new UsefulFakePlayer(world, profile);
+    }
+
     /**
      * Used by Dire to simulate using an item
      */
@@ -75,13 +82,6 @@ public class UsefulFakePlayer extends FakePlayer {
 
     public void setReach(double reach) {
         this.reach = reach;
-    }
-
-    /**
-     * Creates a new UsefulFakePlayer.
-     */
-    public static UsefulFakePlayer createPlayer(Level world, GameProfile profile) {
-        return new UsefulFakePlayer(world, profile);
     }
 
     public void drawParticles(ServerLevel serverLevel, ItemStack itemStack) {

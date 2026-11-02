@@ -11,14 +11,13 @@ public record TickSpeedPayload(
         int tickSpeed
 ) implements CustomPacketPayload {
     public static final Type<TickSpeedPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "tick_speed_packet"));
+    public static final StreamCodec<FriendlyByteBuf, TickSpeedPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, TickSpeedPayload::tickSpeed,
+            TickSpeedPayload::new
+    );
 
     @Override
     public Type<TickSpeedPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, TickSpeedPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, TickSpeedPayload::tickSpeed,
-            TickSpeedPayload::new
-    );
 }

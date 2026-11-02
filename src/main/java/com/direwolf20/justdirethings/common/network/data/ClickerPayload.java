@@ -15,12 +15,6 @@ public record ClickerPayload(
         int maxHoldTicks
 ) implements CustomPacketPayload {
     public static final Type<ClickerPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "clicker_packet"));
-
-    @Override
-    public Type<ClickerPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<ByteBuf, ClickerPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, ClickerPayload::clickType,
             ByteBufCodecs.INT, ClickerPayload::clickTarget,
@@ -29,4 +23,9 @@ public record ClickerPayload(
             ByteBufCodecs.INT, ClickerPayload::maxHoldTicks,
             ClickerPayload::new
     );
+
+    @Override
+    public Type<ClickerPayload> type() {
+        return TYPE;
+    }
 }

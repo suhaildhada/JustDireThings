@@ -6,12 +6,25 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 public interface PoweredItem {
+    static boolean hasEnoughEnergy(ItemStack stack, int requiredAmt) {
+        return getAvailableEnergy(stack) >= requiredAmt;
+    }
+
     static int getAvailableEnergy(ItemStack stack) {
         var energy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (energy == null) {
             return -1;
         }
         return energy.getEnergyStored();
+    }
+
+    static boolean consumeEnergy(ItemStack itemStack, int amt) {
+        IEnergyStorage energyStorage = itemStack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (energyStorage == null) {
+            return false;
+        }
+        int amtExtracted = energyStorage.extractEnergy(amt, false);
+        return amtExtracted == amt;
     }
 
     default boolean isPowerBarVisible(ItemStack stack) {
@@ -40,16 +53,5 @@ public interface PoweredItem {
 
     default int getMaxEnergy() {
         return 10000;
-    }
-
-    static boolean hasEnoughEnergy(ItemStack stack, int requiredAmt) {
-        return getAvailableEnergy(stack) >= requiredAmt;
-    }
-
-    static boolean consumeEnergy(ItemStack itemStack, int amt) {
-        IEnergyStorage energyStorage = itemStack.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (energyStorage == null) return false;
-        int amtExtracted = energyStorage.extractEnergy(amt, false);
-        return amtExtracted == amt;
     }
 }

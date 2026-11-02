@@ -19,22 +19,23 @@ import java.util.List;
 import java.util.Map;
 
 public class InventoryHolderBE extends BaseMachineBE {
-    public FilterBasicHandler filterBasicHandler = new FilterBasicHandler(41);
-    public Map<ItemStackKey, List<Integer>> filteredCache = new HashMap<>();
-    public boolean compareNBT = false;
-    public boolean filtersOnly = false;
-    public boolean automatedFiltersOnly = false;
-    public boolean compareCounts = false;
-    public boolean automatedCompareCounts = false;
-    public int renderedSlot = 27;
-    public boolean renderPlayer = true;
-    public InventoryHolderBE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
-        super(pType, pPos, pBlockState);
-        MACHINE_SLOTS = 41; //Hotbar, Inventory, Armor, and Offhand
-    }
+    public FilterBasicHandler               filterBasicHandler     = new FilterBasicHandler(41);
+    public Map<ItemStackKey, List<Integer>> filteredCache          = new HashMap<>();
+    public boolean                          compareNBT             = false;
+    public boolean                          filtersOnly            = false;
+    public boolean                          automatedFiltersOnly   = false;
+    public boolean                          compareCounts          = false;
+    public boolean                          automatedCompareCounts = false;
+    public int                              renderedSlot           = 27;
+    public boolean                          renderPlayer           = true;
 
     public InventoryHolderBE(BlockPos pPos, BlockState pBlockState) {
         this(Registration.InventoryHolderBE.get(), pPos, pBlockState);
+    }
+
+    public InventoryHolderBE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
+        MACHINE_SLOTS = 41; //Hotbar, Inventory, Armor, and Offhand
     }
 
     public void addSavedItem(int slot) {
@@ -44,27 +45,29 @@ public class InventoryHolderBE extends BaseMachineBE {
         markDirtyClient();
     }
 
-    public void saveSettings(boolean compareNBT, boolean filtersOnly, boolean compareCounts, boolean automatedFiltersOnly, boolean automatedCompareCounts, boolean renderPlayer, int renderedSlot) {
-        this.compareNBT = compareNBT;
-        this.filtersOnly = filtersOnly;
-        this.compareCounts = compareCounts;
-        this.automatedFiltersOnly = automatedFiltersOnly;
-        this.automatedCompareCounts = automatedCompareCounts;
-        this.renderPlayer = renderPlayer;
-        this.renderedSlot = renderedSlot;
-        markDirtyClient();
-    }
-
     public void rebuildFilterCache() {
         filteredCache.clear();
         for (int i = 0; i < filterBasicHandler.getSlots(); i++) {
             ItemStack stack = filterBasicHandler.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack.isEmpty()) {
+                continue;
+            }
             ItemStackKey key = new ItemStackKey(stack, compareNBT);
             List<Integer> slotList = filteredCache.getOrDefault(key, new ArrayList<>());
             slotList.add(i);
             filteredCache.put(key, slotList);
         }
+    }
+
+    public void saveSettings(boolean compareNBT, boolean filtersOnly, boolean compareCounts, boolean automatedFiltersOnly, boolean automatedCompareCounts, boolean renderPlayer, int renderedSlot) {
+        this.compareNBT             = compareNBT;
+        this.filtersOnly            = filtersOnly;
+        this.compareCounts          = compareCounts;
+        this.automatedFiltersOnly   = automatedFiltersOnly;
+        this.automatedCompareCounts = automatedCompareCounts;
+        this.renderPlayer           = renderPlayer;
+        this.renderedSlot           = renderedSlot;
+        markDirtyClient();
     }
 
     public ItemStackHandler getInventoryHolderHandler() {
@@ -79,11 +82,23 @@ public class InventoryHolderBE extends BaseMachineBE {
         if (automatedCompareCounts) {
             int amountDesired = getSlotLimit(slot);
             int amountHad = getMachineHandler().getStackInSlot(slot).getCount();
-            if (amountDesired > amountHad)
+            if (amountDesired > amountHad) {
                 return 0;
+            }
             return Math.min(amount, amountHad - amountDesired);
         }
         return 0;
+    }
+
+    public int getSlotLimit(int slot) {
+        if (!automatedCompareCounts) {
+            return -1;
+        }
+        ItemStack stack = filterBasicHandler.getStackInSlot(slot);
+        if (stack.isEmpty()) {
+            return -1;
+        }
+        return stack.getCount();
     }
 
     public boolean isStackValidFilter(ItemStack testStack, int slot) {
@@ -95,40 +110,6 @@ public class InventoryHolderBE extends BaseMachineBE {
         return key.equals(new ItemStackKey(stack, compareNBT));
     }
 
-    public int getSlotLimit(int slot) {
-        if (!automatedCompareCounts)
-            return -1;
-        ItemStack stack = filterBasicHandler.getStackInSlot(slot);
-        if (stack.isEmpty()) return -1;
-        return stack.getCount();
-    }
-
-    @Override
-    public boolean isDefaultSettings() {
-        if (compareNBT)
-            return false;
-        if (filtersOnly)
-            return false;
-        if (automatedFiltersOnly)
-            return false;
-        if (compareCounts)
-            return false;
-        if (automatedCompareCounts)
-            return false;
-        if (renderedSlot != 27)
-            return false;
-        for (int i = 0; i < filterBasicHandler.getSlots(); i++) {
-            if (!filterBasicHandler.getStackInSlot(i).isEmpty())
-                return false;
-        }
-        ItemStackHandler itemStackHandler = getMachineHandler();
-        for (int i = 0; i < itemStackHandler.getSlots(); i++) {
-            if (!itemStackHandler.getStackInSlot(i).isEmpty())
-                return false;
-        }
-        return true;
-    }
-
     public void saveInventory(CompoundTag tag, HolderLookup.Provider provider) {
         tag.put("storedItems", getMachineHandler().serializeNBT(provider));
     }
@@ -137,6 +118,27 @@ public class InventoryHolderBE extends BaseMachineBE {
         if (tag.contains("storedItems")) {
             CompoundTag filteredItems = tag.getCompound("storedItems");
             getMachineHandler().deserializeNBT(provider, filteredItems);
+            rebuildFilterCache();
+        }
+    }
+
+    @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
+        compareNBT             = tag.getBoolean("compareNBT");
+        filtersOnly            = tag.getBoolean("filtersOnly");
+        compareCounts          = tag.getBoolean("compareCounts");
+        automatedFiltersOnly   = tag.getBoolean("automatedFiltersOnly");
+        automatedCompareCounts = tag.getBoolean("automatedCompareCounts");
+        if (tag.contains("renderPlayer")) {
+            renderPlayer = tag.getBoolean("renderPlayer");
+        }
+        if (tag.contains("renderedSlot")) {
+            renderedSlot = tag.getInt("renderedSlot");
+        }
+        if (tag.contains("filteredItems")) {
+            CompoundTag filteredItems = tag.getCompound("filteredItems");
+            filterBasicHandler.deserializeNBT(provider, filteredItems);
             rebuildFilterCache();
         }
     }
@@ -156,21 +158,36 @@ public class InventoryHolderBE extends BaseMachineBE {
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        compareNBT = tag.getBoolean("compareNBT");
-        filtersOnly = tag.getBoolean("filtersOnly");
-        compareCounts = tag.getBoolean("compareCounts");
-        automatedFiltersOnly = tag.getBoolean("automatedFiltersOnly");
-        automatedCompareCounts = tag.getBoolean("automatedCompareCounts");
-        if (tag.contains("renderPlayer"))
-            renderPlayer = tag.getBoolean("renderPlayer");
-        if (tag.contains("renderedSlot"))
-            renderedSlot = tag.getInt("renderedSlot");
-        if (tag.contains("filteredItems")) {
-            CompoundTag filteredItems = tag.getCompound("filteredItems");
-            filterBasicHandler.deserializeNBT(provider, filteredItems);
-            rebuildFilterCache();
+    public boolean isDefaultSettings() {
+        if (compareNBT) {
+            return false;
         }
+        if (filtersOnly) {
+            return false;
+        }
+        if (automatedFiltersOnly) {
+            return false;
+        }
+        if (compareCounts) {
+            return false;
+        }
+        if (automatedCompareCounts) {
+            return false;
+        }
+        if (renderedSlot != 27) {
+            return false;
+        }
+        for (int i = 0; i < filterBasicHandler.getSlots(); i++) {
+            if (!filterBasicHandler.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        ItemStackHandler itemStackHandler = getMachineHandler();
+        for (int i = 0; i < itemStackHandler.getSlots(); i++) {
+            if (!itemStackHandler.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

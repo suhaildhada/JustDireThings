@@ -25,7 +25,8 @@ import javax.annotation.Nullable;
 import java.util.stream.Stream;
 
 public class EnergyTransmitter extends BaseMachineBlock {
-    protected static final VoxelShape[] shapes = new VoxelShape[]{
+    public static final    DirectionProperty FACING = BlockStateProperties.FACING;
+    protected static final VoxelShape[]      shapes = new VoxelShape[]{
             Stream.of(
                     Block.box(4, 0, 4, 12, 1, 12),
                     Block.box(3, 1, 3, 13, 2, 13),
@@ -88,8 +89,6 @@ public class EnergyTransmitter extends BaseMachineBlock {
             ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get() //WEST
     };
 
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
-
     public EnergyTransmitter() {
         super(Properties.of()
                 .sound(SoundType.METAL)
@@ -107,27 +106,16 @@ public class EnergyTransmitter extends BaseMachineBlock {
     }
 
     @Override
-    public void openMenu(Player player, BlockPos blockPos) {
-        player.openMenu(new SimpleMenuProvider(
-                (windowId, playerInventory, playerEntity) -> new EnergyTransmitterContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
-            buf.writeBlockPos(blockPos);
-        }));
-    }
-
-    @Override
     public boolean isValidBE(BlockEntity blockEntity) {
         return blockEntity instanceof EnergyTransmitterBE;
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
-        return shapes[state.getValue(FACING).get3DDataValue()];
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter reader, BlockPos pos) {
-        return shapes[state.getValue(FACING).get3DDataValue()];
+    public void openMenu(Player player, BlockPos blockPos) {
+        player.openMenu(new SimpleMenuProvider(
+                (windowId, playerInventory, playerEntity) -> new EnergyTransmitterContainer(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
+            buf.writeBlockPos(blockPos);
+        }));
     }
 
     @Override
@@ -140,9 +128,20 @@ public class EnergyTransmitter extends BaseMachineBlock {
         builder.add(BlockStateProperties.FACING);
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter reader, BlockPos pos) {
+        return shapes[state.getValue(FACING).get3DDataValue()];
+    }
+
     @Override
     public float getShadeBrightness(BlockState p_48731_, BlockGetter p_48732_, BlockPos p_48733_) {
         return 1.0F;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
+        return shapes[state.getValue(FACING).get3DDataValue()];
     }
 
     @Override

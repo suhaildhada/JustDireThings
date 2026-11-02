@@ -14,8 +14,8 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 
 public class GooSoilBE extends BlockEntity {
-    private NBTHelpers.BoundInventory boundInventory;
     protected BlockCapabilityCache<IItemHandler, Direction> attachedInventory;
+    private   NBTHelpers.BoundInventory                     boundInventory;
 
     public GooSoilBE(BlockPos pos, BlockState state) {
         super(Registration.GooSoilBE.get(), pos, state);
@@ -27,10 +27,14 @@ public class GooSoilBE extends BlockEntity {
     }
 
     public IItemHandler getAttachedInventory(ServerLevel serverLevel) {
-        if (boundInventory == null) return null;
+        if (boundInventory == null) {
+            return null;
+        }
         if (attachedInventory == null) {
             ServerLevel boundLevel = serverLevel.getServer().getLevel(boundInventory.globalPos().dimension());
-            if (boundLevel == null) return null;
+            if (boundLevel == null) {
+                return null;
+            }
             attachedInventory = BlockCapabilityCache.create(
                     Capabilities.ItemHandler.BLOCK, // capability to cache
                     boundLevel, // level
@@ -46,17 +50,18 @@ public class GooSoilBE extends BlockEntity {
     }
 
     @Override
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        if (tag.contains("boundinventory")) {
+            boundInventory = NBTHelpers.BoundInventory.fromNBT(tag.getCompound("boundinventory"));
+        }
+        super.loadAdditional(tag, provider);
+    }
+
+    @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
         if (boundInventory != null) {
             tag.put("boundinventory", NBTHelpers.BoundInventory.toNBT(boundInventory));
         }
-    }
-
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        if (tag.contains("boundinventory"))
-            boundInventory = NBTHelpers.BoundInventory.fromNBT(tag.getCompound("boundinventory"));
-        super.loadAdditional(tag, provider);
     }
 }

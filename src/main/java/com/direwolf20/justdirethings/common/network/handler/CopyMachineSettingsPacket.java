@@ -17,10 +17,12 @@ public class CopyMachineSettingsPacket {
         context.enqueueWork(() -> {
             Player sender = context.player();
             ItemStack itemStack = sender.getMainHandItem();
-            if (!(itemStack.getItem() instanceof MachineSettingsCopier))
+            if (!(itemStack.getItem() instanceof MachineSettingsCopier)) {
                 itemStack = sender.getOffhandItem();
-            if (!(itemStack.getItem() instanceof MachineSettingsCopier))
+            }
+            if (!(itemStack.getItem() instanceof MachineSettingsCopier)) {
                 return;
+            }
 
             MachineSettingsCopier.setSettings(itemStack, payload.area(), payload.offset(), payload.filter(), payload.redstone());
 

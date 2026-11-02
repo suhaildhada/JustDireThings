@@ -9,14 +9,13 @@ import net.minecraft.resources.ResourceLocation;
 public record PortalGunLeftClickPayload(
 
 ) implements CustomPacketPayload {
-    public static final PortalGunLeftClickPayload INSTANCE = new PortalGunLeftClickPayload();
-    public static final Type<PortalGunLeftClickPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_gun_left_click"));
+    public static final PortalGunLeftClickPayload       INSTANCE = new PortalGunLeftClickPayload();
+    public static final Type<PortalGunLeftClickPayload> TYPE     = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "portal_gun_left_click"));
+    public static final StreamCodec<ByteBuf, PortalGunLeftClickPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     @Override
     public Type<PortalGunLeftClickPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<ByteBuf, PortalGunLeftClickPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 }
 

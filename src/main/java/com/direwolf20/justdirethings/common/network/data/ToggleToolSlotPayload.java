@@ -14,12 +14,6 @@ public record ToggleToolSlotPayload(
         int value
 ) implements CustomPacketPayload {
     public static final Type<ToggleToolSlotPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "toggle_tool_slot_setting"));
-
-    @Override
-    public Type<ToggleToolSlotPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ToggleToolSlotPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, ToggleToolSlotPayload::settingName,
             ByteBufCodecs.INT, ToggleToolSlotPayload::slot,
@@ -27,5 +21,10 @@ public record ToggleToolSlotPayload(
             ByteBufCodecs.INT, ToggleToolSlotPayload::value,
             ToggleToolSlotPayload::new
     );
+
+    @Override
+    public Type<ToggleToolSlotPayload> type() {
+        return TYPE;
+    }
 }
 

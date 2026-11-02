@@ -20,8 +20,8 @@ import java.util.UUID;
 
 public class DecoyEntityRender<T extends DecoyEntity, M extends EntityModel<T>> extends LivingEntityRenderer<DecoyEntity, PlayerModel<DecoyEntity>> {
 
-    public static final UUID defaultPlayerUUID = UUID.fromString("0192723f-b3dc-495a-959f-52c53fa63bff");
-    public boolean modelSet = false;
+    public static final UUID    defaultPlayerUUID = UUID.fromString("0192723f-b3dc-495a-959f-52c53fa63bff");
+    public              boolean modelSet          = false;
 
     public DecoyEntityRender(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);

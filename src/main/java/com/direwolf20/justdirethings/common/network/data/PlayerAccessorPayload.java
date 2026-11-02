@@ -12,15 +12,14 @@ public record PlayerAccessorPayload(
         int accessType
 ) implements CustomPacketPayload {
     public static final Type<PlayerAccessorPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "player_accessor_packet"));
-
-    @Override
-    public Type<PlayerAccessorPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, PlayerAccessorPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, PlayerAccessorPayload::direction,
             ByteBufCodecs.INT, PlayerAccessorPayload::accessType,
             PlayerAccessorPayload::new
     );
+
+    @Override
+    public Type<PlayerAccessorPayload> type() {
+        return TYPE;
+    }
 }

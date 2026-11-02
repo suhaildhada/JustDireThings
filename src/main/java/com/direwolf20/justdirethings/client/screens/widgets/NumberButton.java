@@ -10,16 +10,16 @@ import net.minecraft.network.chat.Component;
 import java.awt.*;
 
 public class NumberButton extends BaseButton {
+    public  int min;
+    public  int max;
     private int value;
-    public int min;
-    public int max;
 
     public NumberButton(int x, int y, int width, int height, int value, int min, int max, Component localization, OnPress onPress) {
         super(x, y, width, height, net.minecraft.network.chat.Component.empty(), onPress, Button.DEFAULT_NARRATION);
-        this.value = value;
+        this.value        = value;
         this.localization = localization;
-        this.min = min;
-        this.max = max;
+        this.min          = min;
+        this.max          = max;
     }
 
     @Override

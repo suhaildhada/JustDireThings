@@ -29,10 +29,16 @@ public class TotemOfDeathRecall extends Item {
                 .stacksTo(1));
     }
 
+    public static void setBoundTo(ItemStack stack, NBTHelpers.GlobalVec3 globalPos) {
+        stack.set(JustDireDataComponents.BOUND_GLOBAL_VEC3, globalPos);
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
-        if (getBoundTo(itemStack) == null) return new InteractionResultHolder<>(InteractionResult.PASS, itemStack);
+        if (getBoundTo(itemStack) == null) {
+            return new InteractionResultHolder<>(InteractionResult.PASS, itemStack);
+        }
         player.startUsingItem(hand);
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, player.getItemInHand(hand));
     }
@@ -40,6 +46,11 @@ public class TotemOfDeathRecall extends Item {
     @Override
     public UseAnim getUseAnimation(ItemStack pStack) {
         return UseAnim.BOW;
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity livingEntity) {
+        return 72000;  // Max duration (arbitrary large number)
     }
 
     @Override
@@ -51,7 +62,9 @@ public class TotemOfDeathRecall extends Item {
                 if (!world.isClientSide) {
                     if (stack.has(JustDireDataComponents.BOUND_GLOBAL_VEC3)) {
                         NBTHelpers.GlobalVec3 globalPos = getBoundTo(stack);
-                        if (globalPos == null) return;
+                        if (globalPos == null) {
+                            return;
+                        }
                         Vec3 position = globalPos.position();
                         ServerLevel targetLevel = world.getServer().getLevel(globalPos.dimension());
                         if (targetLevel != null) {
@@ -66,25 +79,6 @@ public class TotemOfDeathRecall extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack, LivingEntity livingEntity) {
-        return 72000;  // Max duration (arbitrary large number)
-    }
-
-    public boolean isFoil(ItemStack pStack) {
-        return getBoundTo(pStack) != null;
-    }
-
-    public static NBTHelpers.GlobalVec3 getBoundTo(ItemStack stack) {
-        if (stack.has(JustDireDataComponents.BOUND_GLOBAL_VEC3))
-            return stack.get(JustDireDataComponents.BOUND_GLOBAL_VEC3);
-        return null;
-    }
-
-    public static void setBoundTo(ItemStack stack, NBTHelpers.GlobalVec3 globalPos) {
-        stack.set(JustDireDataComponents.BOUND_GLOBAL_VEC3, globalPos);
-    }
-
-    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, context, tooltip, flagIn);
         Level level = context.level();
@@ -96,5 +90,16 @@ public class TotemOfDeathRecall extends Item {
         if (boundPos != null) {
             tooltip.add(Component.translatable("justdirethings.boundto", I18n.get(boundPos.dimension().location().getPath()), boundPos.toVec3ShortString()).withStyle(chatFormatting));
         }
+    }
+
+    public boolean isFoil(ItemStack pStack) {
+        return getBoundTo(pStack) != null;
+    }
+
+    public static NBTHelpers.GlobalVec3 getBoundTo(ItemStack stack) {
+        if (stack.has(JustDireDataComponents.BOUND_GLOBAL_VEC3)) {
+            return stack.get(JustDireDataComponents.BOUND_GLOBAL_VEC3);
+        }
+        return null;
     }
 }

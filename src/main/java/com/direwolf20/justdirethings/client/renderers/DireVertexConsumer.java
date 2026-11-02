@@ -6,10 +6,10 @@ import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 
 
 public class DireVertexConsumer extends VertexConsumerWrapper {
-    private float alpha;
-    private float red = -1;
+    private final float alpha;
+    private       float red   = -1;
     private float green = -1;
-    private float blue = -1;
+    private float blue  = -1;
 
     public DireVertexConsumer(VertexConsumer parent, float alpha) {
         super(parent);
@@ -19,16 +19,16 @@ public class DireVertexConsumer extends VertexConsumerWrapper {
     public DireVertexConsumer(VertexConsumer parent, float alpha, float red, float green, float blue) {
         super(parent);
         this.alpha = alpha;
-        this.red = red;
+        this.red   = red;
         this.green = green;
-        this.blue = blue;
+        this.blue  = blue;
     }
 
     @Override
     public VertexConsumer setColor(int r, int g, int b, int a) {
-        if (red == -1)
+        if (red == -1) {
             parent.setColor(r, g, b, Math.round((float) 255 * alpha));
-        else {
+        } else {
             int rCol = (int) Mth.lerp(red, 0, r);
             int gCol = (int) Mth.lerp(green, 0, g);
             int bCol = (int) Mth.lerp(blue, 0, b);

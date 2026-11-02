@@ -27,6 +27,7 @@ public class PortalEntityRender<T extends PortalEntity> extends EntityRenderer<T
             .using(List.of(
                     new ShaderTexture(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/block/portal_shader.png"))
             ));
+
     public PortalEntityRender(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
@@ -109,6 +110,18 @@ public class PortalEntityRender<T extends PortalEntity> extends EntityRenderer<T
         super.render(pEntity, pEntityYaw, pPartialTicks, pPoseStack, pBuffer, pPackedLight);
     }
 
+    @Override
+    public ResourceLocation getTextureLocation(T pEntity) {
+        return TextureAtlas.LOCATION_BLOCKS;
+    }
+
+    private void renderFace(Matrix4f matrixStack, VertexConsumer vertexConsumer, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4) {
+        vertexConsumer.addVertex(matrixStack, x1, y1, z1).setUv(0f, 0f);
+        vertexConsumer.addVertex(matrixStack, x2, y1, z2).setUv(1f, 0f);
+        vertexConsumer.addVertex(matrixStack, x2, y2, z3).setUv(1f, 1f);
+        vertexConsumer.addVertex(matrixStack, x1, y2, z4).setUv(0f, 1f);
+    }
+
     // New method to render a thick border
     private void renderFlatFrame(PoseStack matrix, MultiBufferSource buffer, AABB aabb, float thickness, Color color, Direction.Axis alignment) {
         float minX = (float) aabb.minX;
@@ -154,17 +167,5 @@ public class PortalEntityRender<T extends PortalEntity> extends EntityRenderer<T
             // Back border
             renderBoxSolid(matrix, matrix.last().pose(), buffer, new AABB(minX, minY, maxZ - thickness, maxX, minY, maxZ), r, g, b, alpha);
         }
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(T pEntity) {
-        return TextureAtlas.LOCATION_BLOCKS;
-    }
-
-    private void renderFace(Matrix4f matrixStack, VertexConsumer vertexConsumer, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4) {
-        vertexConsumer.addVertex(matrixStack, x1, y1, z1).setUv(0f, 0f);
-        vertexConsumer.addVertex(matrixStack, x2, y1, z2).setUv(1f, 0f);
-        vertexConsumer.addVertex(matrixStack, x2, y2, z3).setUv(1f, 1f);
-        vertexConsumer.addVertex(matrixStack, x1, y2, z4).setUv(0f, 1f);
     }
 }

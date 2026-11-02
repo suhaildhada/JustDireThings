@@ -16,12 +16,6 @@ public record ToggleToolLeftRightClickPayload(
         boolean requireEquipped
 ) implements CustomPacketPayload {
     public static final Type<ToggleToolLeftRightClickPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "tool_left_right_click_settings_packet"));
-
-    @Override
-    public Type<ToggleToolLeftRightClickPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ToggleToolLeftRightClickPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, ToggleToolLeftRightClickPayload::slot,
             ByteBufCodecs.STRING_UTF8, ToggleToolLeftRightClickPayload::abilityName,
@@ -31,4 +25,9 @@ public record ToggleToolLeftRightClickPayload(
             ByteBufCodecs.BOOL, ToggleToolLeftRightClickPayload::requireEquipped,
             ToggleToolLeftRightClickPayload::new
     );
+
+    @Override
+    public Type<ToggleToolLeftRightClickPayload> type() {
+        return TYPE;
+    }
 }

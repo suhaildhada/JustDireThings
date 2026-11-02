@@ -11,57 +11,43 @@ import org.joml.Vector4f;
 public class DireVertexConsumerSquished extends VertexConsumerWrapper {
     private final float minX, minY, minZ, maxX, maxY, maxZ;
     private final Matrix4f matrix4f;
+    public boolean adjustUV = false;
+    public boolean bottomUp = false;
     float minU = 0;
     float maxU = 1;
     float minV = 0;
     float maxV = 1;
-    public boolean adjustUV = false;
-    public boolean bottomUp = false;
-    Direction direction = null;
+    Direction          direction = null;
     TextureAtlasSprite sprite;
-    private float red = -1;
+    private float red   = -1;
     private float green = -1;
-    private float blue = -1;
+    private float blue  = -1;
     private float alpha = -1;
 
     public DireVertexConsumerSquished(VertexConsumer parent, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Matrix4f matrix4f) {
         super(parent);
-        this.minX = minX;
-        this.minY = minY;
-        this.minZ = minZ;
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.maxZ = maxZ;
+        this.minX     = minX;
+        this.minY     = minY;
+        this.minZ     = minZ;
+        this.maxX     = maxX;
+        this.maxY     = maxY;
+        this.maxZ     = maxZ;
         this.matrix4f = matrix4f;
     }
 
     public DireVertexConsumerSquished(VertexConsumer parent, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, Matrix4f matrix4f, float red, float green, float blue, float alpha) {
         super(parent);
-        this.minX = minX;
-        this.minY = minY;
-        this.minZ = minZ;
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.maxZ = maxZ;
+        this.minX     = minX;
+        this.minY     = minY;
+        this.minZ     = minZ;
+        this.maxX     = maxX;
+        this.maxY     = maxY;
+        this.maxZ     = maxZ;
         this.matrix4f = matrix4f;
-        this.red = red;
-        this.green = green;
-        this.blue = blue;
-        this.alpha = alpha;
-    }
-
-    @Override
-    public VertexConsumer setColor(int r, int g, int b, int a) {
-        if (red == -1)
-            parent.setColor(r, g, b, a);
-        else {
-            int rCol = (int) Mth.lerp(red, 0, r);
-            int gCol = (int) Mth.lerp(green, 0, g);
-            int bCol = (int) Mth.lerp(blue, 0, b);
-            int aCol = (int) Mth.lerp(alpha, 0, a);
-            parent.setColor(rCol, gCol, bCol, aCol);
-        }
-        return this;
+        this.red      = red;
+        this.green    = green;
+        this.blue     = blue;
+        this.alpha    = alpha;
     }
 
     public void setDirection(Direction direction) {
@@ -70,10 +56,10 @@ public class DireVertexConsumerSquished extends VertexConsumerWrapper {
 
     public void setSprite(TextureAtlasSprite sprite) {
         this.sprite = sprite;
-        minU = sprite.getU0();
-        maxU = sprite.getU1();
-        minV = sprite.getV0();
-        maxV = sprite.getV1();
+        minU        = sprite.getU0();
+        maxU        = sprite.getU1();
+        minV        = sprite.getV0();
+        maxV        = sprite.getV1();
     }
 
     @Override
@@ -88,6 +74,20 @@ public class DireVertexConsumerSquished extends VertexConsumerWrapper {
 
         Vector4f vector4f = matrix4f.transform(new Vector4f(adjustedX, adjustedY, adjustedZ, 1.0F));
         parent.addVertex(vector4f.x, vector4f.y, vector4f.z);
+        return this;
+    }
+
+    @Override
+    public VertexConsumer setColor(int r, int g, int b, int a) {
+        if (red == -1) {
+            parent.setColor(r, g, b, a);
+        } else {
+            int rCol = (int) Mth.lerp(red, 0, r);
+            int gCol = (int) Mth.lerp(green, 0, g);
+            int bCol = (int) Mth.lerp(blue, 0, b);
+            int aCol = (int) Mth.lerp(alpha, 0, a);
+            parent.setColor(rCol, gCol, bCol, aCol);
+        }
         return this;
     }
 
@@ -124,31 +124,31 @@ public class DireVertexConsumerSquished extends VertexConsumerWrapper {
                         float adjustedU;
                         if (direction.getAxis().equals(Direction.Axis.X)) {
                             if (direction.equals(Direction.EAST)) { //These are reverse for Opposite sides, not quite sure why though
-                                uDistanceToEnd = maxU - u;
-                                uDistanceToStart = u - minU;
-                                adjustedUDistance = uDistanceToEnd * (maxZ); //If we're drawing the X axis, shrink the Z axis to its appropriate sizes
+                                uDistanceToEnd     = maxU - u;
+                                uDistanceToStart   = u - minU;
+                                adjustedUDistance  = uDistanceToEnd * (maxZ); //If we're drawing the X axis, shrink the Z axis to its appropriate sizes
                                 adjustedU2Distance = uDistanceToStart * (minZ);
-                                adjustedU = maxU - adjustedUDistance - adjustedU2Distance;
+                                adjustedU          = maxU - adjustedUDistance - adjustedU2Distance;
                             } else {
-                                uDistanceToEnd = u - minU;
-                                uDistanceToStart = maxU - u;
-                                adjustedUDistance = uDistanceToEnd * (maxZ);
+                                uDistanceToEnd     = u - minU;
+                                uDistanceToStart   = maxU - u;
+                                adjustedUDistance  = uDistanceToEnd * (maxZ);
                                 adjustedU2Distance = uDistanceToStart * (minZ);
-                                adjustedU = minU + adjustedUDistance + adjustedU2Distance;
+                                adjustedU          = minU + adjustedUDistance + adjustedU2Distance;
                             }
                         } else {
                             if (direction.equals(Direction.NORTH)) {
-                                uDistanceToEnd = maxU - u;
-                                uDistanceToStart = u - minU;
-                                adjustedUDistance = uDistanceToEnd * (maxX); //If we're drawing the Z axis, shrink the X axis to its appropriate sizes
+                                uDistanceToEnd     = maxU - u;
+                                uDistanceToStart   = u - minU;
+                                adjustedUDistance  = uDistanceToEnd * (maxX); //If we're drawing the Z axis, shrink the X axis to its appropriate sizes
                                 adjustedU2Distance = uDistanceToStart * (minX);
-                                adjustedU = maxU - adjustedUDistance - adjustedU2Distance;
+                                adjustedU          = maxU - adjustedUDistance - adjustedU2Distance;
                             } else {
-                                uDistanceToEnd = u - minU;
-                                uDistanceToStart = maxU - u;
-                                adjustedUDistance = uDistanceToEnd * (maxX);
+                                uDistanceToEnd     = u - minU;
+                                uDistanceToStart   = maxU - u;
+                                adjustedUDistance  = uDistanceToEnd * (maxX);
                                 adjustedU2Distance = uDistanceToStart * (minX);
-                                adjustedU = minU + adjustedUDistance + adjustedU2Distance;
+                                adjustedU          = minU + adjustedUDistance + adjustedU2Distance;
                             }
                         }
                         float adjustedVDistance = vDistanceToEnd * (maxY); // Adjust for the block height
@@ -165,29 +165,29 @@ public class DireVertexConsumerSquished extends VertexConsumerWrapper {
                         float adjustedVDistance, adjustedV2Distance;
                         float adjustedV;
                         if (direction.equals(Direction.UP)) {
-                            uDistanceToEnd = u - minU;
-                            uDistanceToStart = maxU - u;
-                            adjustedUDistance = uDistanceToEnd * (maxX);
+                            uDistanceToEnd     = u - minU;
+                            uDistanceToStart   = maxU - u;
+                            adjustedUDistance  = uDistanceToEnd * (maxX);
                             adjustedU2Distance = uDistanceToStart * minX;
-                            adjustedU = minU + adjustedUDistance + adjustedU2Distance;
+                            adjustedU          = minU + adjustedUDistance + adjustedU2Distance;
 
-                            vDistanceToEnd = v - minV;
-                            vDistanceToStart = maxV - v;
-                            adjustedVDistance = vDistanceToEnd * (maxZ);
+                            vDistanceToEnd     = v - minV;
+                            vDistanceToStart   = maxV - v;
+                            adjustedVDistance  = vDistanceToEnd * (maxZ);
                             adjustedV2Distance = vDistanceToStart * minZ;
-                            adjustedV = minV + adjustedVDistance + adjustedV2Distance;
+                            adjustedV          = minV + adjustedVDistance + adjustedV2Distance;
                         } else {
-                            uDistanceToEnd = u - minU;  //v is reversed, but U isn't, weird
-                            uDistanceToStart = maxU - u;
-                            adjustedUDistance = uDistanceToEnd * (maxX);
+                            uDistanceToEnd     = u - minU;  //v is reversed, but U isn't, weird
+                            uDistanceToStart   = maxU - u;
+                            adjustedUDistance  = uDistanceToEnd * (maxX);
                             adjustedU2Distance = uDistanceToStart * minX;
-                            adjustedU = minU + adjustedUDistance + adjustedU2Distance;
+                            adjustedU          = minU + adjustedUDistance + adjustedU2Distance;
 
-                            vDistanceToEnd = maxV - v; //v is reversed, but U isn't, weird
-                            vDistanceToStart = v - minV;
-                            adjustedVDistance = vDistanceToEnd * (maxZ);
+                            vDistanceToEnd     = maxV - v; //v is reversed, but U isn't, weird
+                            vDistanceToStart   = v - minV;
+                            adjustedVDistance  = vDistanceToEnd * (maxZ);
                             adjustedV2Distance = vDistanceToStart * minZ;
-                            adjustedV = maxV - adjustedVDistance - adjustedV2Distance;
+                            adjustedV          = maxV - adjustedVDistance - adjustedV2Distance;
                         }
                         parent.setUv(adjustedU, adjustedV);
                         return this;

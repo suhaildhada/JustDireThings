@@ -12,15 +12,14 @@ public record ItemCollectorSettingsPayload(
         boolean showParticles
 ) implements CustomPacketPayload {
     public static final Type<ItemCollectorSettingsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "item_collector_settings"));
-
-    @Override
-    public Type<ItemCollectorSettingsPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ItemCollectorSettingsPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, ItemCollectorSettingsPayload::respectPickupDelay,
             ByteBufCodecs.BOOL, ItemCollectorSettingsPayload::showParticles,
             ItemCollectorSettingsPayload::new
     );
+
+    @Override
+    public Type<ItemCollectorSettingsPayload> type() {
+        return TYPE;
+    }
 }

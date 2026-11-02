@@ -10,9 +10,9 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 public class ToggleButton extends BaseButton {
-    private List<TextureLocalization> textureLocalizations;
-    private int texturePosition;
-    private int maxValue = -1;
+    private final List<TextureLocalization> textureLocalizations;
+    private       int                       texturePosition;
+    private int                       maxValue = -1;
 
     public ToggleButton(int x, int y, int width, int height, List<TextureLocalization> textureLocalizations, int texturePosition, OnPress onPress) {
         super(x, y, width, height, Component.empty(), onPress, Button.DEFAULT_NARRATION);
@@ -49,11 +49,6 @@ public class ToggleButton extends BaseButton {
         super.onClick(p_onClick_1_, p_onClick_3_);
     }
 
-    @Override
-    public boolean mouseClicked(double x, double y, int button) {
-        return super.mouseClicked(x, y, button);
-    }
-
     public int getTexturePosition() {
         return texturePosition >= textureLocalizations.size() ? 0 : texturePosition;
     }
@@ -62,32 +57,27 @@ public class ToggleButton extends BaseButton {
         setTexturePosition(texturePosition ? 1 : 0);
     }
 
+    public void setTexturePosition(int texturePosition) {
+        if (texturePosition >= textureLocalizations.size()) {
+            this.texturePosition = textureLocalizations.size();
+        } else {
+            this.texturePosition = texturePosition;
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        return super.mouseClicked(x, y, button);
+    }
+
     @Override
     public void onClick(double mouseX, double mouseY, int button) {
-        if (button == 1)
+        if (button == 1) {
             previousTexturePosition();
-        else
+        } else {
             nextTexturePosition();
+        }
         onPress();
-    }
-
-    public void setTexturePosition(int texturePosition) {
-        if (texturePosition >= textureLocalizations.size())
-            this.texturePosition = textureLocalizations.size();
-        else
-            this.texturePosition = texturePosition;
-    }
-
-    public void nextTexturePosition() {
-        if (maxValue == -1)
-            texturePosition = (getTexturePosition() + 1) % textureLocalizations.size();
-        else
-            texturePosition = (getTexturePosition() + 1) % Math.min(textureLocalizations.size(), maxValue);
-    }
-
-    @Override
-    public Component getLocalization() {
-        return textureLocalizations.get(getTexturePosition()).localization();
     }
 
     public void previousTexturePosition() {
@@ -98,5 +88,18 @@ public class ToggleButton extends BaseButton {
             int limit = Math.min(textureLocalizations.size(), maxValue); // Determine the effective limit
             texturePosition = (getTexturePosition() - 1 + limit) % limit;
         }
+    }
+
+    public void nextTexturePosition() {
+        if (maxValue == -1) {
+            texturePosition = (getTexturePosition() + 1) % textureLocalizations.size();
+        } else {
+            texturePosition = (getTexturePosition() + 1) % Math.min(textureLocalizations.size(), maxValue);
+        }
+    }
+
+    @Override
+    public Component getLocalization() {
+        return textureLocalizations.get(getTexturePosition()).localization();
     }
 }

@@ -11,15 +11,14 @@ public record ToggleToolRefreshSlots(
         int slot
 ) implements CustomPacketPayload {
     public static final Type<ToggleToolRefreshSlots> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "toggle_tool_refresh_slots"));
+    public static final StreamCodec<FriendlyByteBuf, ToggleToolRefreshSlots> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, ToggleToolRefreshSlots::slot,
+            ToggleToolRefreshSlots::new
+    );
 
     @Override
     public Type<ToggleToolRefreshSlots> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, ToggleToolRefreshSlots> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, ToggleToolRefreshSlots::slot,
-            ToggleToolRefreshSlots::new
-    );
 }
 

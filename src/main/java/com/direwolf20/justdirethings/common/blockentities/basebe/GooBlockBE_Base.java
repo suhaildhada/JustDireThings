@@ -33,12 +33,12 @@ import java.util.Random;
 import static com.direwolf20.justdirethings.common.blocks.gooblocks.GooBlock_Base.ALIVE;
 
 public class GooBlockBE_Base extends BlockEntity {
-    public final Map<Direction, Integer> sidedCounters = new Object2IntOpenHashMap<>();
+    public final Map<Direction, Integer> sidedCounters  = new Object2IntOpenHashMap<>();
     public final Map<Direction, Integer> sidedDurations = new Object2IntOpenHashMap<>();
 
     //Cache so we don't have to iterate recipes every time
-    public final Map<BlockState, BlockState> outputCache = new HashMap<>();
-    public final Map<BlockState, Integer> durationCache = new Object2IntOpenHashMap<>();
+    public final Map<BlockState, BlockState> outputCache   = new HashMap<>();
+    public final Map<BlockState, Integer>    durationCache = new Object2IntOpenHashMap<>();
 
     public GooBlockBE_Base(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -46,23 +46,6 @@ public class GooBlockBE_Base extends BlockEntity {
             sidedCounters.put(direction, -1); //Init the counters, -1 means we aren't operating on anything on that side
             sidedDurations.put(direction, -1); //Init the durations, -1 means we aren't operating on anything on that side
         }
-    }
-
-    public boolean updateSideCounter(Direction direction, int newCounter) {
-        int oldCounter = sidedCounters.get(direction);
-        sidedCounters.put(direction, newCounter);
-        if (oldCounter >= 0 && newCounter == -1 && level.isClientSide) {
-            spawnParticles(direction);
-        }
-        int duration = sidedDurations.get(direction);
-        if (newCounter <= 0 || duration <= 0)
-            return false;
-        // Every 3 seconds or so
-        return (newCounter % (60 * counterReducer())) == 0;
-    }
-
-    public int counterReducer() {
-        return 1;
     }
 
     public int getTier() {
@@ -81,10 +64,46 @@ public class GooBlockBE_Base extends BlockEntity {
         tickCounters(); //We tick on client side too, just for rendering of course!
     }
 
-    public void tickServer() {
-        checkSides();
-        tickCounters();
+    public void tickCounters() {
+        boolean needsUpdate = false;
+        for (Direction direction : Direction.values()) {
+            int sideCounter = sidedCounters.get(direction);
+            if (sideCounter > 0) {
+                sideCounter = Math.max(sideCounter - counterReducer(), 0);
+                if (updateSideCounter(direction, sideCounter)) {
+                    needsUpdate = true;
+                }
+            }
+        }
+        if (needsUpdate && !level.isClientSide) {
+            markDirtyClient();
+        }
+    }
+
+    public int counterReducer() {
+        return 1;
+    }
+
+    public boolean updateSideCounter(Direction direction, int newCounter) {
+        int oldCounter = sidedCounters.get(direction);
+        sidedCounters.put(direction, newCounter);
+        if (oldCounter >= 0 && newCounter == -1 && level.isClientSide) {
+            spawnParticles(direction);
+        }
+        int duration = sidedDurations.get(direction);
+        if (newCounter <= 0 || duration <= 0) {
+            return false;
+        }
+        // Every 3 seconds or so
+        return (newCounter % (60 * counterReducer())) == 0;
+    }
+
+    public void markDirtyClient() {
         this.setChanged();
+        if (this.getLevel() != null) {
+            BlockState state = this.getLevel().getBlockState(this.getBlockPos());
+            this.getLevel().sendBlockUpdated(this.getBlockPos(), state, state, 3);
+        }
     }
 
     public void spawnParticles(Direction side) {
@@ -102,22 +121,16 @@ public class GooBlockBE_Base extends BlockEntity {
         }
     }
 
-    public void tickCounters() {
-        boolean needsUpdate = false;
-        for (Direction direction : Direction.values()) {
-            int sideCounter = sidedCounters.get(direction);
-            if (sideCounter > 0) {
-                sideCounter = Math.max(sideCounter - counterReducer(), 0);
-                if (updateSideCounter(direction, sideCounter))
-                    needsUpdate = true;
-            }
-        }
-        if (needsUpdate && !level.isClientSide)
-            markDirtyClient();
+    public void tickServer() {
+        checkSides();
+        tickCounters();
+        this.setChanged();
     }
 
     public void checkSides() {
-        if (level == null) return;
+        if (level == null) {
+            return;
+        }
         for (Direction direction : Direction.values()) {
             BlockState input = level.getBlockState(getBlockPos().relative(direction));
             BlockState output = findOutput(input);
@@ -145,10 +158,11 @@ public class GooBlockBE_Base extends BlockEntity {
     }
 
     public void setBlockToTarget(BlockState output, Direction direction) {
-        if (output.hasProperty(BlockStateProperties.FACING))
+        if (output.hasProperty(BlockStateProperties.FACING)) {
             level.setBlockAndUpdate(getBlockPos().relative(direction), output.setValue(BlockStateProperties.FACING, direction));
-        else
+        } else {
             level.setBlockAndUpdate(getBlockPos().relative(direction), output);
+        }
         updateSideCounter(direction, -1);
         sidedDurations.put(direction, -1);
         level.playSound(null, getBlockPos(), SoundEvents.SCULK_BLOCK_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -156,7 +170,9 @@ public class GooBlockBE_Base extends BlockEntity {
     }
 
     private void killGoo() {
-        if (!Config.GOO_CAN_DIE.get()) return;
+        if (!Config.GOO_CAN_DIE.get()) {
+            return;
+        }
         if (level != null && !level.isClientSide) {
             BlockState state = this.getBlockState();
 
@@ -170,14 +186,16 @@ public class GooBlockBE_Base extends BlockEntity {
     }
 
     public BlockState findOutput(BlockState input) {
-        if (!outputCache.containsKey(input))
+        if (!outputCache.containsKey(input)) {
             populateCaches(input);
+        }
         return outputCache.get(input);
     }
 
     public int findDuration(BlockState input) {
-        if (!durationCache.containsKey(input))
+        if (!durationCache.containsKey(input)) {
             populateCaches(input);
+        }
         return durationCache.get(input);
     }
 
@@ -186,12 +204,12 @@ public class GooBlockBE_Base extends BlockEntity {
         int duration = -1;
         GooSpreadRecipe gooSpreadRecipe = findRecipe(input);
         if (gooSpreadRecipe != null) {
-            output = gooSpreadRecipe.getOutput();
+            output   = gooSpreadRecipe.getOutput();
             duration = gooSpreadRecipe.getCraftingDuration();
         } else {
             GooSpreadRecipeTag gooSpreadRecipeTag = findRecipeTag(input);
             if (gooSpreadRecipeTag != null) {
-                output = gooSpreadRecipeTag.getOutput();
+                output   = gooSpreadRecipeTag.getOutput();
                 duration = gooSpreadRecipeTag.getCraftingDuration();
             }
         }
@@ -226,25 +244,13 @@ public class GooBlockBE_Base extends BlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        ListTag counterListTag = new ListTag();
-        for (Direction direction : Direction.values()) {
-            CompoundTag counterTag = new CompoundTag();
-            counterTag.putInt("side", direction.ordinal());
-            counterTag.putInt("counter", sidedCounters.get(direction));
-            counterListTag.add(counterTag);
-        }
-        tag.put("sideCounters", counterListTag);
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
+        this.loadAdditional(pkt.getTag(), lookupProvider);
+    }
 
-        ListTag durationListTag = new ListTag();
-        for (Direction direction : Direction.values()) {
-            CompoundTag durationTag = new CompoundTag();
-            durationTag.putInt("side", direction.ordinal());
-            durationTag.putInt("duration", sidedDurations.get(direction));
-            durationListTag.add(durationTag);
-        }
-        tag.put("sideDurations", durationListTag);
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider lookupProvider) {
+        this.loadAdditional(tag, lookupProvider);
     }
 
     @Override
@@ -271,14 +277,31 @@ public class GooBlockBE_Base extends BlockEntity {
     }
 
     @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        // Vanilla uses the type parameter to indicate which type of tile entity (command block, skull, or beacon?) is receiving the packet, but it seems like Forge has overridden this behavior
-        return ClientboundBlockEntityDataPacket.create(this);
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        ListTag counterListTag = new ListTag();
+        for (Direction direction : Direction.values()) {
+            CompoundTag counterTag = new CompoundTag();
+            counterTag.putInt("side", direction.ordinal());
+            counterTag.putInt("counter", sidedCounters.get(direction));
+            counterListTag.add(counterTag);
+        }
+        tag.put("sideCounters", counterListTag);
+
+        ListTag durationListTag = new ListTag();
+        for (Direction direction : Direction.values()) {
+            CompoundTag durationTag = new CompoundTag();
+            durationTag.putInt("side", direction.ordinal());
+            durationTag.putInt("duration", sidedDurations.get(direction));
+            durationListTag.add(durationTag);
+        }
+        tag.put("sideDurations", durationListTag);
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider lookupProvider) {
-        this.loadAdditional(tag, lookupProvider);
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        // Vanilla uses the type parameter to indicate which type of tile entity (command block, skull, or beacon?) is receiving the packet, but it seems like Forge has overridden this behavior
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
@@ -286,18 +309,5 @@ public class GooBlockBE_Base extends BlockEntity {
         CompoundTag tag = new CompoundTag();
         saveAdditional(tag, p_323910_);
         return tag;
-    }
-
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookupProvider) {
-        this.loadAdditional(pkt.getTag(), lookupProvider);
-    }
-
-    public void markDirtyClient() {
-        this.setChanged();
-        if (this.getLevel() != null) {
-            BlockState state = this.getLevel().getBlockState(this.getBlockPos());
-            this.getLevel().sendBlockUpdated(this.getBlockPos(), state, state, 3);
-        }
     }
 }

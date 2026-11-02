@@ -28,10 +28,11 @@ public class LeftClickPacket {
             Player sender = context.player();
 
             ItemStack toggleableItem = ItemStack.EMPTY;
-            if (payload.inventorySlot() == -1)
+            if (payload.inventorySlot() == -1) {
                 toggleableItem = ToggleableItem.getToggleableItem(sender);
-            else
+            } else {
                 toggleableItem = sender.getInventory().getItem(payload.inventorySlot());
+            }
             if (toggleableItem.getItem() instanceof LeftClickableTool && toggleableItem.getItem() instanceof ToggleableTool toggleableTool) {
                 if (payload.keyCode() == -1) {//left Click
                     InteractionHand hand = payload.mainHand() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;

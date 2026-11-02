@@ -17,24 +17,24 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class ExperienceHolderScreen extends BaseMachineScreen<ExperienceHolderContainer> {
-    private ExperienceHolderBE experienceHolderBE;
-    private int exp;
-    private int targetExp;
-    private boolean ownerOnly;
-    private boolean collectExp;
-    public boolean showParticles = true;
-    private static final ResourceLocation EXPERIENCE_BAR_BACKGROUND_SPRITE = ResourceLocation.withDefaultNamespace("hud/experience_bar_background");
-    private static final ResourceLocation EXPERIENCE_BAR_PROGRESS_SPRITE = ResourceLocation.withDefaultNamespace("hud/experience_bar_progress");
+    private static final ResourceLocation   EXPERIENCE_BAR_BACKGROUND_SPRITE = ResourceLocation.withDefaultNamespace("hud/experience_bar_background");
+    private static final ResourceLocation   EXPERIENCE_BAR_PROGRESS_SPRITE   = ResourceLocation.withDefaultNamespace("hud/experience_bar_progress");
+    public               boolean            showParticles                    = true;
+    private              ExperienceHolderBE experienceHolderBE;
+    private              int                exp;
+    private              int                targetExp;
+    private              boolean            ownerOnly;
+    private              boolean            collectExp;
 
     public ExperienceHolderScreen(ExperienceHolderContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof ExperienceHolderBE experienceHolderBE) {
             this.experienceHolderBE = experienceHolderBE;
-            this.exp = experienceHolderBE.exp;
-            this.targetExp = experienceHolderBE.targetExp;
-            this.ownerOnly = experienceHolderBE.ownerOnly;
-            this.collectExp = experienceHolderBE.collectExp;
-            this.showParticles = experienceHolderBE.showParticles;
+            this.exp                = experienceHolderBE.exp;
+            this.targetExp          = experienceHolderBE.targetExp;
+            this.ownerOnly          = experienceHolderBE.ownerOnly;
+            this.collectExp         = experienceHolderBE.collectExp;
+            this.showParticles      = experienceHolderBE.showParticles;
         }
     }
 
@@ -43,18 +43,20 @@ public class ExperienceHolderScreen extends BaseMachineScreen<ExperienceHolderCo
         super.init();
         addRenderableWidget(ToggleButtonFactory.STOREEXPBUTTON(topSectionLeft + (topSectionWidth / 2) + 15, topSectionTop + 62, true, b -> {
             int amt = 1;
-            if (Screen.hasControlDown())
+            if (Screen.hasControlDown()) {
                 amt = -1;
-            else if (Screen.hasShiftDown())
+            } else if (Screen.hasShiftDown()) {
                 amt = amt * 10;
+            }
             PacketDistributor.sendToServer(new ExperienceHolderPayload(true, amt));
         }));
         addRenderableWidget(ToggleButtonFactory.EXTRACTEXPBUTTON(topSectionLeft + (topSectionWidth / 2) - 15 - 18, topSectionTop + 62, true, b -> {
             int amt = 1;
-            if (Screen.hasControlDown())
+            if (Screen.hasControlDown()) {
                 amt = -1;
-            else if (Screen.hasShiftDown())
+            } else if (Screen.hasShiftDown()) {
                 amt = amt * 10;
+            }
             PacketDistributor.sendToServer(new ExperienceHolderPayload(false, amt));
         }));
         addRenderableWidget(ToggleButtonFactory.TARGETEXPBUTTON(topSectionLeft + (topSectionWidth / 2) - 15 - 42, topSectionTop + 64, targetExp, b -> {

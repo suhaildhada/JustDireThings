@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ClickerT2BE extends ClickerT1BE implements PoweredMachineBE, AreaAffectingBE, FilterableBE {
-    public FilterData filterData = new FilterData();
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
     public final PoweredMachineContainerData poweredMachineData;
+    public       FilterData                  filterData        = new FilterData();
+    public       AreaAffectingData           areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
 
     public ClickerT2BE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.ClickerT2BE.get(), pPos, pBlockState);
@@ -58,13 +58,13 @@ public class ClickerT2BE extends ClickerT1BE implements PoweredMachineBE, AreaAf
     }
 
     @Override
-    public FilterBasicHandler getFilterHandler() {
-        return getData(Registration.HANDLER_BASIC_FILTER);
+    public FilterData getFilterData() {
+        return filterData;
     }
 
     @Override
-    public FilterData getFilterData() {
-        return filterData;
+    public FilterBasicHandler getFilterHandler() {
+        return getData(Registration.HANDLER_BASIC_FILTER);
     }
 
     @Override
@@ -79,33 +79,6 @@ public class ClickerT2BE extends ClickerT1BE implements PoweredMachineBE, AreaAf
     }
 
     @Override
-    public InteractionResult clickEntity(ItemStack itemStack, UsefulFakePlayer fakePlayer, LivingEntity entity) {
-        InteractionResult interactionResult = super.clickEntity(itemStack, fakePlayer, entity);
-        if (interactionResult.equals(InteractionResult.SUCCESS))
-            extractEnergy(getStandardEnergyCost(), false);
-        return interactionResult;
-    }
-
-    @Override
-    public InteractionResult clickBlock(ItemStack itemStack, UsefulFakePlayer fakePlayer, BlockPos blockPos) {
-        InteractionResult interactionResult = super.clickBlock(itemStack, fakePlayer, blockPos);
-        if (interactionResult.equals(InteractionResult.SUCCESS))
-            extractEnergy(getStandardEnergyCost(), false);
-        return interactionResult;
-    }
-
-    @Override
-    public boolean isBlockPosValid(FakePlayer fakePlayer, BlockPos blockPos) {
-        if (!super.isBlockPosValid(fakePlayer, blockPos))
-            return false; //Do the same checks as normal, then check the filters
-        BlockState blockState = level.getBlockState(blockPos);
-        if ((blockState.getBlock() instanceof LiquidBlock liquidBlock))
-            return isStackValidFilter(liquidBlock);
-        ItemStack blockItemStack = blockState.getCloneItemStack(new BlockHitResult(Vec3.ZERO, getDirectionValue(), blockPos, false), level, blockPos, fakePlayer);
-        return isStackValidFilter(blockItemStack);
-    }
-
-    @Override
     public List<BlockPos> findSpotsToClick(FakePlayer fakePlayer) {
         AABB area = getAABB(getBlockPos());
         return BlockPos.betweenClosedStream((int) area.minX, (int) area.minY, (int) area.minZ, (int) area.maxX - 1, (int) area.maxY - 1, (int) area.maxZ - 1)
@@ -116,14 +89,46 @@ public class ClickerT2BE extends ClickerT1BE implements PoweredMachineBE, AreaAf
     }
 
     @Override
+    public InteractionResult clickBlock(ItemStack itemStack, UsefulFakePlayer fakePlayer, BlockPos blockPos) {
+        InteractionResult interactionResult = super.clickBlock(itemStack, fakePlayer, blockPos);
+        if (interactionResult.equals(InteractionResult.SUCCESS)) {
+            extractEnergy(getStandardEnergyCost(), false);
+        }
+        return interactionResult;
+    }
+
+    @Override
     public AABB getAABB() {
         return getAABB(getBlockPos());
     }
 
     @Override
-    public boolean isValidEntity(Entity entity) {
-        if (!super.isValidEntity(entity))
+    public InteractionResult clickEntity(ItemStack itemStack, UsefulFakePlayer fakePlayer, LivingEntity entity) {
+        InteractionResult interactionResult = super.clickEntity(itemStack, fakePlayer, entity);
+        if (interactionResult.equals(InteractionResult.SUCCESS)) {
+            extractEnergy(getStandardEnergyCost(), false);
+        }
+        return interactionResult;
+    }
+
+    @Override
+    public boolean isBlockPosValid(FakePlayer fakePlayer, BlockPos blockPos) {
+        if (!super.isBlockPosValid(fakePlayer, blockPos)) {
             return false; //Do the same checks as normal, then check the filters
+        }
+        BlockState blockState = level.getBlockState(blockPos);
+        if ((blockState.getBlock() instanceof LiquidBlock liquidBlock)) {
+            return isStackValidFilter(liquidBlock);
+        }
+        ItemStack blockItemStack = blockState.getCloneItemStack(new BlockHitResult(Vec3.ZERO, getDirectionValue(), blockPos, false), level, blockPos, fakePlayer);
+        return isStackValidFilter(blockItemStack);
+    }
+
+    @Override
+    public boolean isValidEntity(Entity entity) {
+        if (!super.isValidEntity(entity)) {
+            return false; //Do the same checks as normal, then check the filters
+        }
         return isEntityValidFilter(entity, this.level);
     }
 }

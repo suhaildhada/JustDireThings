@@ -30,31 +30,30 @@ import java.util.List;
 import java.util.Map;
 
 public class SensorT1Screen extends BaseMachineScreen<SensorT1Container> implements SensorScreenInterface {
-    public int senseTarget;
-    public boolean strongSignal;
-    public boolean showBlockStates;
-    public int blockStateSlot = -1;
-    private BlockStateScrollList scrollPanel;
-    public ItemStack stateItemStack = ItemStack.EMPTY;
-    public Map<Integer, Map<Property<?>, Comparable<?>>> blockStateProperties = new HashMap<>();
-    public Map<Integer, ItemStack> itemStackCache = new HashMap<>();
+    public  int                                           senseTarget;
+    public  boolean                                       strongSignal;
+    public  boolean                                       showBlockStates;
+    public  int                                           blockStateSlot       = -1;
+    public  ItemStack                                     stateItemStack       = ItemStack.EMPTY;
+    public  Map<Integer, Map<Property<?>, Comparable<?>>> blockStateProperties = new HashMap<>();
+    public  Map<Integer, ItemStack>                       itemStackCache       = new HashMap<>();
+    private BlockStateScrollList                          scrollPanel;
 
     public SensorT1Screen(SensorT1Container container, Inventory inv, Component name) {
         super(container, inv, name);
         if (baseMachineBE instanceof SensorT1BE sensor) {
-            senseTarget = sensor.sense_target.ordinal();
-            strongSignal = sensor.strongSignal;
+            senseTarget          = sensor.sense_target.ordinal();
+            strongSignal         = sensor.strongSignal;
             blockStateProperties = sensor.blockStateProperties;
             populateItemStackCache();
         }
     }
 
-    @Override
-    public void addFilterButtons() {
-        addRenderableWidget(ToggleButtonFactory.ALLOWLISTBUTTON(getGuiLeft() + 38, topSectionTop + 38, filterData.allowlist, b -> {
-            filterData.allowlist = !filterData.allowlist;
-            saveSettings();
-        }));
+    public void populateItemStackCache() {
+        for (int i = 0; i < container.FILTER_SLOTS; i++) {
+            ItemStack stack = container.filterHandler.getStackInSlot(i);
+            this.itemStackCache.put(i, stack);
+        }
     }
 
     @Override
@@ -74,15 +73,16 @@ public class SensorT1Screen extends BaseMachineScreen<SensorT1Container> impleme
 
     @Override
     public void setTopSection() {
-        extraWidth = 0;
+        extraWidth  = 0;
         extraHeight = 0;
     }
 
     @Override
-    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeftIn, int guiTopIn, int mouseButton) {
-        if (showBlockStates && MiscTools.inBounds(topSectionLeft - 101, topSectionTop, 100, topSectionHeight, mouseX, mouseY))
-            return false;
-        return super.hasClickedOutside(mouseX, mouseY, guiLeftIn, guiTopIn, mouseButton);
+    public void addFilterButtons() {
+        addRenderableWidget(ToggleButtonFactory.ALLOWLISTBUTTON(getGuiLeft() + 38, topSectionTop + 38, filterData.allowlist, b -> {
+            filterData.allowlist = !filterData.allowlist;
+            saveSettings();
+        }));
     }
 
     @Override
@@ -91,32 +91,15 @@ public class SensorT1Screen extends BaseMachineScreen<SensorT1Container> impleme
         PacketDistributor.sendToServer(new SensorPayload(senseTarget, strongSignal, 0, 0));
     }
 
-    public Comparable<?> getValue(Property<?> property) {
-        if (!blockStateProperties.containsKey(blockStateSlot)) return null;
-        Map<Property<?>, Comparable<?>> props = blockStateProperties.get(blockStateSlot);
-        if (!props.containsKey(property)) return null;
-        return props.get(property);
-    }
-
-    public void setPropertyValue(Property<?> property, Comparable<?> comparable, boolean isAny) {
-        Map<Property<?>, Comparable<?>> props = blockStateProperties.getOrDefault(blockStateSlot, new HashMap<>());
-        if (isAny) {
-            props.remove(property);
-        } else {
-            props.put(property, comparable);
-        }
-        blockStateProperties.put(blockStateSlot, props);
-        saveBlockStateData(blockStateSlot);
-    }
-
-    public void clearStateProperties(int slot) {
-        blockStateProperties.put(slot, new HashMap<>());
-    }
-
-    public void populateItemStackCache() {
-        for (int i = 0; i < container.FILTER_SLOTS; i++) {
-            ItemStack stack = container.filterHandler.getStackInSlot(i);
-            this.itemStackCache.put(i, stack);
+    @Override
+    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
+        super.renderBg(guiGraphics, partialTicks, mouseX, mouseY);
+        validateItemStackCache();
+        if (showBlockStates) {
+            guiGraphics.blitSprite(SOCIALBACKGROUND, topSectionLeft - 100, topSectionTop, 100, topSectionHeight);
+            if (blockStateSlot != -1 && !container.filterHandler.getStackInSlot(blockStateSlot).equals(scrollPanel.getStateStack())) {
+                refreshStateWindow();
+            }
         }
     }
 
@@ -132,50 +115,17 @@ public class SensorT1Screen extends BaseMachineScreen<SensorT1Container> impleme
         }
     }
 
-    public void saveBlockStateData(int slot) {
-        if (!blockStateProperties.containsKey(slot)) return;
-        Map<Property<?>, Comparable<?>> props = blockStateProperties.get(slot);
-        CompoundTag tag = new CompoundTag();
-        ListTag listTag = SensorT1BE.saveBlockStateProperty(props);
-        tag.put("tagList", listTag);
-        PacketDistributor.sendToServer(new BlockStateFilterPayload(slot, tag));
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
-        super.renderBg(guiGraphics, partialTicks, mouseX, mouseY);
-        validateItemStackCache();
-        if (showBlockStates) {
-            guiGraphics.blitSprite(SOCIALBACKGROUND, topSectionLeft - 100, topSectionTop, 100, topSectionHeight);
-            if (blockStateSlot != -1 && !container.filterHandler.getStackInSlot(blockStateSlot).equals(scrollPanel.getStateStack()))
-                refreshStateWindow();
-        }
-    }
-
     public void refreshStateWindow() {
-        if (!showBlockStates || blockStateSlot == -1) return;
+        if (!showBlockStates || blockStateSlot == -1) {
+            return;
+        }
         stateItemStack = container.filterHandler.getStackInSlot(blockStateSlot);
         scrollPanel.setStateStack(stateItemStack);
         scrollPanel.refreshList();
     }
 
-    @Override
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        if (hoveredSlot != null && (hoveredSlot instanceof FilterBasicSlot)) {
-            if (this.menu.getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
-                List<Component> components = new ArrayList<>();
-                ItemStack itemstack = this.hoveredSlot.getItem();
-                components.add(Component.translatable("justdirethings.screen.rightclicksettings").withStyle(ChatFormatting.RED));
-                components.addAll(this.getTooltipFromContainerItem(itemstack));
-                pGuiGraphics.renderTooltip(this.font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
-            } else {
-                List<FormattedText> components = new ArrayList<>();
-                components.add(Component.translatable("justdirethings.screen.rightclicksettings").withStyle(ChatFormatting.RED));
-                pGuiGraphics.renderTooltip(this.font, Language.getInstance().getVisualOrder(components), pX, pY);
-            }
-        } else {
-            super.renderTooltip(pGuiGraphics, pX, pY);
-        }
+    public void clearStateProperties(int slot) {
+        blockStateProperties.put(slot, new HashMap<>());
     }
 
     @Override
@@ -201,5 +151,65 @@ public class SensorT1Screen extends BaseMachineScreen<SensorT1Container> impleme
             }
         }
         return super.mouseClicked(x, y, btn);
+    }
+
+    @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeftIn, int guiTopIn, int mouseButton) {
+        if (showBlockStates && MiscTools.inBounds(topSectionLeft - 101, topSectionTop, 100, topSectionHeight, mouseX, mouseY)) {
+            return false;
+        }
+        return super.hasClickedOutside(mouseX, mouseY, guiLeftIn, guiTopIn, mouseButton);
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        if (hoveredSlot != null && (hoveredSlot instanceof FilterBasicSlot)) {
+            if (this.menu.getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
+                List<Component> components = new ArrayList<>();
+                ItemStack itemstack = this.hoveredSlot.getItem();
+                components.add(Component.translatable("justdirethings.screen.rightclicksettings").withStyle(ChatFormatting.RED));
+                components.addAll(this.getTooltipFromContainerItem(itemstack));
+                pGuiGraphics.renderTooltip(this.font, components, itemstack.getTooltipImage(), itemstack, pX, pY);
+            } else {
+                List<FormattedText> components = new ArrayList<>();
+                components.add(Component.translatable("justdirethings.screen.rightclicksettings").withStyle(ChatFormatting.RED));
+                pGuiGraphics.renderTooltip(this.font, Language.getInstance().getVisualOrder(components), pX, pY);
+            }
+        } else {
+            super.renderTooltip(pGuiGraphics, pX, pY);
+        }
+    }
+
+    public Comparable<?> getValue(Property<?> property) {
+        if (!blockStateProperties.containsKey(blockStateSlot)) {
+            return null;
+        }
+        Map<Property<?>, Comparable<?>> props = blockStateProperties.get(blockStateSlot);
+        if (!props.containsKey(property)) {
+            return null;
+        }
+        return props.get(property);
+    }
+
+    public void setPropertyValue(Property<?> property, Comparable<?> comparable, boolean isAny) {
+        Map<Property<?>, Comparable<?>> props = blockStateProperties.getOrDefault(blockStateSlot, new HashMap<>());
+        if (isAny) {
+            props.remove(property);
+        } else {
+            props.put(property, comparable);
+        }
+        blockStateProperties.put(blockStateSlot, props);
+        saveBlockStateData(blockStateSlot);
+    }
+
+    public void saveBlockStateData(int slot) {
+        if (!blockStateProperties.containsKey(slot)) {
+            return;
+        }
+        Map<Property<?>, Comparable<?>> props = blockStateProperties.get(slot);
+        CompoundTag tag = new CompoundTag();
+        ListTag listTag = SensorT1BE.saveBlockStateProperty(props);
+        tag.put("tagList", listTag);
+        PacketDistributor.sendToServer(new BlockStateFilterPayload(slot, tag));
     }
 }

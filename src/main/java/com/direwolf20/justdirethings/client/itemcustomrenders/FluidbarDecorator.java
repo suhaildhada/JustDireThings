@@ -17,8 +17,9 @@ public class FluidbarDecorator implements IItemDecorator {
             if (stack.getItem() instanceof PoweredItem poweredItem) {
                 isPowerBarVisible = poweredItem.isPowerBarVisible(stack);
             }
-            if (stack.isBarVisible())
+            if (stack.isBarVisible()) {
                 isPowerBarVisible = true;
+            }
 
             // Retrieve fluid capability
             boolean isFluidBarVisible = fluidContainingItem.isFluidBarVisible(stack);

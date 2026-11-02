@@ -23,18 +23,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ToolSettingContainer extends BaseContainer {
-    public Player playerEntity;
-    public static final ResourceLocation EMPTY_ARMOR_SLOT_HELMET = ResourceLocation.parse("item/empty_armor_slot_helmet");
-    public static final ResourceLocation EMPTY_ARMOR_SLOT_CHESTPLATE = ResourceLocation.parse("item/empty_armor_slot_chestplate");
-    public static final ResourceLocation EMPTY_ARMOR_SLOT_LEGGINGS = ResourceLocation.parse("item/empty_armor_slot_leggings");
-    public static final ResourceLocation EMPTY_ARMOR_SLOT_BOOTS = ResourceLocation.parse("item/empty_armor_slot_boots");
-    public static final ResourceLocation EMPTY_ARMOR_SLOT_SHIELD = ResourceLocation.parse("item/empty_armor_slot_shield");
-    static final ResourceLocation[] TEXTURE_EMPTY_SLOTS = new ResourceLocation[]{
+    public static final  ResourceLocation     EMPTY_ARMOR_SLOT_HELMET     = ResourceLocation.parse("item/empty_armor_slot_helmet");
+    public static final  ResourceLocation     EMPTY_ARMOR_SLOT_CHESTPLATE = ResourceLocation.parse("item/empty_armor_slot_chestplate");
+    public static final  ResourceLocation     EMPTY_ARMOR_SLOT_LEGGINGS   = ResourceLocation.parse("item/empty_armor_slot_leggings");
+    public static final  ResourceLocation     EMPTY_ARMOR_SLOT_BOOTS      = ResourceLocation.parse("item/empty_armor_slot_boots");
+    public static final  ResourceLocation     EMPTY_ARMOR_SLOT_SHIELD     = ResourceLocation.parse("item/empty_armor_slot_shield");
+    static final         ResourceLocation[]   TEXTURE_EMPTY_SLOTS         = new ResourceLocation[]{
             EMPTY_ARMOR_SLOT_BOOTS, EMPTY_ARMOR_SLOT_LEGGINGS, EMPTY_ARMOR_SLOT_CHESTPLATE, EMPTY_ARMOR_SLOT_HELMET
     };
-    private static final EquipmentSlot[] SLOT_IDS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-    public final List<Slot> dynamicSlots = new ArrayList<>();
-    public ComponentItemHandler componentItemHandler;
+    private static final EquipmentSlot[]      SLOT_IDS                    = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+    public final         List<Slot>           dynamicSlots                = new ArrayList<>();
+    public               Player               playerEntity;
+    public               ComponentItemHandler componentItemHandler;
 
 
     public ToolSettingContainer(int windowId, Inventory playerInventory, Player player, FriendlyByteBuf extraData) {
@@ -51,6 +51,11 @@ public class ToolSettingContainer extends BaseContainer {
             final EquipmentSlot equipmentslot = SLOT_IDS[k];
             this.addSlot(new Slot(playerInventory, 39 - k, 44 + k * 18, 66) {
                 @Override
+                public boolean mayPlace(ItemStack p_39746_) {
+                    return p_39746_.canEquip(equipmentslot, playerEntity);
+                }
+
+                @Override
                 public void setByPlayer(ItemStack p_270969_, ItemStack p_299918_) {
                     onEquipItem(playerEntity, equipmentslot, p_270969_, p_299918_);
                     super.setByPlayer(p_270969_, p_299918_);
@@ -62,19 +67,14 @@ public class ToolSettingContainer extends BaseContainer {
                 }
 
                 @Override
-                public boolean mayPlace(ItemStack p_39746_) {
-                    return p_39746_.canEquip(equipmentslot, playerEntity);
+                public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+                    return Pair.of(InventoryMenu.BLOCK_ATLAS, TEXTURE_EMPTY_SLOTS[equipmentslot.getIndex()]);
                 }
 
                 @Override
                 public boolean mayPickup(Player p_39744_) {
                     ItemStack itemstack = this.getItem();
-                    return !itemstack.isEmpty() && !p_39744_.isCreative() && EnchantmentHelper.has(itemstack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE) ? false : super.mayPickup(p_39744_);
-                }
-
-                @Override
-                public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                    return Pair.of(InventoryMenu.BLOCK_ATLAS, TEXTURE_EMPTY_SLOTS[equipmentslot.getIndex()]);
+                    return (itemstack.isEmpty() || p_39744_.isCreative() || !EnchantmentHelper.has(itemstack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) && super.mayPickup(p_39744_);
                 }
             });
         }
@@ -95,6 +95,34 @@ public class ToolSettingContainer extends BaseContainer {
         refreshSlots(player.getMainHandItem());
     }
 
+    static void onEquipItem(Player pPlayer, EquipmentSlot pSlot, ItemStack pNewItem, ItemStack pOldItem) {
+        pPlayer.onEquipItem(pSlot, pOldItem, pNewItem);
+    }
+
+    public void refreshSlots(ItemStack selectedStack) {
+        clearDynamicSlots();
+        componentItemHandler = getItemSlots(selectedStack);
+        if (componentItemHandler != null) {
+            addSelectedItemSlots();
+        }
+    }
+
+    public void clearDynamicSlots() {
+        for (Slot slot : dynamicSlots) {
+            this.slots.remove(slot);
+            this.remoteSlots.remove(remoteSlots.size() - 1);
+        }
+        dynamicSlots.clear();
+    }
+
+    public ComponentItemHandler getItemSlots(ItemStack itemStack) {
+        IItemHandler itemHandler = itemStack.getCapability(Capabilities.ItemHandler.ITEM);
+        if (itemHandler instanceof ComponentItemHandler componentItemHandler) {
+            return componentItemHandler;
+        }
+        return null;
+    }
+
     private void addSelectedItemSlots() {
         for (int i = 0; i < componentItemHandler.getSlots(); i++) { // Example slot count
             int x = 134 + (i % 2) * 18; // 2 slots per row
@@ -108,29 +136,6 @@ public class ToolSettingContainer extends BaseContainer {
             this.addSlot(slot);
             dynamicSlots.add(slot);
         }
-    }
-
-    public void clearDynamicSlots() {
-        for (Slot slot : dynamicSlots) {
-            this.slots.remove(slot);
-            this.remoteSlots.remove(remoteSlots.size() - 1);
-        }
-        dynamicSlots.clear();
-    }
-
-    public void refreshSlots(ItemStack selectedStack) {
-        clearDynamicSlots();
-        componentItemHandler = getItemSlots(selectedStack);
-        if (componentItemHandler != null) {
-            addSelectedItemSlots();
-        }
-    }
-
-    public ComponentItemHandler getItemSlots(ItemStack itemStack) {
-        IItemHandler itemHandler = itemStack.getCapability(Capabilities.ItemHandler.ITEM);
-        if (itemHandler instanceof ComponentItemHandler componentItemHandler)
-            return componentItemHandler;
-        return null;
     }
 
     @Override
@@ -170,9 +175,5 @@ public class ToolSettingContainer extends BaseContainer {
     @Override
     public boolean stillValid(Player pPlayer) {
         return true;
-    }
-
-    static void onEquipItem(Player pPlayer, EquipmentSlot pSlot, ItemStack pNewItem, ItemStack pOldItem) {
-        pPlayer.onEquipItem(pSlot, pOldItem, pNewItem);
     }
 }

@@ -36,62 +36,24 @@ import org.joml.Matrix4f;
 import java.awt.*;
 
 public class AdvPortalRadialMenu extends Screen {
-    ToggleButtonFactory.TextureLocalization ADD_BUTTON = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/add.png"), Component.translatable("justdirethings.screen.add_favorite"));
-    ToggleButtonFactory.TextureLocalization REMOVE_BUTTON = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/remove.png"), Component.translatable("justdirethings.screen.remove_favorite"));
-    ToggleButtonFactory.TextureLocalization EDIT_BUTTON = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/matchnbttrue.png"), Component.translatable("justdirethings.screen.edit_favorite"));
-    ToggleButtonFactory.TextureLocalization STAYOPEN_BUTTON = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/area.png"), Component.translatable("justdirethings.screen.stay_open"));
     private static final int SEGMENTS = PortalGunV2.MAX_FAVORITES;
-
-    private int timeIn = 0;
-    private int slotHovered = -1;
-    private int slotSelected = 0;
-    private ItemStack portalGun;
-    private final static int radiusMin = 26;
-    private final static int radiusMax = 120;
-    private boolean staysOpen = false;
+    private final static int       radiusMin    = 26;
+    private final static int       radiusMax    = 120;
+    ToggleButtonFactory.TextureLocalization ADD_BUTTON      = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/add.png"), Component.translatable("justdirethings.screen.add_favorite"));
+    ToggleButtonFactory.TextureLocalization REMOVE_BUTTON   = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/remove.png"), Component.translatable("justdirethings.screen.remove_favorite"));
+    ToggleButtonFactory.TextureLocalization EDIT_BUTTON     = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/matchnbttrue.png"), Component.translatable("justdirethings.screen.edit_favorite"));
+    ToggleButtonFactory.TextureLocalization STAYOPEN_BUTTON = new ToggleButtonFactory.TextureLocalization(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/area.png"), Component.translatable("justdirethings.screen.stay_open"));
+    private              int       timeIn       = 0;
+    private              int       slotHovered  = -1;
+    private              int       slotSelected = 0;
+    private              ItemStack portalGun;
+    private              boolean   staysOpen    = false;
 
     public AdvPortalRadialMenu(ItemStack stack) {
         super(Component.literal(""));
-        portalGun = stack;
-        slotSelected = PortalGunV2.getFavoritePosition(portalGun);
+        portalGun      = stack;
+        slotSelected   = PortalGunV2.getFavoritePosition(portalGun);
         this.staysOpen = PortalGunV2.getStayOpen(portalGun);
-    }
-
-    private static float mouseAngle(int x, int y, int mx, int my) {
-        Vector2f baseVec = new Vector2f(1F, 0F);
-        Vector2f mouseVec = new Vector2f(mx - x, my - y);
-
-        float ang = (float) (Math.acos(baseVec.dot(mouseVec) / (baseVec.length() * mouseVec.length())) * (180F / Math.PI));
-        return my < y ? 360F - ang : ang;
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-    }
-
-    @Override
-    public void init() {
-        GrayscaleButton addButton = new GrayscaleButton(width / 2 - 150, height / 2 - 20, 16, 16, ADD_BUTTON.texture(), ADD_BUTTON.localization(), true, (clicked) -> {
-            addFavorite();
-        });
-        addRenderableWidget(addButton);
-
-        GrayscaleButton removeButton = new GrayscaleButton(width / 2 + 140, height / 2 - 20, 16, 16, REMOVE_BUTTON.texture(), REMOVE_BUTTON.localization(), true, (clicked) -> {
-            removeFavorite();
-        });
-        addRenderableWidget(removeButton);
-
-        GrayscaleButton editButton = new GrayscaleButton(width / 2 - 150, height / 2 + 20, 16, 16, EDIT_BUTTON.texture(), EDIT_BUTTON.localization(), true, (clicked) -> {
-            editFavorite();
-        });
-        addRenderableWidget(editButton);
-
-        GrayscaleButton stayOpenButton = new GrayscaleButton(width / 2 + 140, height / 2 + 20, 16, 16, STAYOPEN_BUTTON.texture(), STAYOPEN_BUTTON.localization(), staysOpen, (clicked) -> {
-            staysOpen = !staysOpen;
-            saveFavorite();
-            ((GrayscaleButton) clicked).toggleActive();
-        });
-        addRenderableWidget(stayOpenButton);
     }
 
     @Override
@@ -121,7 +83,7 @@ public class AdvPortalRadialMenu extends Screen {
         for (int seg = 0; seg < SEGMENTS; seg++) {
             NBTHelpers.PortalDestination favorite = getFavorite(seg);
             String favoriteName = favorite != null ? favorite.name() : "Empty";
-            String dimension = favorite != null && !favorite.equals(NBTHelpers.PortalDestination.EMPTY) ? favorite.globalVec3().dimension().location().getPath().toString() : "";
+            String dimension = favorite != null && !favorite.equals(NBTHelpers.PortalDestination.EMPTY) ? favorite.globalVec3().dimension().location().getPath() : "";
             String coordinates = favorite != null && !favorite.equals(NBTHelpers.PortalDestination.EMPTY) ? String.format("(%d, %d, %d)",
                     (int) favorite.globalVec3().position().x(),
                     (int) favorite.globalVec3().position().y(),
@@ -141,7 +103,7 @@ public class AdvPortalRadialMenu extends Screen {
             float a = 0.4F;
             if (mouseInSector) {
                 this.slotHovered = seg;
-                r = g = b = 1F;
+                r                = g = b = 1F;
             }
             if (seg == slotSelected) {
                 r = g = 1F;
@@ -199,25 +161,6 @@ public class AdvPortalRadialMenu extends Screen {
         }
     }
 
-    private boolean isCursorInSlice(float angle, float totalDeg, float degPer, boolean inRange) {
-        return inRange && angle > totalDeg && angle < totalDeg + degPer;
-    }
-
-    public boolean isInRange(double mouseX, double mouseY) {
-        int x = this.width / 2;
-        int y = this.height / 2;
-
-        double dist = new Vec3(x, y, 0).distanceTo(new Vec3(mouseX, mouseY, 0));
-        return dist > radiusMin && dist < radiusMax;
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (isInRange(mouseX, mouseY))
-            saveFavorite();
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
     @Override
     public boolean keyPressed(int p_keyPressed_1_, int p_keyPressed_2_, int p_keyPressed_3_) {
         if (staysOpen && (p_keyPressed_1_ == 256 || p_keyPressed_1_ == KeyBindings.toggleTool.getKey().getValue())) {
@@ -229,6 +172,31 @@ public class AdvPortalRadialMenu extends Screen {
     }
 
     @Override
+    public void init() {
+        GrayscaleButton addButton = new GrayscaleButton(width / 2 - 150, height / 2 - 20, 16, 16, ADD_BUTTON.texture(), ADD_BUTTON.localization(), true, (clicked) -> {
+            addFavorite();
+        });
+        addRenderableWidget(addButton);
+
+        GrayscaleButton removeButton = new GrayscaleButton(width / 2 + 140, height / 2 - 20, 16, 16, REMOVE_BUTTON.texture(), REMOVE_BUTTON.localization(), true, (clicked) -> {
+            removeFavorite();
+        });
+        addRenderableWidget(removeButton);
+
+        GrayscaleButton editButton = new GrayscaleButton(width / 2 - 150, height / 2 + 20, 16, 16, EDIT_BUTTON.texture(), EDIT_BUTTON.localization(), true, (clicked) -> {
+            editFavorite();
+        });
+        addRenderableWidget(editButton);
+
+        GrayscaleButton stayOpenButton = new GrayscaleButton(width / 2 + 140, height / 2 + 20, 16, 16, STAYOPEN_BUTTON.texture(), STAYOPEN_BUTTON.localization(), staysOpen, (clicked) -> {
+            staysOpen = !staysOpen;
+            saveFavorite();
+            ((GrayscaleButton) clicked).toggleActive();
+        });
+        addRenderableWidget(stayOpenButton);
+    }
+
+    @Override
     public void tick() {
         if (!staysOpen && !InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), KeyBindings.toggleTool.getKey().getValue())) {
             onClose();
@@ -237,23 +205,13 @@ public class AdvPortalRadialMenu extends Screen {
         this.timeIn++;
     }
 
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        for (Renderable renderable : this.renderables) {
-            if (renderable instanceof BaseButton button && !button.getLocalization(pX, pY).equals(Component.empty())) {
-                pGuiGraphics.renderTooltip(font, button.getLocalization(), pX, pY);
-            }
-        }
+    @Override
+    public void renderBackground(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
     }
 
     @Override
     public boolean isPauseScreen() {
         return false;
-    }
-
-    public void saveFavorite() {
-        slotSelected = slotHovered;
-        PacketDistributor.sendToServer(new PortalGunFavoritePayload(slotSelected, staysOpen));
-        OurSounds.playSound(Registration.BEEP.get());
     }
 
     public void addFavorite() {
@@ -268,8 +226,50 @@ public class AdvPortalRadialMenu extends Screen {
         Minecraft.getInstance().setScreen(new AdvPortalEditMenu(portalGun, slotSelected));
     }
 
+    public void saveFavorite() {
+        slotSelected = slotHovered;
+        PacketDistributor.sendToServer(new PortalGunFavoritePayload(slotSelected, staysOpen));
+        OurSounds.playSound(Registration.BEEP.get());
+    }
+
+    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
+        for (Renderable renderable : this.renderables) {
+            if (renderable instanceof BaseButton button && !button.getLocalization(pX, pY).equals(Component.empty())) {
+                pGuiGraphics.renderTooltip(font, button.getLocalization(), pX, pY);
+            }
+        }
+    }
+
+    public boolean isInRange(double mouseX, double mouseY) {
+        int x = this.width / 2;
+        int y = this.height / 2;
+
+        double dist = new Vec3(x, y, 0).distanceTo(new Vec3(mouseX, mouseY, 0));
+        return dist > radiusMin && dist < radiusMax;
+    }
+
+    private static float mouseAngle(int x, int y, int mx, int my) {
+        Vector2f baseVec = new Vector2f(1F, 0F);
+        Vector2f mouseVec = new Vector2f(mx - x, my - y);
+
+        float ang = (float) (Math.acos(baseVec.dot(mouseVec) / (baseVec.length() * mouseVec.length())) * (180F / Math.PI));
+        return my < y ? 360F - ang : ang;
+    }
+
     public NBTHelpers.PortalDestination getFavorite(int slot) {
         return PortalGunV2.getFavorite(portalGun, slot);
+    }
+
+    private boolean isCursorInSlice(float angle, float totalDeg, float degPer, boolean inRange) {
+        return inRange && angle > totalDeg && angle < totalDeg + degPer;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (isInRange(mouseX, mouseY)) {
+            saveFavorite();
+        }
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     private static class Vector2f {

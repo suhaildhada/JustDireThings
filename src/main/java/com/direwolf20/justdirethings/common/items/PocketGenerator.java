@@ -43,7 +43,9 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
-        if (level.isClientSide()) return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemstack);
+        if (level.isClientSide()) {
+            return new InteractionResultHolder<>(InteractionResult.SUCCESS, itemstack);
+        }
 
         if (!player.isShiftKeyDown()) {
             player.openMenu(new SimpleMenuProvider(
@@ -55,11 +57,34 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
     }
 
     @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return isPowerBarVisible(stack);
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        return getPowerBarWidth(stack);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        int color = getPowerBarColor(stack);
+        if (color == -1) {
+            return super.getBarColor(stack);
+        }
+        return color;
+    }
+
+    @Override
     public void inventoryTick(@NotNull ItemStack itemStack, @NotNull Level world, @NotNull Entity entity, int itemSlot, boolean isSelected) {
-        if (world.isClientSide) return;
+        if (world.isClientSide) {
+            return;
+        }
         if (entity instanceof Player player && itemStack.getItem() instanceof ToggleableItem toggleableItem && toggleableItem.getEnabled(itemStack)) {
             IEnergyStorage energyStorage = itemStack.getCapability(Capabilities.EnergyStorage.ITEM);
-            if (energyStorage == null) return;
+            if (energyStorage == null) {
+                return;
+            }
             if (energyStorage instanceof EnergyStorageItemStackNoReceive EnergyStorageItemStackNoReceive) {
                 tryBurn(EnergyStorageItemStackNoReceive, itemStack);
                 if (energyStorage.getEnergyStored() >= (getFEPerTick() / 10)) { //If we have 1/10th the max transfer speed, go ahead and let it rip
@@ -77,6 +102,24 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
                 }
             }
         }
+    }
+
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+        super.appendHoverText(stack, context, tooltip, flagIn);
+        Level level = context.level();
+        if (level == null) {
+            return;
+        }
+        appendFEText(stack, tooltip);
+        appendToolEnabled(stack, tooltip);
+        appendGeneratorDetails(stack, tooltip);
+        appendShiftForInfo(stack, tooltip);
     }
 
     private void transferEnergy(ItemStack slotStack, IEnergyStorage energyStorage) {
@@ -99,11 +142,11 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
         if (itemStack.getOrDefault(JustDireDataComponents.POCKETGEN_COUNTER, 0) > 0 && canInsertEnergy) {
             burn(energyStorage, itemStack);
         } else if (canInsertEnergy) {
-            if (initBurn(itemStack))
+            if (initBurn(itemStack)) {
                 burn(energyStorage, itemStack);
+            }
         }
     }
-
 
     private void burn(EnergyStorageItemStackNoReceive energyStorage, ItemStack itemStack) {
         energyStorage.forceReceiveEnergy(fePerTick(itemStack), false);
@@ -131,9 +174,9 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
             } else {
                 setFuelMultiplier(itemStack, 1);
             }
-            if (fuelStack.hasCraftingRemainingItem())
+            if (fuelStack.hasCraftingRemainingItem()) {
                 handler.setStackInSlot(0, fuelStack.getCraftingRemainingItem());
-            else {
+            } else {
                 fuelStack.shrink(1);
                 handler.setStackInSlot(0, fuelStack);
             }
@@ -146,42 +189,6 @@ public class PocketGenerator extends Item implements PoweredItem, ToggleableItem
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        super.appendHoverText(stack, context, tooltip, flagIn);
-        Level level = context.level();
-        if (level == null) {
-            return;
-        }
-        appendFEText(stack, tooltip);
-        appendToolEnabled(stack, tooltip);
-        appendGeneratorDetails(stack, tooltip);
-        appendShiftForInfo(stack, tooltip);
-    }
-
-    @Override
-    public boolean isBarVisible(ItemStack stack) {
-        return isPowerBarVisible(stack);
-    }
-
-    @Override
-    public int getBarWidth(ItemStack stack) {
-        return getPowerBarWidth(stack);
-    }
-
-    @Override
-    public int getBarColor(ItemStack stack) {
-        int color = getPowerBarColor(stack);
-        if (color == -1)
-            return super.getBarColor(stack);
-        return color;
-    }
-
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.NONE;
     }
 
     @Override

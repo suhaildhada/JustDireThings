@@ -26,8 +26,9 @@ public class ExperienceHolderBER extends AreaAffectingBER {
     @Override
     public void render(BlockEntity blockentity, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedLightsIn, int combinedOverlayIn) {
         super.render(blockentity, partialTicks, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn);
-        if (blockentity instanceof ExperienceHolderBE experienceHolderBE)
+        if (blockentity instanceof ExperienceHolderBE experienceHolderBE) {
             this.renderItemStack(experienceHolderBE, matrixStackIn, bufferIn, combinedOverlayIn);
+        }
     }
 
     private void renderItemStack(ExperienceHolderBE blockEntity, PoseStack poseStack, MultiBufferSource bufferIn, int combinedOverlayIn) {

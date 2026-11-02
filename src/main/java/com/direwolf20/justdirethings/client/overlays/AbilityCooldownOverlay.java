@@ -20,16 +20,20 @@ import java.util.List;
 
 
 public class AbilityCooldownOverlay implements LayeredDraw.Layer {
-    public static final AbilityCooldownOverlay INSTANCE = new AbilityCooldownOverlay();
-    private static final EquipmentSlot[] EQUIPMENT_ORDER = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
+    public static final  AbilityCooldownOverlay INSTANCE        = new AbilityCooldownOverlay();
+    private static final EquipmentSlot[]        EQUIPMENT_ORDER = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND};
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         // Check if GUI should be hidden
-        if (mc.options.hideGui) return;
+        if (mc.options.hideGui) {
+            return;
+        }
         Player player = mc.player;
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         int screenWidth = guiGraphics.guiWidth();
         int screenHeight = guiGraphics.guiHeight();
         int renderedIcons = 0;
@@ -38,10 +42,16 @@ public class AbilityCooldownOverlay implements LayeredDraw.Layer {
 
         for (EquipmentSlot slot : EQUIPMENT_ORDER) {
             ItemStack itemStack = player.getItemBySlot(slot);
-            if (!(itemStack.getItem() instanceof ToggleableTool toggleableTool)) continue;
-            if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) continue;
+            if (!(itemStack.getItem() instanceof ToggleableTool toggleableTool)) {
+                continue;
+            }
+            if (!itemStack.has(JustDireDataComponents.ABILITY_COOLDOWNS)) {
+                continue;
+            }
             List<ToolRecords.AbilityCooldown> abilityCooldowns = itemStack.get(JustDireDataComponents.ABILITY_COOLDOWNS);
-            if (abilityCooldowns == null) continue;
+            if (abilityCooldowns == null) {
+                continue;
+            }
 
             for (ToolRecords.AbilityCooldown abilityCooldown : abilityCooldowns) {
                 //int xPosition = (int)(684/scaleFactor) + ((renderedIcons % 7) * 11);

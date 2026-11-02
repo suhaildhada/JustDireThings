@@ -20,6 +20,15 @@ public class GooBlock_Item extends BlockItem {
     }
 
     @Override
+    protected BlockState getPlacementState(BlockPlaceContext context) {
+        BlockState blockstate = Config.GOO_CAN_DIE.get() ? this.getBlock().getStateForPlacement(context) : this.getBlock().getStateForPlacement(context).setValue(GooBlock_Base.ALIVE, true);
+        if (blockstate == null) {
+            return null;
+        }
+        return this.canPlace(context, blockstate) ? blockstate : null;
+    }
+
+    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, context, tooltip, flagIn);
         Level level = context.level();
@@ -29,13 +38,5 @@ public class GooBlock_Item extends BlockItem {
 
         tooltip.add(Component.translatable("justdirethings.requiresfeeding")
                 .withStyle(ChatFormatting.DARK_RED));
-    }
-
-    @Override
-    protected BlockState getPlacementState(BlockPlaceContext context) {
-        BlockState blockstate = Config.GOO_CAN_DIE.get() ? this.getBlock().getStateForPlacement(context) : this.getBlock().getStateForPlacement(context).setValue(GooBlock_Base.ALIVE, true);
-        if (blockstate == null)
-            return null;
-        return this.canPlace(context, blockstate) ? blockstate : null;
     }
 }

@@ -30,23 +30,13 @@ public class BlockPlacerT1BE extends BaseMachineBE implements RedstoneControlled
     public RedstoneControlData redstoneControlData = new RedstoneControlData();
     List<BlockPos> positionsToPlace = new ArrayList<>();
 
-    public BlockPlacerT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
-        super(pType, pPos, pBlockState);
-        MACHINE_SLOTS = 1; //Slot for a pickaxe
-    }
-
     public BlockPlacerT1BE(BlockPos pPos, BlockState pBlockState) {
         this(Registration.BlockPlacerT1BE.get(), pPos, pBlockState);
     }
 
-    @Override
-    public RedstoneControlData getRedstoneControlData() {
-        return redstoneControlData;
-    }
-
-    @Override
-    public BlockEntity getBlockEntity() {
-        return this;
+    public BlockPlacerT1BE(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
+        MACHINE_SLOTS = 1; //Slot for a pickaxe
     }
 
     @Override
@@ -59,34 +49,6 @@ public class BlockPlacerT1BE extends BaseMachineBE implements RedstoneControlled
         doBlockPlace();
     }
 
-    public ItemStack getPlaceStack() {
-        return getMachineHandler().getStackInSlot(0);
-    }
-
-    public boolean isStackValid(ItemStack itemStack) {
-        if (itemStack.isEmpty())
-            return false;
-        if (!(itemStack.getItem() instanceof BlockItem))
-            return false;
-        return true;
-    }
-
-    public boolean canPlace() {
-        return true;
-    }
-
-    public boolean clearTrackerIfNeeded(ItemStack itemStack) {
-        if (positionsToPlace.isEmpty())
-            return false;
-        if (!isStackValid(itemStack))
-            return true;
-        if (!canPlace())
-            return true;
-        if (!isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE))
-            return true;
-        return false;
-    }
-
     public void doBlockPlace() {
         ItemStack placeStack = getPlaceStack();
         if (!isStackValid(placeStack)) {
@@ -97,12 +59,16 @@ public class BlockPlacerT1BE extends BaseMachineBE implements RedstoneControlled
             positionsToPlace.clear();
             return;
         }
-        if (!canPlace()) return;
-        UsefulFakePlayer fakePlayer = getUsefulFakePlayer((ServerLevel) level);
-        if (isActiveRedstone() && canRun() && positionsToPlace.isEmpty())
-            positionsToPlace = findSpotsToPlace(fakePlayer);
-        if (positionsToPlace.isEmpty())
+        if (!canPlace()) {
             return;
+        }
+        UsefulFakePlayer fakePlayer = getUsefulFakePlayer((ServerLevel) level);
+        if (isActiveRedstone() && canRun() && positionsToPlace.isEmpty()) {
+            positionsToPlace = findSpotsToPlace(fakePlayer);
+        }
+        if (positionsToPlace.isEmpty()) {
+            return;
+        }
         if (canRun()) {
             BlockPos blockPos = positionsToPlace.remove(0);
             Direction placing = getDirectionValue();
@@ -111,6 +77,53 @@ public class BlockPlacerT1BE extends BaseMachineBE implements RedstoneControlled
             placeBlock(placeStack, fakePlayer, blockPos);
             FakePlayerUtil.cleanupFakePlayerFromUse(fakePlayer, fakePlayer.getMainHandItem());
         }
+    }
+
+    public ItemStack getPlaceStack() {
+        return getMachineHandler().getStackInSlot(0);
+    }
+
+    public boolean isStackValid(ItemStack itemStack) {
+        if (itemStack.isEmpty()) {
+            return false;
+        }
+        return itemStack.getItem() instanceof BlockItem;
+    }
+
+    @Override
+    public RedstoneControlData getRedstoneControlData() {
+        return redstoneControlData;
+    }
+
+    @Override
+    public BlockEntity getBlockEntity() {
+        return this;
+    }
+
+    public boolean clearTrackerIfNeeded(ItemStack itemStack) {
+        if (positionsToPlace.isEmpty()) {
+            return false;
+        }
+        if (!isStackValid(itemStack)) {
+            return true;
+        }
+        if (!canPlace()) {
+            return true;
+        }
+        return !isActiveRedstone() && !redstoneControlData.redstoneMode.equals(MiscHelpers.RedstoneMode.PULSE);
+    }
+
+    public boolean canPlace() {
+        return true;
+    }
+
+    public List<BlockPos> findSpotsToPlace(FakePlayer fakePlayer) {
+        List<BlockPos> returnList = new ArrayList<>();
+        BlockPos blockPos = getBlockPos().relative(getBlockState().getValue(BlockStateProperties.FACING));
+        if (isBlockPosValid(fakePlayer, blockPos)) {
+            returnList.add(blockPos);
+        }
+        return returnList;
     }
 
     public InteractionResult placeBlock(ItemStack itemStack, FakePlayer fakePlayer, BlockPos blockPos) {
@@ -122,20 +135,12 @@ public class BlockPlacerT1BE extends BaseMachineBE implements RedstoneControlled
     }
 
     public boolean isBlockPosValid(FakePlayer fakePlayer, BlockPos blockPos) {
-        if (!level.mayInteract(fakePlayer, blockPos))
+        if (!level.mayInteract(fakePlayer, blockPos)) {
             return false;
-        if (!level.getBlockState(blockPos).canBeReplaced())
+        }
+        if (!level.getBlockState(blockPos).canBeReplaced()) {
             return false;
-        if (!canPlaceAt(level, blockPos, fakePlayer))
-            return false;
-        return true;
-    }
-
-    public List<BlockPos> findSpotsToPlace(FakePlayer fakePlayer) {
-        List<BlockPos> returnList = new ArrayList<>();
-        BlockPos blockPos = getBlockPos().relative(getBlockState().getValue(BlockStateProperties.FACING));
-        if (isBlockPosValid(fakePlayer, blockPos))
-            returnList.add(blockPos);
-        return returnList;
+        }
+        return canPlaceAt(level, blockPos, fakePlayer);
     }
 }

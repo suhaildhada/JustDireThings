@@ -15,8 +15,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 public class PortalProjectileRender extends EntityRenderer<PortalProjectile> {
-    protected static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/entity/portal_projectile.png");
-    protected final PortalProjectileModel model;
+    protected static final ResourceLocation      TEXTURE = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/entity/portal_projectile.png");
+    protected final        PortalProjectileModel model;
 
     public PortalProjectileRender(EntityRendererProvider.Context pContext) {
         super(pContext);
@@ -30,7 +30,7 @@ public class PortalProjectileRender extends EntityRenderer<PortalProjectile> {
         float f = Mth.rotLerp(pPartialTicks, pEntity.yRotO, pEntity.getYRot());
         float f1 = Mth.lerp(pPartialTicks, pEntity.xRotO, pEntity.getXRot());
         float f2 = (float) pEntity.tickCount + pPartialTicks;
-        pPoseStack.translate(0.0D, (double) 0.15F, 0.0D);
+        pPoseStack.translate(0.0D, 0.15F, 0.0D);
         pPoseStack.mulPose(Axis.YP.rotationDegrees(Mth.sin(f2 * 0.1F) * 180.0F));
         pPoseStack.mulPose(Axis.XP.rotationDegrees(Mth.cos(f2 * 0.1F) * 180.0F));
         pPoseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(f2 * 0.15F) * 360.0F));

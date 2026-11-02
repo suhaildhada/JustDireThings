@@ -113,76 +113,44 @@ public enum Ability {
             ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/overlay/epicarrow.png"), Registration.UPGRADE_EPICARROW);
 
 
-    public enum SettingType {
-        TOGGLE,
-        SLIDER,
-        CYCLE
-    }
-
-    public enum CustomSettingType {
-        NONE,
-        RENDER,
-        TARGET
-    }
-
-    public enum UseType {
-        USE,
-        USE_ON,
-        USE_COOLDOWN,
-        PASSIVE,
-        PASSIVE_TICK,
-        PASSIVE_COOLDOWN,
-        PASSIVE_TICK_COOLDOWN
-    }
-
-    public enum BindingType {
-        NONE,
-        CUSTOM_ONLY,
-        LEFT_AND_CUSTOM
-    }
-
-    final String name;
-    final String localization;
-    final SettingType settingType;
-    final ResourceLocation iconLocation;
-    final int durabilityCost;
-    final int feCost;
-    final BindingType bindingType;
-    final CustomSettingType customSettingType;
-    final UseType useType;
-    private Holder<Item> upgradeItem;
     // Dynamic parameter map
     private static final Map<Ability, AbilityParams> dynamicParams = new EnumMap<>(Ability.class);
-    public AbilityAction action;  // Functional interface for action
-    public UseOnAbilityAction useOnAction;  // Additional functional interface for use-on action
-    private ResourceLocation cooldownIcon;
-
-
-    Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, CustomSettingType customSettingType) {
-        this.name = this.name().toLowerCase(Locale.ROOT);
-        this.settingType = settingType;
-        this.localization = "justdirethings.ability." + name;
-        this.iconLocation = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/" + name + ".png");
-        this.durabilityCost = durabilityCost;
-        this.feCost = feCost;
-        this.bindingType = bindingType;
-        this.customSettingType = customSettingType;
-        this.useType = useType;
-    }
-
+    final                String                      name;
+    final                String                      localization;
+    final                SettingType                 settingType;
+    final                ResourceLocation            iconLocation;
+    final                int                         durabilityCost;
+    final                int                         feCost;
+    final                BindingType                 bindingType;
+    final                CustomSettingType           customSettingType;
+    final                UseType                     useType;
+    public               AbilityAction               action;  // Functional interface for action
+    public               UseOnAbilityAction          useOnAction;  // Additional functional interface for use-on action
+    private              Holder<Item>                upgradeItem;
+    private              ResourceLocation            cooldownIcon;
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType) {
         this(settingType, durabilityCost, feCost, useType, bindingType, CustomSettingType.NONE);
     }
-
+    Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, CustomSettingType customSettingType) {
+        this.name              = this.name().toLowerCase(Locale.ROOT);
+        this.settingType       = settingType;
+        this.localization      = "justdirethings.ability." + name;
+        this.iconLocation      = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "textures/gui/buttons/" + name + ".png");
+        this.durabilityCost    = durabilityCost;
+        this.feCost            = feCost;
+        this.bindingType       = bindingType;
+        this.customSettingType = customSettingType;
+        this.useType           = useType;
+    }
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, Holder<Item> upgradeItem) {
         this(settingType, durabilityCost, feCost, useType, bindingType, CustomSettingType.NONE);
         this.upgradeItem = upgradeItem;
     }
-
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, CustomSettingType customSettingType, Holder<Item> upgradeItem) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
         this.upgradeItem = upgradeItem;
     }
+
 
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, AbilityAction action, CustomSettingType customSettingType) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
@@ -191,7 +159,7 @@ public enum Ability {
 
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, AbilityAction action, CustomSettingType customSettingType, Holder<Item> upgradeItem) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
-        this.action = action;
+        this.action      = action;
         this.upgradeItem = upgradeItem;
     }
 
@@ -203,20 +171,20 @@ public enum Ability {
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, CustomSettingType customSettingType, ResourceLocation cooldownIcon, Holder<Item> upgradeItem) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
         this.cooldownIcon = cooldownIcon;
-        this.upgradeItem = upgradeItem;
+        this.upgradeItem  = upgradeItem;
     }
 
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, AbilityAction action, CustomSettingType customSettingType, ResourceLocation cooldownIcon) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
-        this.action = action;
+        this.action       = action;
         this.cooldownIcon = cooldownIcon;
     }
 
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, AbilityAction action, CustomSettingType customSettingType, ResourceLocation cooldownIcon, Holder<Item> upgradeItem) {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
-        this.action = action;
+        this.action       = action;
         this.cooldownIcon = cooldownIcon;
-        this.upgradeItem = upgradeItem;
+        this.upgradeItem  = upgradeItem;
     }
 
     Ability(SettingType settingType, int durabilityCost, int feCost, UseType useType, BindingType bindingType, UseOnAbilityAction useOnAction, CustomSettingType customSettingType) {
@@ -228,6 +196,23 @@ public enum Ability {
         this(settingType, durabilityCost, feCost, useType, bindingType, customSettingType);
         this.useOnAction = useOnAction;
         this.upgradeItem = upgradeItem;
+    }
+
+    public static Ability byName(String name) {
+        return Ability.valueOf(name.toUpperCase(Locale.ROOT));
+    }
+
+    public static Ability getAbilityFromUpgradeItem(Item item) {
+        for (Ability ability : values()) {
+            if (ability.getUpgradeItem() != null && ability.getUpgradeItem().value() == item) {
+                return ability;
+            }
+        }
+        return null;
+    }
+
+    public Holder<Item> getUpgradeItem() {
+        return upgradeItem;
     }
 
     public boolean hasDynamicParams(Ability toolAbility) {
@@ -274,10 +259,6 @@ public enum Ability {
         return customSettingType;
     }
 
-    public static Ability byName(String name) {
-        return Ability.valueOf(name.toUpperCase(Locale.ROOT));
-    }
-
     public ResourceLocation getCooldownIcon() {
         return cooldownIcon;
     }
@@ -286,17 +267,32 @@ public enum Ability {
         return upgradeItem != null;
     }
 
-    public Holder<Item> getUpgradeItem() {
-        return upgradeItem;
+    public enum SettingType {
+        TOGGLE,
+        SLIDER,
+        CYCLE
     }
 
-    public static Ability getAbilityFromUpgradeItem(Item item) {
-        for (Ability ability : values()) {
-            if (ability.getUpgradeItem() != null && ability.getUpgradeItem().value() == item) {
-                return ability;
-            }
-        }
-        return null;
+    public enum CustomSettingType {
+        NONE,
+        RENDER,
+        TARGET
+    }
+
+    public enum UseType {
+        USE,
+        USE_ON,
+        USE_COOLDOWN,
+        PASSIVE,
+        PASSIVE_TICK,
+        PASSIVE_COOLDOWN,
+        PASSIVE_TICK_COOLDOWN
+    }
+
+    public enum BindingType {
+        NONE,
+        CUSTOM_ONLY,
+        LEFT_AND_CUSTOM
     }
 
     @FunctionalInterface

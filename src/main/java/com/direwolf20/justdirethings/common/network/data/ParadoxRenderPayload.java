@@ -12,15 +12,14 @@ public record ParadoxRenderPayload(
         int targetType
 ) implements CustomPacketPayload {
     public static final Type<ParadoxRenderPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "paradox_render"));
-
-    @Override
-    public Type<ParadoxRenderPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ParadoxRenderPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, ParadoxRenderPayload::renderParadox,
             ByteBufCodecs.INT, ParadoxRenderPayload::targetType,
             ParadoxRenderPayload::new
     );
+
+    @Override
+    public Type<ParadoxRenderPayload> type() {
+        return TYPE;
+    }
 }

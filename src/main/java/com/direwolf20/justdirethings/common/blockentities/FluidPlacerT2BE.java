@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FluidPlacerT2BE extends FluidPlacerT1BE implements PoweredMachineBE, AreaAffectingBE, FilterableBE {
-    public FilterData filterData = new FilterData();
-    public AreaAffectingData areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
     public final PoweredMachineContainerData poweredMachineData;
+    public       FilterData                  filterData        = new FilterData();
+    public       AreaAffectingData           areaAffectingData = new AreaAffectingData(getBlockState().getValue(BlockStateProperties.FACING));
 
     public FluidPlacerT2BE(BlockPos pPos, BlockState pBlockState) {
         super(Registration.FluidPlacerT2BE.get(), pPos, pBlockState);
@@ -36,6 +36,39 @@ public class FluidPlacerT2BE extends FluidPlacerT1BE implements PoweredMachineBE
     @Override
     public int getMaxMB() {
         return 32000;
+    }
+
+    @Override
+    public boolean canPlace() {
+        return hasEnoughPower(getStandardEnergyCost());
+    }
+
+    @Override
+    public List<BlockPos> findSpotsToPlace(FakePlayer fakePlayer) {
+        AABB area = getAABB(getBlockPos());
+        return BlockPos.betweenClosedStream((int) area.minX, (int) area.minY, (int) area.minZ, (int) area.maxX - 1, (int) area.maxY - 1, (int) area.maxZ - 1)
+                .filter(blockPos -> isBlockPosValid(blockPos, fakePlayer))
+                .map(BlockPos::immutable)
+                .sorted(Comparator.comparingDouble(x -> x.distSqr(getBlockPos())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean placeFluid(FluidStack fluidStack, BlockPos blockPos) {
+        boolean success = super.placeFluid(fluidStack, blockPos);
+        if (success) {
+            extractEnergy(getStandardEnergyCost(), false);
+        }
+        return success;
+    }
+
+    @Override
+    public boolean isBlockPosValid(BlockPos blockPos, FakePlayer fakePlayer) {
+        if (!super.isBlockPosValid(blockPos, fakePlayer)) {
+            return false; //Do the same checks as normal, then check the filters
+        }
+        ItemStack blockItemStack = level.getBlockState(blockPos.relative(getDirectionValue())).getCloneItemStack(new BlockHitResult(Vec3.ZERO, getDirectionValue(), blockPos, false), level, blockPos, null);
+        return isStackValidFilter(blockItemStack);
     }
 
     @Override
@@ -59,43 +92,12 @@ public class FluidPlacerT2BE extends FluidPlacerT1BE implements PoweredMachineBE
     }
 
     @Override
-    public FilterBasicHandler getFilterHandler() {
-        return getData(Registration.HANDLER_BASIC_FILTER);
-    }
-
-    @Override
     public FilterData getFilterData() {
         return filterData;
     }
 
     @Override
-    public boolean canPlace() {
-        return hasEnoughPower(getStandardEnergyCost());
-    }
-
-    @Override
-    public boolean placeFluid(FluidStack fluidStack, BlockPos blockPos) {
-        boolean success = super.placeFluid(fluidStack, blockPos);
-        if (success)
-            extractEnergy(getStandardEnergyCost(), false);
-        return success;
-    }
-
-    @Override
-    public List<BlockPos> findSpotsToPlace(FakePlayer fakePlayer) {
-        AABB area = getAABB(getBlockPos());
-        return BlockPos.betweenClosedStream((int) area.minX, (int) area.minY, (int) area.minZ, (int) area.maxX - 1, (int) area.maxY - 1, (int) area.maxZ - 1)
-                .filter(blockPos -> isBlockPosValid(blockPos, fakePlayer))
-                .map(BlockPos::immutable)
-                .sorted(Comparator.comparingDouble(x -> x.distSqr(getBlockPos())))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean isBlockPosValid(BlockPos blockPos, FakePlayer fakePlayer) {
-        if (!super.isBlockPosValid(blockPos, fakePlayer))
-            return false; //Do the same checks as normal, then check the filters
-        ItemStack blockItemStack = level.getBlockState(blockPos.relative(getDirectionValue())).getCloneItemStack(new BlockHitResult(Vec3.ZERO, getDirectionValue(), blockPos, false), level, blockPos, null);
-        return isStackValidFilter(blockItemStack);
+    public FilterBasicHandler getFilterHandler() {
+        return getData(Registration.HANDLER_BASIC_FILTER);
     }
 }

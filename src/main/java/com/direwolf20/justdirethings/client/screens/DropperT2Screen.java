@@ -24,9 +24,34 @@ public class DropperT2Screen extends BaseMachineScreen<DropperT2Container> {
     public DropperT2Screen(DropperT2Container container, Inventory inv, Component name) {
         super(container, inv, name);
         if (baseMachineBE instanceof DropperT2BE dropper) {
-            this.dropCount = dropper.dropCount;
+            this.dropCount   = dropper.dropCount;
             this.pickupDelay = dropper.pickupDelay;
         }
+    }
+
+    @Override
+    public void setTopSection() {
+        extraWidth  = 60;
+        extraHeight = 0;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        addRenderableWidget(ToggleButtonFactory.DIRECTIONBUTTON(getGuiLeft() + 122, topSectionTop + 38, direction, b -> {
+            direction = ((ToggleButton) b).getTexturePosition();
+            PacketDistributor.sendToServer(new DirectionSettingPayload(direction));
+        }));
+
+        addRenderableWidget(new NumberButton(getGuiLeft() + 20, topSectionTop + 41, 24, 12, dropCount, 1, 64, Component.translatable("justdirethings.screen.dropcount"), b -> {
+            dropCount = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
+            saveSettings();
+        }));
+
+        addRenderableWidget(ToggleButtonFactory.PICKUPDELAYBUTTON(getGuiLeft() + 20, topSectionTop + 27, pickupDelay, b -> {
+            pickupDelay = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
+            saveSettings();
+        }));
     }
 
     public void addFilterButtons() {
@@ -63,37 +88,6 @@ public class DropperT2Screen extends BaseMachineScreen<DropperT2Container> {
     }
 
     @Override
-    public void init() {
-        super.init();
-        addRenderableWidget(ToggleButtonFactory.DIRECTIONBUTTON(getGuiLeft() + 122, topSectionTop + 38, direction, b -> {
-            direction = ((ToggleButton) b).getTexturePosition();
-            PacketDistributor.sendToServer(new DirectionSettingPayload(direction));
-        }));
-
-        addRenderableWidget(new NumberButton(getGuiLeft() + 20, topSectionTop + 41, 24, 12, dropCount, 1, 64, Component.translatable("justdirethings.screen.dropcount"), b -> {
-            dropCount = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
-            saveSettings();
-        }));
-
-        addRenderableWidget(ToggleButtonFactory.PICKUPDELAYBUTTON(getGuiLeft() + 20, topSectionTop + 27, pickupDelay, b -> {
-            pickupDelay = ((NumberButton) b).getValue(); //The value is updated in the mouseClicked method below
-            saveSettings();
-        }));
-    }
-
-    @Override
-    public void setTopSection() {
-        extraWidth = 60;
-        extraHeight = 0;
-    }
-
-    @Override
-    public void saveSettings() {
-        super.saveSettings();
-        PacketDistributor.sendToServer(new DropperSettingPayload(dropCount, pickupDelay));
-    }
-
-    @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component title = baseMachineBE.getBlockState().getBlock().getName();
         int titleX = topSectionLeft - getGuiLeft() + 20 + ((topSectionWidth - 40) / 2) - this.font.width(title) / 2;
@@ -106,5 +100,11 @@ public class DropperT2Screen extends BaseMachineScreen<DropperT2Container> {
             guiGraphics.drawString(this.font, Component.literal("Y"), xStart + 85, topSectionTop - getGuiTop() + 4, 4210752, false);
             guiGraphics.drawString(this.font, Component.literal("Z"), xStart + 135, topSectionTop - getGuiTop() + 4, 4210752, false);
         }
+    }
+
+    @Override
+    public void saveSettings() {
+        super.saveSettings();
+        PacketDistributor.sendToServer(new DropperSettingPayload(dropCount, pickupDelay));
     }
 }

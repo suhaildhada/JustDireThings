@@ -20,20 +20,26 @@ import net.minecraft.world.level.Level;
 
 import java.util.stream.Stream;
 
-public class AbilityRecipe implements SmithingRecipe {
-    private final Ingredient template;
-    private final Ingredient base;
-    private final Ingredient addition;
-
-    public AbilityRecipe(Ingredient template, Ingredient base, Ingredient addition) {
-        this.template = template;
-        this.base = base;
-        this.addition = addition;
-    }
+public record AbilityRecipe(Ingredient template, Ingredient base, Ingredient addition) implements SmithingRecipe {
 
     @Override
     public RecipeType<?> getType() {
         return RecipeType.SMITHING;
+    }
+
+    @Override
+    public boolean isTemplateIngredient(ItemStack stack) {
+        return stack.isEmpty();
+    }
+
+    @Override
+    public boolean isBaseIngredient(ItemStack stack) {
+        return stack.getItem() instanceof ToggleableTool;
+    }
+
+    @Override
+    public boolean isAdditionIngredient(ItemStack stack) {
+        return stack.getItem() instanceof Upgrade;
     }
 
     public boolean matches(SmithingRecipeInput p_346082_, Level p_345460_) {
@@ -57,11 +63,12 @@ public class AbilityRecipe implements SmithingRecipe {
 
     @Override
     public ItemStack getResultItem(HolderLookup.Provider provider) {
-        ItemStack itemstack = new ItemStack(getBase().getItems()[0].getItem());
-        Ability ability = Ability.getAbilityFromUpgradeItem(getAddition().getItems()[0].getItem());
+        ItemStack itemstack = new ItemStack(base().getItems()[0].getItem());
+        Ability ability = Ability.getAbilityFromUpgradeItem(addition().getItems()[0].getItem());
 
-        if (Config.SERVER_CONFIG.isLoaded() && !Config.AVAILABLE_ABILITY_MAP.get(ability).get())
+        if (Config.SERVER_CONFIG.isLoaded() && !Config.AVAILABLE_ABILITY_MAP.get(ability).get()) {
             return new ItemStack(Items.AIR);
+        }
 
         itemstack.set(JustDireDataComponents.ABILITY_UPGRADE_INSTALLS.get(ability), true);
 
@@ -69,30 +76,8 @@ public class AbilityRecipe implements SmithingRecipe {
     }
 
     @Override
-    public boolean isTemplateIngredient(ItemStack stack) {
-        return stack.isEmpty();
-    }
-
-    @Override
-    public boolean isBaseIngredient(ItemStack stack) {
-        return stack.getItem() instanceof ToggleableTool;
-    }
-
-    @Override
-    public boolean isAdditionIngredient(ItemStack stack) {
-        return stack.getItem() instanceof Upgrade;
-    }
-
-    public Ingredient getTemplate() {
-        return template;
-    }
-
-    public Ingredient getBase() {
-        return base;
-    }
-
-    public Ingredient getAddition() {
-        return addition;
+    public RecipeSerializer<?> getSerializer() {
+        return Registration.ABILITY_RECIPE_SERIALIZER.get();
     }
 
     @Override
@@ -100,15 +85,15 @@ public class AbilityRecipe implements SmithingRecipe {
         return Stream.of(this.template, this.base, this.addition).anyMatch(Ingredient::hasNoItems);
     }
 
-    @Override
-    public RecipeSerializer<?> getSerializer() {
-        return Registration.ABILITY_RECIPE_SERIALIZER.get();
-    }
-
-
     public static class Serializer implements RecipeSerializer<AbilityRecipe> {
-        private static final ResourceLocation NAME = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ability");
-        private static final MapCodec<AbilityRecipe> CODEC = RecordCodecBuilder.mapCodec(
+        public static final  StreamCodec<RegistryFriendlyByteBuf, AbilityRecipe> STREAM_CODEC = StreamCodec.composite(
+                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::template,
+                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::base,
+                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::addition,
+                AbilityRecipe::new
+        );
+        private static final ResourceLocation                                    NAME         = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ability");
+        private static final MapCodec<AbilityRecipe>                             CODEC        = RecordCodecBuilder.mapCodec(
                 p_311734_ -> p_311734_.group(
                                 Ingredient.CODEC.fieldOf("template").forGetter(p_301070_ -> p_301070_.template),
                                 Ingredient.CODEC.fieldOf("base").forGetter(p_300969_ -> p_300969_.base),
@@ -116,14 +101,6 @@ public class AbilityRecipe implements SmithingRecipe {
                         )
                         .apply(p_311734_, AbilityRecipe::new)
         );
-
-        public static final StreamCodec<RegistryFriendlyByteBuf, AbilityRecipe> STREAM_CODEC = StreamCodec.composite(
-                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::getTemplate,
-                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::getBase,
-                Ingredient.CONTENTS_STREAM_CODEC, AbilityRecipe::getAddition,
-                AbilityRecipe::new
-        );
-
 
         @Override
         public MapCodec<AbilityRecipe> codec() {

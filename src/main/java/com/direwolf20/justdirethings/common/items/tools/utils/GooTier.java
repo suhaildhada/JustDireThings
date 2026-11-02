@@ -17,20 +17,20 @@ public enum GooTier implements Tier {
     CELESTIGEM(INCORRECT_FOR_DIAMOND_TOOL, 1561, 10.0F, 4.0F, 18, () -> Ingredient.of(Registration.Celestigem.get())),
     ECLIPSEALLOY(INCORRECT_FOR_NETHERITE_TOOL, 2561, 16.0F, 5.0F, 25, () -> Ingredient.of(Registration.EclipseAlloyIngot.get()));
 
-    private final TagKey<Block> incorrectBlocksForDrops;
-    private final int uses;
-    private final float speed;
-    private final float damage;
-    private final int enchantmentValue;
+    private final TagKey<Block>               incorrectBlocksForDrops;
+    private final int                         uses;
+    private final float                       speed;
+    private final float                       damage;
+    private final int                         enchantmentValue;
     private final LazyLoadedValue<Ingredient> repairIngredient;
 
     GooTier(TagKey<Block> incorrectBlocksForDrops, int pUses, float pSpeed, float pDamage, int pEnchantmentValue, Supplier<Ingredient> pRepairIngredient) {
         this.incorrectBlocksForDrops = incorrectBlocksForDrops;
-        this.uses = pUses;
-        this.speed = pSpeed;
-        this.damage = pDamage;
-        this.enchantmentValue = pEnchantmentValue;
-        this.repairIngredient = new LazyLoadedValue<>(pRepairIngredient);
+        this.uses                    = pUses;
+        this.speed                   = pSpeed;
+        this.damage                  = pDamage;
+        this.enchantmentValue        = pEnchantmentValue;
+        this.repairIngredient        = new LazyLoadedValue<>(pRepairIngredient);
     }
 
     @Override

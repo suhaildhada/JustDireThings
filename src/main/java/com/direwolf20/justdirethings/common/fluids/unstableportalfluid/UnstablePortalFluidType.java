@@ -24,6 +24,11 @@ public class UnstablePortalFluidType extends FluidType {
     }
 
     @Override
+    public boolean canConvertToSource(FluidState state, LevelReader reader, BlockPos pos) {
+        return false;
+    }
+
+    @Override
     public boolean isVaporizedOnPlacement(Level level, BlockPos pos, FluidStack stack) {
         return !level.getBiome(pos).is(JustDireBiomeTags.UNSTABLE_PORTAL_FLUID_VIABLE);
     }
@@ -32,12 +37,8 @@ public class UnstablePortalFluidType extends FluidType {
         SoundEvent sound = this.getSound(player, level, pos, SoundActions.FLUID_VAPORIZE);
         level.playSound(player, pos, sound != null ? sound : SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F, 2.6F + (level.random.nextFloat() - level.random.nextFloat()) * 0.8F);
 
-        for (int l = 0; l < 8; ++l)
+        for (int l = 0; l < 8; ++l) {
             level.addAlwaysVisibleParticle(ParticleTypes.DRAGON_BREATH, (double) pos.getX() + Math.random(), (double) pos.getY() + Math.random(), (double) pos.getZ() + Math.random(), 0.0D, 0.0D, 0.0D);
-    }
-
-    @Override
-    public boolean canConvertToSource(FluidState state, LevelReader reader, BlockPos pos) {
-        return false;
+        }
     }
 }

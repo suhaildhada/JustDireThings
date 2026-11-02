@@ -21,18 +21,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public class OreToResourceCategory implements IRecipeCategory<OreToResourceRecipe> {
-    private final IDrawable background;
-    private final IDrawable icon;
-    private final IDrawable pickaxeIcon;
-    private final IDrawableAnimated animatedArrow;
-    public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ore_to_resource");
+    public static final ResourceLocation  UID = ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "ore_to_resource");
+    private final       IDrawable         background;
+    private final       IDrawable         icon;
+    private final       IDrawable         pickaxeIcon;
+    private final       IDrawableAnimated animatedArrow;
 
     public OreToResourceCategory(IGuiHelper guiHelper) {
         this.background = guiHelper.createBlankDrawable(120, 30);  // Adjust size as needed
-        this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Registration.RawFerricoreOre.get()));
+        this.icon       = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Registration.RawFerricoreOre.get()));
         IDrawableStatic arrowDrawable = guiHelper.getRecipeArrow();
         this.animatedArrow = guiHelper.createAnimatedDrawable(arrowDrawable, 40, IDrawableAnimated.StartDirection.LEFT, false);  // 20 ticks duration, left-to-right animation, no looping
-        this.pickaxeIcon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.IRON_PICKAXE));
+        this.pickaxeIcon   = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(Items.IRON_PICKAXE));
     }
 
     @Override
@@ -56,6 +56,12 @@ public class OreToResourceCategory implements IRecipeCategory<OreToResourceRecip
     }
 
     @Override
+    public void setRecipe(IRecipeLayoutBuilder builder, OreToResourceRecipe recipe, IFocusGroup focuses) {
+        builder.addSlot(RecipeIngredientRole.INPUT, 20, 10).addItemStack(recipe.oreBlock());
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 80, 10).addItemStack(recipe.output());
+    }
+
+    @Override
     public void draw(OreToResourceRecipe recipe, IRecipeSlotsView slotsView, GuiGraphics gui, double mouseX, double mouseY) {
         RenderSystem.enableBlend();
 
@@ -65,11 +71,5 @@ public class OreToResourceCategory implements IRecipeCategory<OreToResourceRecip
         background.draw(gui, 17, 0);
         pickaxeIcon.draw(gui, 50, -2);
         RenderSystem.disableBlend();
-    }
-
-    @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, OreToResourceRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.INPUT, 20, 10).addItemStack(recipe.getOreBlock());
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 80, 10).addItemStack(recipe.getOutput());
     }
 }

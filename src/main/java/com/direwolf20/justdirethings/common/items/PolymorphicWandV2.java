@@ -48,25 +48,16 @@ public class PolymorphicWandV2 extends BaseToggleableTool implements LeftClickab
     public InteractionResult useOn(UseOnContext pContext) {
         ItemStack itemStack = pContext.getItemInHand();
         Player player = pContext.getPlayer();
-        if (player == null || itemStack.isEmpty()) return InteractionResult.FAIL;
+        if (player == null || itemStack.isEmpty()) {
+            return InteractionResult.FAIL;
+        }
         BlockHitResult blockhitresult = getPlayerPOVHitResult(player.level(), player, ClipContext.Fluid.SOURCE_ONLY);
         if (blockhitresult.getType() == HitResult.Type.BLOCK) {
-            if (FluidContainingItem.pickupFluid(player.level(), player, itemStack, blockhitresult))
+            if (FluidContainingItem.pickupFluid(player.level(), player, itemStack, blockhitresult)) {
                 return InteractionResult.SUCCESS;
+            }
         }
         return super.useOn(pContext);
-    }
-
-    @Override
-    public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
-        Level level = player.level();
-        if (level.isClientSide) return true;
-        ItemStack itemStack = player.getMainHandItem();
-        Set<Ability> abilities = LeftClickableTool.getLeftClickList(itemStack);
-        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && !abilities.isEmpty()) {
-            toggleableTool.useAbility(player.level(), player, InteractionHand.MAIN_HAND, false);
-        }
-        return true;
     }
 
     @Override
@@ -74,8 +65,9 @@ public class PolymorphicWandV2 extends BaseToggleableTool implements LeftClickab
         ItemStack itemStack = player.getItemInHand(hand);
         BlockHitResult blockhitresult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.SOURCE_ONLY);
         if (blockhitresult.getType() == HitResult.Type.BLOCK) {
-            if (FluidContainingItem.pickupFluid(level, player, itemStack, blockhitresult))
+            if (FluidContainingItem.pickupFluid(level, player, itemStack, blockhitresult)) {
                 return InteractionResultHolder.fail(itemStack);
+            }
         }
         Entity entity = MiscTools.getEntityLookedAt(player, 4);
         if (!level.isClientSide && player.isShiftKeyDown() && entity instanceof LivingEntity livingEntity) { //Custom Handling due to shift-clicking mobs to set target
@@ -95,6 +87,11 @@ public class PolymorphicWandV2 extends BaseToggleableTool implements LeftClickab
     }
 
     @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.NONE;
+    }
+
+    @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, context, tooltip, flagIn);
         Level level = context.level();
@@ -107,26 +104,39 @@ public class PolymorphicWandV2 extends BaseToggleableTool implements LeftClickab
         }
         tooltip.add(Component.translatable("justdirethings.polymorphicfluidamt", MagicHelpers.formatted(fluidHandler.getFluidInTank(0).getAmount()), MagicHelpers.formatted(fluidHandler.getTankCapacity(0))).withStyle(ChatFormatting.GREEN));
 
-        if (!stack.has(ENTITIYTYPE)) return;
+        if (!stack.has(ENTITIYTYPE)) {
+            return;
+        }
         EntityType<?> newType = EntityType.byString(stack.get(ENTITIYTYPE)).orElse(null);
-        if (newType == null) return;
+        if (newType == null) {
+            return;
+        }
         tooltip.add(Component.translatable("justdirethings.polymorphset", newType.getDescription())
                 .withStyle(ChatFormatting.AQUA));
     }
 
     @Override
-    public int getMaxEnergy() {
-        return Config.POLYMORPHIC_WAND_V2_FE_CAPACITY.get();
-    }
-
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.NONE;
-    }
-
-    @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
         return false;
+    }
+
+    @Override
+    public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
+        Level level = player.level();
+        if (level.isClientSide) {
+            return true;
+        }
+        ItemStack itemStack = player.getMainHandItem();
+        Set<Ability> abilities = LeftClickableTool.getLeftClickList(itemStack);
+        if (itemStack.getItem() instanceof ToggleableTool toggleableTool && !abilities.isEmpty()) {
+            toggleableTool.useAbility(player.level(), player, InteractionHand.MAIN_HAND, false);
+        }
+        return true;
+    }
+
+    @Override
+    public int getMaxEnergy() {
+        return Config.POLYMORPHIC_WAND_V2_FE_CAPACITY.get();
     }
 
 }

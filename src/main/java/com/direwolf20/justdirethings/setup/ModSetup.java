@@ -18,14 +18,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import static com.direwolf20.justdirethings.JustDireThings.MODID;
 
 public class ModSetup {
-    public static void init(final FMLCommonSetupEvent event) {
-        NeoForge.EVENT_BUS.register(BlockEvents.class);
-        NeoForge.EVENT_BUS.register(EntityEvents.class);
-        NeoForge.EVENT_BUS.register(LivingEntityEvents.class);
-        NeoForge.EVENT_BUS.register(PlayerEvents.class);
-    }
-
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public static final DeferredRegister<CreativeModeTab>                CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB_JUSTDIRETHINGS = CREATIVE_MODE_TABS.register(MODID, () -> CreativeModeTab.builder()
             .title(Component.literal("Just Dire Things"))
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
@@ -56,5 +49,12 @@ public class ModSetup {
                     output.accept(item);
                 });
             }).build());
+
+    public static void init(final FMLCommonSetupEvent event) {
+        NeoForge.EVENT_BUS.register(BlockEvents.class);
+        NeoForge.EVENT_BUS.register(EntityEvents.class);
+        NeoForge.EVENT_BUS.register(LivingEntityEvents.class);
+        NeoForge.EVENT_BUS.register(PlayerEvents.class);
+    }
 
 }

@@ -22,6 +22,7 @@ import org.joml.Matrix4f;
 
 public class EnergyTransmitterRenderer extends AreaAffectingBER {
     public static final ItemStack itemStack = new ItemStack(Registration.Celestigem.get());
+
     public EnergyTransmitterRenderer(BlockEntityRendererProvider.Context context) {
 
     }
@@ -30,8 +31,9 @@ public class EnergyTransmitterRenderer extends AreaAffectingBER {
     public void render(BlockEntity blockentity, float partialTicks, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedLightsIn, int combinedOverlayIn) {
         super.render(blockentity, partialTicks, matrixStackIn, bufferIn, combinedLightsIn, combinedOverlayIn);
 
-        if (blockentity instanceof EnergyTransmitterBE energyTransmitterBE)
+        if (blockentity instanceof EnergyTransmitterBE energyTransmitterBE) {
             this.renderItemStack(energyTransmitterBE, matrixStackIn, bufferIn, combinedOverlayIn);
+        }
     }
 
     private void renderItemStack(EnergyTransmitterBE blockEntity, PoseStack poseStack, MultiBufferSource bufferIn, int combinedOverlayIn) {
@@ -64,10 +66,10 @@ public class EnergyTransmitterRenderer extends AreaAffectingBER {
         float one;
         if (f1 < ticks / 2f) {
             zero = Mth.lerp(lerp, zeroSmall, zeroBig);
-            one = Mth.lerp(lerp, oneSmall, oneBig);
+            one  = Mth.lerp(lerp, oneSmall, oneBig);
         } else {
             zero = Mth.lerp(lerp, zeroBig, zeroSmall);
-            one = Mth.lerp(lerp, oneBig, oneSmall);
+            one  = Mth.lerp(lerp, oneBig, oneSmall);
         }
         float diff = one - zero;
         float f;

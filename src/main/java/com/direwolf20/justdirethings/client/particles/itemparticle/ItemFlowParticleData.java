@@ -13,8 +13,8 @@ import net.minecraft.world.item.ItemStack;
 
 import javax.annotation.Nonnull;
 
-public class ItemFlowParticleData implements ParticleOptions {
-    public static final MapCodec<ItemFlowParticleData> MAP_CODEC = RecordCodecBuilder.mapCodec(instance ->
+public record ItemFlowParticleData(double targetX, double targetY, double targetZ, int ticksPerBlock, ItemStack itemStack) implements ParticleOptions {
+    public static final MapCodec<ItemFlowParticleData>                             MAP_CODEC    = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     ItemStack.CODEC.fieldOf("itemStack").forGetter(p -> p.itemStack),
                     Codec.DOUBLE.fieldOf("targetX").forGetter(p -> p.targetX),
@@ -24,56 +24,27 @@ public class ItemFlowParticleData implements ParticleOptions {
             ).apply(instance, ItemFlowParticleData::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, ItemFlowParticleData> STREAM_CODEC = StreamCodec.composite(
             ItemStack.STREAM_CODEC,
-            ItemFlowParticleData::getItemStack,
+            ItemFlowParticleData::itemStack,
             ByteBufCodecs.DOUBLE,
-            ItemFlowParticleData::getTargetX,
+            ItemFlowParticleData::targetX,
             ByteBufCodecs.DOUBLE,
-            ItemFlowParticleData::getTargetY,
+            ItemFlowParticleData::targetY,
             ByteBufCodecs.DOUBLE,
-            ItemFlowParticleData::getTargetZ,
+            ItemFlowParticleData::targetZ,
             ByteBufCodecs.INT,
-            ItemFlowParticleData::getTicksPerBlock,
+            ItemFlowParticleData::ticksPerBlock,
             ItemFlowParticleData::new
     );
 
-    private final ItemStack itemStack;
-    public final double targetX;
-    public final double targetY;
-    public final double targetZ;
-    public final int ticksPerBlock;
-
     public ItemFlowParticleData(ItemStack itemStack, double tx, double ty, double tz, int ticks) {
-        this.itemStack = itemStack.copy(); //Forge: Fix stack updating after the fact causing particle changes.
-        targetX = tx;
-        targetY = ty;
-        targetZ = tz;
-        ticksPerBlock = ticks;
+        //Forge: Fix stack updating after the fact causing particle changes.
+        this(tx, ty, tz, ticks, itemStack.copy());
     }
 
     @Nonnull
     @Override
     public ParticleType<ItemFlowParticleData> getType() {
         return ModParticles.ITEMFLOWPARTICLE.get();
-    }
-
-    public ItemStack getItemStack() {
-        return this.itemStack;
-    }
-
-    public double getTargetX() {
-        return targetX;
-    }
-
-    public double getTargetY() {
-        return targetY;
-    }
-
-    public double getTargetZ() {
-        return targetZ;
-    }
-
-    public int getTicksPerBlock() {
-        return ticksPerBlock;
     }
 }
 

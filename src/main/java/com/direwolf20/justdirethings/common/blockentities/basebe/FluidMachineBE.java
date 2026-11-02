@@ -6,21 +6,13 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 public interface FluidMachineBE {
-    default int getMaxMB() {
-        return 8000;
-    }
-
     ContainerData getFluidContainerData();
-
-    FluidTank getFluidTank();
-
-    default FluidStack getFluidStack() {
-        return getFluidTank().getFluid();
-    }
 
     default void setFluidStack(Fluid fluid, int amt) {
         getFluidTank().setFluid(new FluidStack(fluid, amt));
     }
+
+    FluidTank getFluidTank();
 
     default int getAmountStored() {
         return getFluidTank().getFluidAmount();
@@ -32,5 +24,13 @@ public interface FluidMachineBE {
 
     default boolean isFull() {
         return getFluidStack().getAmount() >= getMaxMB();
+    }
+
+    default FluidStack getFluidStack() {
+        return getFluidTank().getFluid();
+    }
+
+    default int getMaxMB() {
+        return 8000;
     }
 }

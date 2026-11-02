@@ -27,14 +27,17 @@ public class ToggleToolLeftRightClickPacket {
                 Ability ability = Ability.valueOf(payload.abilityName().toUpperCase(Locale.ROOT));
                 LeftClickableTool.setBindingMode(stack, ability, payload.button());
                 if (payload.button() == 0) //Right Click
+                {
                     LeftClickableTool.removeFromLeftClickList(stack, ability);
-                else if (payload.button() == 1) //Left Click
+                } else if (payload.button() == 1) //Left Click
+                {
                     LeftClickableTool.addToLeftClickList(stack, ability);
-                else if (payload.button() == 2) { //Custom Keybind
-                    if (payload.keyCode() == -1)
+                } else if (payload.button() == 2) { //Custom Keybind
+                    if (payload.keyCode() == -1) {
                         LeftClickableTool.removeFromCustomBindingList(stack, ability);
-                    else
+                    } else {
                         LeftClickableTool.addToCustomBindingList(stack, new ToolRecords.AbilityBinding(payload.abilityName(), payload.keyCode(), payload.isMouse(), payload.requireEquipped()));
+                    }
                 }
             }
         });

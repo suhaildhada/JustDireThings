@@ -18,23 +18,22 @@ public class PaxelRecipeCategory implements ISmithingCategoryExtension<PaxelReci
     }
 
     @Override
+    public <T extends IIngredientAcceptor<T>> void setTemplate(PaxelRecipe recipe, T ingredientAcceptor) {
+        Ingredient ingredient = recipe.template();
+        ingredientAcceptor.addIngredients(ingredient);
+    }
+
+    @Override
     public <T extends IIngredientAcceptor<T>> void setBase(PaxelRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getBase();
+        Ingredient ingredient = recipe.base();
         ingredientAcceptor.addIngredients(ingredient);
     }
 
     @Override
     public <T extends IIngredientAcceptor<T>> void setAddition(PaxelRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getAddition();
+        Ingredient ingredient = recipe.addition();
         ingredientAcceptor.addIngredients(ingredient);
     }
-
-    @Override
-    public <T extends IIngredientAcceptor<T>> void setTemplate(PaxelRecipe recipe, T ingredientAcceptor) {
-        Ingredient ingredient = recipe.getTemplate();
-        ingredientAcceptor.addIngredients(ingredient);
-    }
-
 
     @Override
     public <T extends IIngredientAcceptor<T>> void setOutput(PaxelRecipe recipe, T ingredientAcceptor) {
@@ -54,12 +53,12 @@ public class PaxelRecipeCategory implements ISmithingCategoryExtension<PaxelReci
         RegistryAccess registryAccess = level.registryAccess();
 
         SmithingRecipeInput input = new SmithingRecipeInput(
-            templateSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
-            baseSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
-            additionSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY)
+                templateSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
+                baseSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY),
+                additionSlot.getDisplayedItemStack().orElse(ItemStack.EMPTY)
         );
         ItemStack result = recipe.assemble(input, registryAccess);
         outputSlot.createDisplayOverrides()
-            .addItemStack(result);
+                .addItemStack(result);
     }
 }

@@ -20,6 +20,7 @@ import javax.annotation.Nullable;
 
 public class BlockBreakerT1 extends BaseMachineBlock {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+
     public BlockBreakerT1() {
         super(Properties.of()
                 .sound(SoundType.METAL)
@@ -35,16 +36,16 @@ public class BlockBreakerT1 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof BlockBreakerT1BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new BlockBreakerT1Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
             buf.writeBlockPos(blockPos);
         }));
-    }
-
-    @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof BlockBreakerT1BE;
     }
 
     @Override

@@ -18,16 +18,17 @@ public class RefinedFuelSlot extends SlotItemHandler {
 
     @Override
     public boolean mayPlace(@Nonnull ItemStack itemStack) {
-        if (itemStack.isEmpty())
+        if (itemStack.isEmpty()) {
             return false;
+        }
         IFluidHandlerItem fluidHandlerItem = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
-        if (fluidHandlerItem == null)
+        if (fluidHandlerItem == null) {
             return false;
+        }
         FluidStack fluidStack = fluidHandlerItem.drain(1000, IFluidHandler.FluidAction.SIMULATE);
-        if (fluidStack.getAmount() == 0)
+        if (fluidStack.getAmount() == 0) {
             return false;
-        if (!(fluidStack.getFluid() instanceof RefinedFuel))
-            return false;
-        return true;
+        }
+        return fluidStack.getFluid() instanceof RefinedFuel;
     }
 }

@@ -26,14 +26,10 @@ public abstract class BaseScreen<T extends BaseContainer> extends AbstractContai
     protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
         for (Renderable renderable : this.renderables) {
-            if (renderable instanceof BaseButton button && !button.getLocalization(pX, pY).equals(Component.empty()))
+            if (renderable instanceof BaseButton button && !button.getLocalization(pX, pY).equals(Component.empty())) {
                 pGuiGraphics.renderTooltip(font, button.getLocalization(pX, pY), pX, pY);
+            }
         }
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
     }
 
     @Override
@@ -45,6 +41,11 @@ public abstract class BaseScreen<T extends BaseContainer> extends AbstractContai
         }
 
         return super.keyPressed(p_keyPressed_1_, p_keyPressed_2_, p_keyPressed_3_);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     public Minecraft getMinecraftInstance() {

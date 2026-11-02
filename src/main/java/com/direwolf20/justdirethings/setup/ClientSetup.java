@@ -79,7 +79,9 @@ public class ClientSetup {
             for (var bow : Registration.BOWS.getEntries()) {
                 if (bow.get() instanceof BaseBow baseBow) {
                     ItemProperties.register(bow.get(), ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "pull"), (stack, level, living, id) -> {
-                        if (living == null || living.getUseItem() != stack) return 0.0F;
+                        if (living == null || living.getUseItem() != stack) {
+                            return 0.0F;
+                        }
                         return (stack.getUseDuration(living) - (living.getUseItemRemainingTicks() + (20 - baseBow.getMaxDraw()))) / baseBow.getMaxDraw();
                     });
                     ItemProperties.register(bow.get(), ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "pulling"), (stack, level, living, id) -> {
@@ -110,6 +112,32 @@ public class ClientSetup {
         ItemBlockRenderTypes.setRenderLayer(Registration.TIME_FLUID_FLOWING.get(), RenderType.translucent());
     }
 
+    public static void registerEnabledToolTextures(Item tool) {
+        if (tool instanceof ToggleableItem toggleableItem) {
+            ItemProperties.register(tool,
+                    ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "enabled"), (stack, level, living, id) -> {
+                        if (stack.getItem() instanceof PocketGenerator) {
+                            if (!toggleableItem.getEnabled(stack)) {
+                                return 0.0f;
+                            }
+                            IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+                            if (energyStorage == null) {
+                                return 0.0f;
+                            }
+                            if (energyStorage.getEnergyStored() > 0) {
+                                return 1.0f;
+                            }
+                            if (!(stack.getOrDefault(JustDireDataComponents.POCKETGEN_COUNTER, 0) > 0)) {
+                                return 0.0f;
+                            }
+                            return 1.0f;
+                        } else {
+                            return toggleableItem.getEnabled(stack) ? 1.0f : 0.0f;
+                        }
+                    });
+        }
+    }
+
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.HOTBAR, ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "abilitycooldownoverlay"), AbilityCooldownOverlay.INSTANCE);
@@ -119,23 +147,6 @@ public class ClientSetup {
         //noinspection deprecation
         if (event.getAtlas().location().equals(TextureAtlas.LOCATION_BLOCKS)) {
             RenderHelpers.captureDummySprite(event.getAtlas());
-        }
-    }
-
-    public static void registerEnabledToolTextures(Item tool) {
-        if (tool instanceof ToggleableItem toggleableItem) {
-            ItemProperties.register(tool,
-                    ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "enabled"), (stack, level, living, id) -> {
-                        if (stack.getItem() instanceof PocketGenerator) {
-                            if (!toggleableItem.getEnabled(stack)) return 0.0f;
-                            IEnergyStorage energyStorage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-                            if (energyStorage == null) return 0.0f;
-                            if (energyStorage.getEnergyStored() > 0) return 1.0f;
-                            if (!(stack.getOrDefault(JustDireDataComponents.POCKETGEN_COUNTER, 0) > 0)) return 0.0f;
-                            return 1.0f;
-                        } else
-                            return toggleableItem.getEnabled(stack) ? 1.0f : 0.0f;
-                    });
         }
     }
 
@@ -152,10 +163,10 @@ public class ClientSetup {
     @SubscribeEvent
     private static void registerShaders(RegisterShadersEvent event) {
         try {
-            for(DireRenderTypes.ShaderRenderType type : DireRenderTypes.getRenderTypes().values()) {
+            for (DireRenderTypes.ShaderRenderType type : DireRenderTypes.getRenderTypes().values()) {
                 type.register(event.getResourceProvider(), event::registerShader);
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -237,7 +248,7 @@ public class ClientSetup {
     @SubscribeEvent
     static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
         event.registerItem(new IClientItemExtensions() {
-            JustDireItemRenderer diremodel = new JustDireItemRenderer();
+            final JustDireItemRenderer diremodel = new JustDireItemRenderer();
 
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
@@ -251,6 +262,11 @@ public class ClientSetup {
         final ResourceLocation WATER_OVERLAY = ResourceLocation.fromNamespaceAndPath(MODID, "block/fluid_overlay");
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFFFFFFFF;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -268,11 +284,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFFFFFFFF;
             }
 
             @Override
@@ -282,6 +293,11 @@ public class ClientSetup {
         }, Registration.POLYMORPHIC_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF00DD00;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -299,11 +315,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF00DD00;
             }
 
             @Override
@@ -313,6 +324,11 @@ public class ClientSetup {
         }, Registration.PORTAL_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF9400D3;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -330,11 +346,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF9400D3;
             }
 
             @Override
@@ -344,6 +355,11 @@ public class ClientSetup {
         }, Registration.UNSTABLE_PORTAL_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF8B0000;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -361,11 +377,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF8B0000;
             }
 
             @Override
@@ -375,6 +386,11 @@ public class ClientSetup {
         }, Registration.REFINED_T2_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF40C7C7;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -392,11 +408,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF40C7C7;
             }
 
             @Override
@@ -406,6 +417,11 @@ public class ClientSetup {
         }, Registration.REFINED_T3_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF1B2027;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -423,11 +439,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF1B2027;
             }
 
             @Override
@@ -437,6 +448,11 @@ public class ClientSetup {
         }, Registration.REFINED_T4_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF8B4500;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -454,11 +470,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF8B4500;
             }
 
             @Override
@@ -468,6 +479,11 @@ public class ClientSetup {
         }, Registration.UNREFINED_T2_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF64D5AD;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -485,11 +501,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF64D5AD;
             }
 
             @Override
@@ -499,6 +510,11 @@ public class ClientSetup {
         }, Registration.UNREFINED_T3_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF36484A;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -516,11 +532,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF36484A;
             }
 
             @Override
@@ -530,6 +541,11 @@ public class ClientSetup {
         }, Registration.UNREFINED_T4_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0x3300FF00;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -547,11 +563,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0x3300FF00;
             }
 
             @Override
@@ -561,6 +572,11 @@ public class ClientSetup {
         }, Registration.TIME_FLUID_TYPE.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
+            public int getTintColor() {
+                return 0xFF32CD32;
+            }
+
+            @Override
             public ResourceLocation getStillTexture() {
                 return WATER_STILL;
             }
@@ -578,11 +594,6 @@ public class ClientSetup {
             @Override
             public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
                 return UNDERWATER_LOCATION;
-            }
-
-            @Override
-            public int getTintColor() {
-                return 0xFF32CD32;
             }
 
             @Override

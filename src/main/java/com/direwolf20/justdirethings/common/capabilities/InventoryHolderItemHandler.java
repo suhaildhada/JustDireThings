@@ -11,19 +11,22 @@ import java.util.List;
 
 public class InventoryHolderItemHandler extends ItemStackHandler {
     InventoryHolderBE inventoryHolderBE;
-    ItemStackHandler sourceHandler;
+    ItemStackHandler  sourceHandler;
 
     public InventoryHolderItemHandler(InventoryHolderBE inventoryHolderBE, ItemStackHandler sourceHandler) {
         super(sourceHandler.getSlots());
         this.inventoryHolderBE = inventoryHolderBE;
-        this.sourceHandler = sourceHandler;
+        this.sourceHandler     = sourceHandler;
     }
 
     @Override
-    public ItemStack extractItem(int slot, int amount, boolean simulate) {
-        if (inventoryHolderBE == null) return ItemStack.EMPTY;
-        int amountAllowed = inventoryHolderBE.allowedExtractAmount(slot, amount);
-        return sourceHandler.extractItem(slot, amountAllowed, simulate);
+    public int getSlots() {
+        return sourceHandler.getSlots();
+    }
+
+    @Override
+    public @NotNull ItemStack getStackInSlot(int i) {
+        return sourceHandler.getStackInSlot(i);
     }
 
     @Override
@@ -32,7 +35,9 @@ public class InventoryHolderItemHandler extends ItemStackHandler {
         if (inventoryHolderBE.filteredCache.containsKey(key)) {
             List<Integer> slotsList = inventoryHolderBE.filteredCache.get(key);
             if (slotsList.contains(slot)) //Skip this if we're already inserting into a filtered slot
+            {
                 return insertItemProxy(slot, stack, simulate);
+            }
             for (Integer i : slotsList) {
                 stack = insertItemProxy(i, stack, simulate);
             }
@@ -40,12 +45,58 @@ public class InventoryHolderItemHandler extends ItemStackHandler {
         return insertItemProxy(slot, stack, simulate);
     }
 
-    public @NotNull ItemStack insertItemProxy(int slot, @NotNull ItemStack stack, boolean simulate) {
-        if (stack.isEmpty())
+    @Override
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        if (inventoryHolderBE == null) {
             return ItemStack.EMPTY;
+        }
+        int amountAllowed = inventoryHolderBE.allowedExtractAmount(slot, amount);
+        return sourceHandler.extractItem(slot, amountAllowed, simulate);
+    }
 
-        if (!isItemValid(slot, stack))
+    @Override
+    public int getSlotLimit(int slot) {
+        if (inventoryHolderBE == null) {
+            return 0;
+        }
+        int allowedAmt = inventoryHolderBE.getSlotLimit(slot);
+        if (allowedAmt == -1) {
+            return Item.ABSOLUTE_MAX_STACK_SIZE;
+        }
+        return allowedAmt;
+    }
+
+    @Override
+    protected int getStackLimit(int slot, ItemStack stack) {
+        if (inventoryHolderBE == null) {
+            return 0;
+        }
+        int allowedAmt = inventoryHolderBE.getSlotLimit(slot);
+        if (allowedAmt == -1) {
+            return Math.min(getSlotLimit(slot), stack.getMaxStackSize());
+        }
+        return Math.min(allowedAmt, stack.getMaxStackSize());
+    }
+
+    @Override
+    public boolean isItemValid(int slot, ItemStack itemStack) {
+        if (inventoryHolderBE == null) {
+            return false;
+        }
+        if (inventoryHolderBE.automatedFiltersOnly) {
+            return inventoryHolderBE.isStackValidFilter(itemStack, slot);
+        }
+        return sourceHandler.isItemValid(slot, itemStack);
+    }
+
+    public @NotNull ItemStack insertItemProxy(int slot, @NotNull ItemStack stack, boolean simulate) {
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        if (!isItemValid(slot, stack)) {
             return stack;
+        }
 
         validateSlotIndex(slot);
 
@@ -54,14 +105,16 @@ public class InventoryHolderItemHandler extends ItemStackHandler {
         int limit = getStackLimit(slot, stack);
 
         if (!existing.isEmpty()) {
-            if (!ItemStack.isSameItemSameComponents(stack, existing))
+            if (!ItemStack.isSameItemSameComponents(stack, existing)) {
                 return stack;
+            }
 
             limit -= existing.getCount();
         }
 
-        if (limit <= 0)
+        if (limit <= 0) {
             return stack;
+        }
 
         boolean reachedLimit = stack.getCount() > limit;
 
@@ -75,41 +128,5 @@ public class InventoryHolderItemHandler extends ItemStackHandler {
         }
 
         return reachedLimit ? stack.copyWithCount(stack.getCount() - limit) : ItemStack.EMPTY;
-    }
-
-    @Override
-    public boolean isItemValid(int slot, ItemStack itemStack) {
-        if (inventoryHolderBE == null) return false;
-        if (inventoryHolderBE.automatedFiltersOnly)
-            return inventoryHolderBE.isStackValidFilter(itemStack, slot);
-        return sourceHandler.isItemValid(slot, itemStack);
-    }
-
-    @Override
-    public int getSlotLimit(int slot) {
-        if (inventoryHolderBE == null) return 0;
-        int allowedAmt = inventoryHolderBE.getSlotLimit(slot);
-        if (allowedAmt == -1)
-            return Item.ABSOLUTE_MAX_STACK_SIZE;
-        return allowedAmt;
-    }
-
-    @Override
-    protected int getStackLimit(int slot, ItemStack stack) {
-        if (inventoryHolderBE == null) return 0;
-        int allowedAmt = inventoryHolderBE.getSlotLimit(slot);
-        if (allowedAmt == -1)
-            return Math.min(getSlotLimit(slot), stack.getMaxStackSize());
-        return Math.min(allowedAmt, stack.getMaxStackSize());
-    }
-
-    @Override
-    public int getSlots() {
-        return sourceHandler.getSlots();
-    }
-
-    @Override
-    public @NotNull ItemStack getStackInSlot(int i) {
-        return sourceHandler.getStackInSlot(i);
     }
 }

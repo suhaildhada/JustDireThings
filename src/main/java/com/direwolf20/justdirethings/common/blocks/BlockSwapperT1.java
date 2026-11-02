@@ -29,15 +29,15 @@ public class BlockSwapperT1 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof BlockSwapperT1BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new BlockSwapperT1Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
             buf.writeBlockPos(blockPos);
         }));
-    }
-
-    @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof BlockSwapperT1BE;
     }
 }

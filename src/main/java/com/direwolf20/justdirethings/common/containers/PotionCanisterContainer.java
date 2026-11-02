@@ -14,10 +14,10 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class PotionCanisterContainer extends BaseContainer {
-    public static final int SLOTS = 1;
-    public PotionCanisterHandler handler;
-    public ItemStack potionCanister;
-    public Player playerEntity;
+    public static final int                   SLOTS = 1;
+    public              PotionCanisterHandler handler;
+    public              ItemStack             potionCanister;
+    public              Player                playerEntity;
 
     public PotionCanisterContainer(int windowId, Inventory playerInventory, Player player, RegistryFriendlyByteBuf extraData) {
         this(windowId, playerInventory, player, ItemStack.OPTIONAL_STREAM_CODEC.decode(extraData));
@@ -25,18 +25,14 @@ public class PotionCanisterContainer extends BaseContainer {
 
     public PotionCanisterContainer(int windowId, Inventory playerInventory, Player player, ItemStack potionCanister) {
         super(Registration.PotionCanister_Container.get(), windowId);
-        playerEntity = player;
-        handler = new PotionCanisterHandler(potionCanister, JustDireDataComponents.TOOL_CONTENTS.get(), 1);
+        playerEntity        = player;
+        handler             = new PotionCanisterHandler(potionCanister, JustDireDataComponents.TOOL_CONTENTS.get(), 1);
         this.potionCanister = potionCanister;
-        if (handler != null)
+        if (handler != null) {
             addItemSlots(handler, 0, 80, 35, 1, 18);
+        }
 
         addPlayerSlots(playerInventory, 8, 84);
-    }
-
-    @Override
-    public boolean stillValid(Player playerIn) {
-        return playerIn.getMainHandItem().equals(potionCanister);
     }
 
     protected int addItemSlots(IItemHandler handler, int index, int x, int y, int amount, int dx) {
@@ -89,5 +85,10 @@ public class PotionCanisterContainer extends BaseContainer {
     @Override
     public void removed(Player playerIn) {
         super.removed(playerIn);
+    }
+
+    @Override
+    public boolean stillValid(Player playerIn) {
+        return playerIn.getMainHandItem().equals(potionCanister);
     }
 }

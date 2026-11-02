@@ -45,10 +45,10 @@ import java.util.List;
 import static net.minecraft.client.renderer.entity.ItemRenderer.getFoilBufferDirect;
 
 public class GooBlockRender_Base<T extends GooBlockBE_Base> implements BlockEntityRenderer<T> {
-    private final static float percentageDivisor = (float) 100 / GooPatternBlock.GOOSTAGE.getPossibleValues().size();
-    private ItemStack cachedItemStack = ItemStack.EMPTY;
-    private int currentItemIndex = 0;
-    private long lastChangeTime = 0;
+    private final static float     percentageDivisor = (float) 100 / GooPatternBlock.GOOSTAGE.getPossibleValues().size();
+    private              ItemStack cachedItemStack   = ItemStack.EMPTY;
+    private              int       currentItemIndex  = 0;
+    private              long      lastChangeTime    = 0;
 
     public GooBlockRender_Base(BlockEntityRendererProvider.Context p_173636_) {
 
@@ -72,29 +72,6 @@ public class GooBlockRender_Base<T extends GooBlockBE_Base> implements BlockEnti
         }
     }
 
-    private ItemStack getNextItemFromTag(int tier) {
-        TagKey<Item> tag = switch (tier) {
-            case 1 -> JustDireItemTags.GOO_REVIVE_TIER_1;
-            case 2 -> JustDireItemTags.GOO_REVIVE_TIER_2;
-            case 3 -> JustDireItemTags.GOO_REVIVE_TIER_3;
-            case 4 -> JustDireItemTags.GOO_REVIVE_TIER_4;
-            default -> null;  // Handle unexpected tiers
-        };
-        if (tag == null)
-            return ItemStack.EMPTY;
-        List<Holder<Item>> items = BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(h -> h.stream()).toList();
-        if (items.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-        // Get the current item and increment the index
-        ItemStack nextItem = new ItemStack(items.get(currentItemIndex).value());
-
-        // Cycle to the next item in the list, wrapping around if necessary
-        currentItemIndex = (currentItemIndex + 1) % items.size();
-
-        return nextItem;
-    }
-
     private void renderFloatingItem(T blockentity, PoseStack matrixStackIn, MultiBufferSource bufferIn, float partialTicks, int combinedLightsIn) {
         long currentTime = System.currentTimeMillis();
         long cycleDuration = 3600; // Full cycle duration in milliseconds (fade in + fade out)
@@ -108,7 +85,7 @@ public class GooBlockRender_Base<T extends GooBlockBE_Base> implements BlockEnti
         // Change the item at the start of a new cycle when the previous cycle completes
         if (elapsedTime < 50 && currentTime - lastChangeTime >= cycleDuration) {
             cachedItemStack = getNextItemFromTag(blockentity.getTier());
-            lastChangeTime = currentTime; // Reset the cycle timer
+            lastChangeTime  = currentTime; // Reset the cycle timer
         }
 
         if (!cachedItemStack.isEmpty()) {
@@ -133,6 +110,71 @@ public class GooBlockRender_Base<T extends GooBlockBE_Base> implements BlockEnti
                 this.renderTransparentItemStack(cachedItemStack, ItemDisplayContext.GROUND, false, matrixStackIn, bufferIn, combinedLightsIn, OverlayTexture.NO_OVERLAY, bakedmodel, fadeFactor);
                 matrixStackIn.popPose();
             }
+        }
+    }
+
+    public void renderTextures(Direction direction, Level level, BlockPos pos, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedOverlayIn, int remainingTicks, int maxTicks, BlockState renderState, GooBlockBE_Base gooBlockBE_base) {
+        float percentComplete = ((1 - (float) remainingTicks / (float) maxTicks) * 100);
+        int tensDigit = (int) (percentComplete / percentageDivisor);
+        if (tensDigit > 0) { //Render the prior stage with full transparency
+            BlockState patternState = Registration.GooPatternBlock.get().defaultBlockState().setValue(GooPatternBlock.GOOSTAGE, tensDigit - 1);
+            renderTexturePattern(direction, level, pos, matrixStackIn, bufferIn, combinedOverlayIn, 1f, patternState, renderState, gooBlockBE_base);
+        }
+        BlockState patternState = Registration.GooPatternBlock.get().defaultBlockState().setValue(GooPatternBlock.GOOSTAGE, tensDigit);
+        float startOfCurrentStage = tensDigit * percentageDivisor; // This calculates the starting percentage of the current stage
+        float percentagePart = percentComplete - startOfCurrentStage; // This calculates how far into the current stage we are
+        float alpha = percentagePart / percentageDivisor;
+        renderTexturePattern(direction, level, pos, matrixStackIn, bufferIn, combinedOverlayIn, alpha, patternState, renderState, gooBlockBE_base);
+    }
+
+    private ItemStack getNextItemFromTag(int tier) {
+        TagKey<Item> tag = switch (tier) {
+            case 1 -> JustDireItemTags.GOO_REVIVE_TIER_1;
+            case 2 -> JustDireItemTags.GOO_REVIVE_TIER_2;
+            case 3 -> JustDireItemTags.GOO_REVIVE_TIER_3;
+            case 4 -> JustDireItemTags.GOO_REVIVE_TIER_4;
+            default -> null;  // Handle unexpected tiers
+        };
+        if (tag == null) {
+            return ItemStack.EMPTY;
+        }
+        List<Holder<Item>> items = BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(h -> h.stream()).toList();
+        if (items.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        // Get the current item and increment the index
+        ItemStack nextItem = new ItemStack(items.get(currentItemIndex).value());
+
+        // Cycle to the next item in the list, wrapping around if necessary
+        currentItemIndex = (currentItemIndex + 1) % items.size();
+
+        return nextItem;
+    }
+
+    private Vec3 getOffsetPositionForSide(Direction direction, boolean isBlockItem) {
+        // The offset distance from the face of the block
+        double offset = 0.025;
+
+        double nudge = isBlockItem ? 0.10 : 0.05; // Additional nudge to counter rotation effects
+
+        return switch (direction) {
+            case UP -> new Vec3(0.5, 1.0 + offset, 0.5 - nudge);
+            case DOWN -> new Vec3(0.5, 0.0 - offset, 0.5 + nudge);
+            case NORTH -> new Vec3(0.5, 0.5 - nudge, 0.0 - offset);
+            case SOUTH -> new Vec3(0.5, 0.5 - nudge, 1.0 + offset);
+            case WEST -> new Vec3(0.0 - offset, 0.5 - nudge, 0.5);
+            case EAST -> new Vec3(1.0 + offset, 0.5 - nudge, 0.5);
+        };
+    }
+
+    private void applyRotationForSide(PoseStack matrixStackIn, Direction direction) {
+        switch (direction) {
+            case UP -> matrixStackIn.mulPose(Axis.XP.rotationDegrees(90));
+            case DOWN -> matrixStackIn.mulPose(Axis.XN.rotationDegrees(90));
+            case NORTH -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(180));
+            case SOUTH -> matrixStackIn.mulPose(Axis.YN.rotationDegrees(0));
+            case WEST -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(90));
+            case EAST -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(-90));
         }
     }
 
@@ -180,47 +222,6 @@ public class GooBlockRender_Base<T extends GooBlockBE_Base> implements BlockEnti
 
             poseStack.popPose();
         }
-    }
-
-    private Vec3 getOffsetPositionForSide(Direction direction, boolean isBlockItem) {
-        // The offset distance from the face of the block
-        double offset = 0.025;
-
-        double nudge = isBlockItem ? 0.10 : 0.05; // Additional nudge to counter rotation effects
-
-        return switch (direction) {
-            case UP -> new Vec3(0.5, 1.0 + offset, 0.5 - nudge);
-            case DOWN -> new Vec3(0.5, 0.0 - offset, 0.5 + nudge);
-            case NORTH -> new Vec3(0.5, 0.5 - nudge, 0.0 - offset);
-            case SOUTH -> new Vec3(0.5, 0.5 - nudge, 1.0 + offset);
-            case WEST -> new Vec3(0.0 - offset, 0.5 - nudge, 0.5);
-            case EAST -> new Vec3(1.0 + offset, 0.5 - nudge, 0.5);
-        };
-    }
-
-    private void applyRotationForSide(PoseStack matrixStackIn, Direction direction) {
-        switch (direction) {
-            case UP -> matrixStackIn.mulPose(Axis.XP.rotationDegrees(90));
-            case DOWN -> matrixStackIn.mulPose(Axis.XN.rotationDegrees(90));
-            case NORTH -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(180));
-            case SOUTH -> matrixStackIn.mulPose(Axis.YN.rotationDegrees(0));
-            case WEST -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(90));
-            case EAST -> matrixStackIn.mulPose(Axis.YP.rotationDegrees(-90));
-        }
-    }
-
-    public void renderTextures(Direction direction, Level level, BlockPos pos, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedOverlayIn, int remainingTicks, int maxTicks, BlockState renderState, GooBlockBE_Base gooBlockBE_base) {
-        float percentComplete = ((1 - (float) remainingTicks / (float) maxTicks) * 100);
-        int tensDigit = (int) (percentComplete / percentageDivisor);
-        if (tensDigit > 0) { //Render the prior stage with full transparency
-            BlockState patternState = Registration.GooPatternBlock.get().defaultBlockState().setValue(GooPatternBlock.GOOSTAGE, tensDigit - 1);
-            renderTexturePattern(direction, level, pos, matrixStackIn, bufferIn, combinedOverlayIn, 1f, patternState, renderState, gooBlockBE_base);
-        }
-        BlockState patternState = Registration.GooPatternBlock.get().defaultBlockState().setValue(GooPatternBlock.GOOSTAGE, tensDigit);
-        float startOfCurrentStage = tensDigit * percentageDivisor; // This calculates the starting percentage of the current stage
-        float percentagePart = percentComplete - startOfCurrentStage; // This calculates how far into the current stage we are
-        float alpha = percentagePart / percentageDivisor;
-        renderTexturePattern(direction, level, pos, matrixStackIn, bufferIn, combinedOverlayIn, alpha, patternState, renderState, gooBlockBE_base);
     }
 
     public void renderTexturePattern(Direction direction, Level level, BlockPos pos, PoseStack matrixStackIn, MultiBufferSource bufferIn, int combinedOverlayIn, float transparency, BlockState pattern, BlockState renderState, GooBlockBE_Base gooBlockBE_base) {

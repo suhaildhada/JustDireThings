@@ -12,15 +12,14 @@ public record ExperienceHolderPayload(
         int levels
 ) implements CustomPacketPayload {
     public static final Type<ExperienceHolderPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "experience_holder"));
-
-    @Override
-    public Type<ExperienceHolderPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, ExperienceHolderPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, ExperienceHolderPayload::add,
             ByteBufCodecs.INT, ExperienceHolderPayload::levels,
             ExperienceHolderPayload::new
     );
+
+    @Override
+    public Type<ExperienceHolderPayload> type() {
+        return TYPE;
+    }
 }

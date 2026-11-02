@@ -29,15 +29,15 @@ public class BlockBreakerT2 extends BaseMachineBlock {
     }
 
     @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof BlockBreakerT2BE;
+    }
+
+    @Override
     public void openMenu(Player player, BlockPos blockPos) {
         player.openMenu(new SimpleMenuProvider(
                 (windowId, playerInventory, playerEntity) -> new BlockBreakerT2Container(windowId, playerInventory, blockPos), Component.translatable("")), (buf -> {
             buf.writeBlockPos(blockPos);
         }));
-    }
-
-    @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof BlockBreakerT2BE;
     }
 }

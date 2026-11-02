@@ -9,20 +9,19 @@ import java.util.Objects;
 import java.util.WeakHashMap;
 
 public class FilterData {
-    public boolean allowlist = false, compareNBT = false;
-    public int blockItemFilter = -1;
-
     //This is not saved in NBT, and is recreated as needed on demand
-    public final Map<ItemStackKey, Boolean> filterCache = new Object2BooleanOpenHashMap<>();
+    public final Map<ItemStackKey, Boolean>   filterCache = new Object2BooleanOpenHashMap<>();
     public final WeakHashMap<Entity, Boolean> entityCache = new WeakHashMap<>();
+    public       boolean                      allowlist   = false, compareNBT = false;
+    public int blockItemFilter = -1;
 
     public FilterData() {
 
     }
 
     public FilterData(boolean allowlist, boolean compareNBT, int blockItemFilter) {
-        this.allowlist = allowlist;
-        this.compareNBT = compareNBT;
+        this.allowlist       = allowlist;
+        this.compareNBT      = compareNBT;
         this.blockItemFilter = blockItemFilter;
     }
 
@@ -33,8 +32,12 @@ public class FilterData {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         FilterData that = (FilterData) o;
         return allowlist == that.allowlist &&
                 compareNBT == that.compareNBT &&

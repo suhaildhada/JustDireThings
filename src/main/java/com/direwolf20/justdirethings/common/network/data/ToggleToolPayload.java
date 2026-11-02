@@ -11,15 +11,14 @@ public record ToggleToolPayload(
         String settingName
 ) implements CustomPacketPayload {
     public static final Type<ToggleToolPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "toggle_tool_setting"));
+    public static final StreamCodec<FriendlyByteBuf, ToggleToolPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, ToggleToolPayload::settingName,
+            ToggleToolPayload::new
+    );
 
     @Override
     public Type<ToggleToolPayload> type() {
         return TYPE;
     }
-
-    public static final StreamCodec<FriendlyByteBuf, ToggleToolPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, ToggleToolPayload::settingName,
-            ToggleToolPayload::new
-    );
 }
 

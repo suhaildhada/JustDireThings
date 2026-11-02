@@ -28,25 +28,24 @@ public class MachineSettingsCopier extends Item {
                 .stacksTo(1));
     }
 
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack itemstack = player.getItemInHand(hand);
-        if (!level.isClientSide() || !player.isShiftKeyDown())
-            return new InteractionResultHolder<>(InteractionResult.PASS, itemstack);
-
-        if (level.isClientSide)
-            ModScreens.openMachineSettingsCopierScreen(itemstack);
-
-        return new InteractionResultHolder<>(InteractionResult.PASS, itemstack);
+    public static void setSettings(ItemStack itemStack, boolean area, boolean offset, boolean filter, boolean redstone) {
+        itemStack.set(JustDireDataComponents.COPY_AREA_SETTINGS, area);
+        itemStack.set(JustDireDataComponents.COPY_OFFSET_SETTINGS, offset);
+        itemStack.set(JustDireDataComponents.COPY_FILTER_SETTINGS, filter);
+        itemStack.set(JustDireDataComponents.COPY_REDSTONE_SETTINGS, redstone);
     }
 
     @Override
     public InteractionResult useOn(UseOnContext pContext) {
         Level level = pContext.getLevel();
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
         BlockEntity blockEntity = level.getBlockEntity(pContext.getClickedPos());
 
-        if (!(blockEntity instanceof BaseMachineBE)) return InteractionResult.PASS;
+        if (!(blockEntity instanceof BaseMachineBE)) {
+            return InteractionResult.PASS;
+        }
         ItemStack itemStack = pContext.getItemInHand();
 
         Player player = pContext.getPlayer();
@@ -64,16 +63,62 @@ public class MachineSettingsCopier extends Item {
         return InteractionResult.SUCCESS;
     }
 
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
+        if (!level.isClientSide() || !player.isShiftKeyDown()) {
+            return new InteractionResultHolder<>(InteractionResult.PASS, itemstack);
+        }
+
+        if (level.isClientSide) {
+            ModScreens.openMachineSettingsCopierScreen(itemstack);
+        }
+
+        return new InteractionResultHolder<>(InteractionResult.PASS, itemstack);
+    }
+
+    public void saveSettings(Level level, BlockEntity blockEntity, ItemStack itemStack) {
+        CompoundTag compoundTag = new CompoundTag();
+        if (blockEntity instanceof AreaAffectingBE areaAffectingBE) {
+            if (getCopyArea(itemStack)) {
+                areaAffectingBE.saveAreaOnly(compoundTag);
+            }
+            if (getCopyOffset(itemStack)) {
+                areaAffectingBE.saveOffsetOnly(compoundTag);
+            }
+        }
+
+        if (getCopyFilter(itemStack) && blockEntity instanceof FilterableBE filterableBE) {
+            filterableBE.saveFilterSettings(compoundTag);
+            FilterBasicHandler filterBasicHandler = filterableBE.getFilterHandler();
+            compoundTag.put("filteredItems", filterBasicHandler.serializeNBT(level.registryAccess()));
+        }
+
+        if (getCopyRedstone(itemStack) && blockEntity instanceof RedstoneControlledBE redstoneControlledBE) {
+            redstoneControlledBE.saveRedstoneSettings(compoundTag);
+        }
+
+        if (!compoundTag.isEmpty()) {
+            itemStack.set(JustDireDataComponents.COPIED_MACHINE_DATA, CustomData.of(compoundTag));
+        }
+    }
+
     public void loadSettings(Level level, BlockEntity blockEntity, ItemStack itemStack) {
-        if (!itemStack.has(JustDireDataComponents.COPIED_MACHINE_DATA)) return;
+        if (!itemStack.has(JustDireDataComponents.COPIED_MACHINE_DATA)) {
+            return;
+        }
         CompoundTag compoundTag = itemStack.get(JustDireDataComponents.COPIED_MACHINE_DATA).copyTag();
-        if (compoundTag.isEmpty()) return;
+        if (compoundTag.isEmpty()) {
+            return;
+        }
 
         if (blockEntity instanceof AreaAffectingBE areaAffectingBE) {
-            if (getCopyArea(itemStack))
+            if (getCopyArea(itemStack)) {
                 areaAffectingBE.loadAreaOnly(compoundTag);
-            if (getCopyOffset(itemStack))
+            }
+            if (getCopyOffset(itemStack)) {
                 areaAffectingBE.loadOffsetOnly(compoundTag);
+            }
         }
 
         if (getCopyFilter(itemStack) && blockEntity instanceof FilterableBE filterableBE) {
@@ -85,39 +130,11 @@ public class MachineSettingsCopier extends Item {
             }
         }
 
-        if (getCopyRedstone(itemStack) && blockEntity instanceof RedstoneControlledBE redstoneControlledBE)
+        if (getCopyRedstone(itemStack) && blockEntity instanceof RedstoneControlledBE redstoneControlledBE) {
             redstoneControlledBE.loadRedstoneSettings(compoundTag);
+        }
 
         ((BaseMachineBE) blockEntity).markDirtyClient();
-    }
-
-    public void saveSettings(Level level, BlockEntity blockEntity, ItemStack itemStack) {
-        CompoundTag compoundTag = new CompoundTag();
-        if (blockEntity instanceof AreaAffectingBE areaAffectingBE) {
-            if (getCopyArea(itemStack))
-                areaAffectingBE.saveAreaOnly(compoundTag);
-            if (getCopyOffset(itemStack))
-                areaAffectingBE.saveOffsetOnly(compoundTag);
-        }
-
-        if (getCopyFilter(itemStack) && blockEntity instanceof FilterableBE filterableBE) {
-            filterableBE.saveFilterSettings(compoundTag);
-            FilterBasicHandler filterBasicHandler = filterableBE.getFilterHandler();
-            compoundTag.put("filteredItems", filterBasicHandler.serializeNBT(level.registryAccess()));
-        }
-
-        if (getCopyRedstone(itemStack) && blockEntity instanceof RedstoneControlledBE redstoneControlledBE)
-            redstoneControlledBE.saveRedstoneSettings(compoundTag);
-
-        if (!compoundTag.isEmpty())
-            itemStack.set(JustDireDataComponents.COPIED_MACHINE_DATA, CustomData.of(compoundTag));
-    }
-
-    public static void setSettings(ItemStack itemStack, boolean area, boolean offset, boolean filter, boolean redstone) {
-        itemStack.set(JustDireDataComponents.COPY_AREA_SETTINGS, area);
-        itemStack.set(JustDireDataComponents.COPY_OFFSET_SETTINGS, offset);
-        itemStack.set(JustDireDataComponents.COPY_FILTER_SETTINGS, filter);
-        itemStack.set(JustDireDataComponents.COPY_REDSTONE_SETTINGS, redstone);
     }
 
     public static boolean getCopyArea(ItemStack itemStack) {

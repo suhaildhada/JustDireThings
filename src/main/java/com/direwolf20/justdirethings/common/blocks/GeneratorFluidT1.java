@@ -54,11 +54,15 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
-        if (level.isClientSide) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (level.isClientSide) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
         IFluidHandlerItem fluidHandlerItem = itemStack.getCapability(Capabilities.FluidHandler.ITEM);
         if (fluidHandlerItem != null) {
             IFluidHandler cap = level.getCapability(Capabilities.FluidHandler.BLOCK, blockPos, blockHitResult.getDirection());
-            if (cap == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (cap == null) {
+                return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            }
             if (fluidHandlerItem.getFluidInTank(0).isEmpty()) {
                 FluidStack testStack = cap.drain(fluidHandlerItem.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE);
                 if (testStack.getAmount() > 0) {
@@ -66,8 +70,9 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
                     if (amtFit > 0) {
                         FluidStack extractedStack = cap.drain(amtFit, IFluidHandler.FluidAction.EXECUTE);
                         fluidHandlerItem.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -79,8 +84,9 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
                     FluidStack extractedStack = fluidHandlerItem.drain(insertAmt, IFluidHandler.FluidAction.EXECUTE);
                     if (!extractedStack.isEmpty()) {
                         cap.fill(extractedStack, IFluidHandler.FluidAction.EXECUTE);
-                        if (itemStack.getItem() instanceof BucketItem)
+                        if (itemStack.getItem() instanceof BucketItem) {
                             player.setItemSlot(hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND, fluidHandlerItem.getContainer());
+                        }
                         level.playSound(null, blockPos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1F, 1.0F);
                         return ItemInteractionResult.SUCCESS;
                     }
@@ -90,10 +96,20 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        return SHAPE;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new GeneratorFluidT1BE(pos, state);
+    }
+
+    @Override
+    public boolean isValidBE(BlockEntity blockEntity) {
+        return blockEntity instanceof GeneratorFluidT1BE;
     }
 
     @Override
@@ -105,13 +121,8 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
     }
 
     @Override
-    public boolean isValidBE(BlockEntity blockEntity) {
-        return blockEntity instanceof GeneratorFluidT1BE;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state;
     }
 
     //Override BaseMachineBlock being rotatable
@@ -122,11 +133,6 @@ public class GeneratorFluidT1 extends BaseMachineBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state;
     }
 
     @Override

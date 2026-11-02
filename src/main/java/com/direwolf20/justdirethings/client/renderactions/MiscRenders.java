@@ -68,8 +68,8 @@ public class MiscRenders {
             }
             EntityModel<Player> entityModel = livingRenderer.getModel();
             entityModel.attackTime = 0f;
-            entityModel.riding = false;
-            entityModel.young = player.isBaby();
+            entityModel.riding     = false;
+            entityModel.young      = player.isBaby();
             entityModel.prepareMobModel(player, f4, f8, pPartialTicks.getGameTimeDeltaTicks());
             entityModel.setupAnim(player, f4, f8, f7, f2, f5);
             int packedARGB = (127 << 24) | (255 << 16) | (255 << 8) | 255;

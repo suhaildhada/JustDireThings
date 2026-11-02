@@ -13,10 +13,10 @@ import net.neoforged.neoforge.items.ComponentItemHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 public class PocketGeneratorContainer extends BaseContainer {
-    public static final int SLOTS = 1;
-    public ComponentItemHandler handler;
-    public ItemStack pocketGeneratorItemStack;
-    public Player playerEntity;
+    public static final int                  SLOTS = 1;
+    public              ComponentItemHandler handler;
+    public              ItemStack            pocketGeneratorItemStack;
+    public              Player               playerEntity;
 
     public PocketGeneratorContainer(int windowId, Inventory playerInventory, Player player, RegistryFriendlyByteBuf extraData) {
         this(windowId, playerInventory, player, ItemStack.OPTIONAL_STREAM_CODEC.decode(extraData));
@@ -24,18 +24,14 @@ public class PocketGeneratorContainer extends BaseContainer {
 
     public PocketGeneratorContainer(int windowId, Inventory playerInventory, Player player, ItemStack pocketGenerator) {
         super(Registration.PocketGenerator_Container.get(), windowId);
-        playerEntity = player;
-        handler = new ComponentItemHandler(pocketGenerator, JustDireDataComponents.ITEMSTACK_HANDLER.get(), 1);
+        playerEntity                  = player;
+        handler                       = new ComponentItemHandler(pocketGenerator, JustDireDataComponents.ITEMSTACK_HANDLER.get(), 1);
         this.pocketGeneratorItemStack = pocketGenerator;
-        if (handler != null)
+        if (handler != null) {
             addGeneratorSlots(handler, 0, 80, 35, 1, 18);
+        }
 
         addPlayerSlots(playerInventory, 8, 84);
-    }
-
-    @Override
-    public boolean stillValid(Player playerIn) {
-        return playerIn.getMainHandItem().equals(pocketGeneratorItemStack);
     }
 
     protected int addGeneratorSlots(IItemHandler handler, int index, int x, int y, int amount, int dx) {
@@ -83,5 +79,10 @@ public class PocketGeneratorContainer extends BaseContainer {
     @Override
     public void removed(Player playerIn) {
         super.removed(playerIn);
+    }
+
+    @Override
+    public boolean stillValid(Player playerIn) {
+        return playerIn.getMainHandItem().equals(pocketGeneratorItemStack);
     }
 }

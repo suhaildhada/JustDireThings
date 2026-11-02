@@ -12,15 +12,14 @@ public record SwapperPayload(
         int swap_entity_type
 ) implements CustomPacketPayload {
     public static final Type<SwapperPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(JustDireThings.MODID, "swapper_packet"));
-
-    @Override
-    public Type<SwapperPayload> type() {
-        return TYPE;
-    }
-
     public static final StreamCodec<FriendlyByteBuf, SwapperPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, SwapperPayload::swapBlocks,
             ByteBufCodecs.INT, SwapperPayload::swap_entity_type,
             SwapperPayload::new
     );
+
+    @Override
+    public Type<SwapperPayload> type() {
+        return TYPE;
+    }
 }

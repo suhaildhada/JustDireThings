@@ -28,33 +28,6 @@ public class PortalGun extends BasePoweredItem implements PoweredItem {
                 .stacksTo(1));
     }
 
-    @Override
-    public int getMaxEnergy() {
-        return Config.PORTAL_GUN_V1_RF_CAPACITY.get();
-    }
-
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack itemStack = player.getItemInHand(hand);
-        /*level.playSound(
-                null,
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                SoundEvents.SNOWBALL_THROW,
-                SoundSource.NEUTRAL,
-                0.5F,
-                0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
-        );*/
-        if (!level.isClientSide) {
-            if (!player.isShiftKeyDown())
-                spawnProjectile(level, player, itemStack, false);
-            else
-                closeMyPortals((ServerLevel) level, itemStack, player);
-        }
-        return InteractionResultHolder.fail(itemStack);
-    }
-
     public static void closeMyPortals(ServerLevel level, ItemStack itemStack, Player player) {
         UUID portalGunUUID = getUUID(itemStack);
         MinecraftServer server = level.getServer();
@@ -78,6 +51,47 @@ public class PortalGun extends BasePoweredItem implements PoweredItem {
         level.addFreshEntity(projectile);
     }
 
+    public static UUID setUUID(ItemStack itemStack) {
+        UUID uuid = UUID.randomUUID();
+        itemStack.set(JustDireDataComponents.PORTALGUN_UUID, uuid);
+        return uuid;
+    }
+
+    public static UUID getUUID(ItemStack itemStack) {
+        if (!itemStack.has(JustDireDataComponents.PORTALGUN_UUID)) {
+            return setUUID(itemStack);
+        }
+        return itemStack.get(JustDireDataComponents.PORTALGUN_UUID);
+    }
+
+    @Override
+    public int getMaxEnergy() {
+        return Config.PORTAL_GUN_V1_RF_CAPACITY.get();
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
+        /*level.playSound(
+                null,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                SoundEvents.SNOWBALL_THROW,
+                SoundSource.NEUTRAL,
+                0.5F,
+                0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
+        );*/
+        if (!level.isClientSide) {
+            if (!player.isShiftKeyDown()) {
+                spawnProjectile(level, player, itemStack, false);
+            } else {
+                closeMyPortals((ServerLevel) level, itemStack, player);
+            }
+        }
+        return InteractionResultHolder.fail(itemStack);
+    }
+
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.NONE;
@@ -86,17 +100,5 @@ public class PortalGun extends BasePoweredItem implements PoweredItem {
     @Override
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
         return false;
-    }
-
-    public static UUID setUUID(ItemStack itemStack) {
-        UUID uuid = UUID.randomUUID();
-        itemStack.set(JustDireDataComponents.PORTALGUN_UUID, uuid);
-        return uuid;
-    }
-
-    public static UUID getUUID(ItemStack itemStack) {
-        if (!itemStack.has(JustDireDataComponents.PORTALGUN_UUID))
-            return setUUID(itemStack);
-        return itemStack.get(JustDireDataComponents.PORTALGUN_UUID);
     }
 }

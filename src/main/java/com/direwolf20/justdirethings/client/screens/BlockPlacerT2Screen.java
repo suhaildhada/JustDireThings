@@ -15,17 +15,17 @@ public class BlockPlacerT2Screen extends BaseMachineScreen<BlockPlacerT2Containe
     }
 
     @Override
-    public void setTopSection() {
-        extraWidth = 60;
-        extraHeight = 0;
-    }
-
-    @Override
     public void init() {
         super.init();
         addRenderableWidget(ToggleButtonFactory.DIRECTIONBUTTON(getGuiLeft() + 116, topSectionTop + 62, direction, b -> {
             direction = ((ToggleButton) b).getTexturePosition();
             PacketDistributor.sendToServer(new DirectionSettingPayload(direction));
         }));
+    }
+
+    @Override
+    public void setTopSection() {
+        extraWidth  = 60;
+        extraHeight = 0;
     }
 }

@@ -13,6 +13,9 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.Random;
 
 public class GooExplodeParticle extends BreakingItemParticle {
+    public static ParticleProvider<GooExplodeParticleData> FACTORY =
+            (data, world, x, y, z, xSpeed, ySpeed, zSpeed) ->
+                    new GooExplodeParticle(world, x, y, z, data.itemStack());
     Random random = new Random();
     private float partSize;
 
@@ -23,13 +26,14 @@ public class GooExplodeParticle extends BreakingItemParticle {
         this.partSize = minSize + random.nextFloat() * (maxSize - minSize);
         this.lifetime = 30;
         int longLifeChance = random.nextInt(20);
-        if (longLifeChance == 0)
+        if (longLifeChance == 0) {
             this.lifetime = 120;
+        }
 
         this.scale(partSize);
         this.partSize = quadSize;
         if (this.sprite == null) {
-            this.setSprite(Minecraft.getInstance().getItemRenderer().getModel(new ItemStack(Blocks.COBBLESTONE), world, (LivingEntity) null, 0).getParticleIcon());
+            this.setSprite(Minecraft.getInstance().getItemRenderer().getModel(new ItemStack(Blocks.COBBLESTONE), world, null, 0).getParticleIcon());
         }
     }
 
@@ -45,7 +49,7 @@ public class GooExplodeParticle extends BreakingItemParticle {
 
         if (relativeAge < 0.5f) {
             adjustedAge = (float) Math.pow(relativeAge / 0.5f, 2);
-            this.alpha = Mth.lerp(adjustedAge, 0.25f, 1);
+            this.alpha  = Mth.lerp(adjustedAge, 0.25f, 1);
         }
     }
 
@@ -53,9 +57,5 @@ public class GooExplodeParticle extends BreakingItemParticle {
     protected int getLightColor(float pPartialTick) {
         return 0xF00080;
     }
-
-    public static ParticleProvider<GooExplodeParticleData> FACTORY =
-            (data, world, x, y, z, xSpeed, ySpeed, zSpeed) ->
-                    new GooExplodeParticle(world, x, y, z, data.getItemStack());
 }
 

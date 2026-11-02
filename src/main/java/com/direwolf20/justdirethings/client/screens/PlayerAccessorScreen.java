@@ -15,19 +15,21 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.HashMap;
 
 public class PlayerAccessorScreen extends BaseMachineScreen<PlayerAccessorContainer> {
-    PlayerAccessorBE playerAccessorBE;
     public HashMap<Direction, Integer> sidedInventoryTypes;
+    PlayerAccessorBE playerAccessorBE;
+
     public PlayerAccessorScreen(PlayerAccessorContainer container, Inventory inv, Component name) {
         super(container, inv, name);
         if (container.baseMachineBE instanceof PlayerAccessorBE playerAccessorBE) {
             this.playerAccessorBE = playerAccessorBE;
-            sidedInventoryTypes = playerAccessorBE.sidedInventoryTypes;
+            sidedInventoryTypes   = playerAccessorBE.sidedInventoryTypes;
         }
     }
 
     @Override
-    public void addTickSpeedButton() {
-        //No-Op
+    public void setTopSection() {
+        extraWidth  = 0;
+        extraHeight = 0;
     }
 
     @Override
@@ -60,9 +62,8 @@ public class PlayerAccessorScreen extends BaseMachineScreen<PlayerAccessorContai
     }
 
     @Override
-    public void setTopSection() {
-        extraWidth = 0;
-        extraHeight = 0;
+    public void addTickSpeedButton() {
+        //No-Op
     }
 
     @Override

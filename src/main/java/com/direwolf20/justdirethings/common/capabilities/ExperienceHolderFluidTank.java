@@ -13,7 +13,16 @@ public class ExperienceHolderFluidTank extends FluidTank {
     public ExperienceHolderFluidTank(ExperienceHolderBE experienceHolderBE, Predicate<FluidStack> validator) {
         super(Integer.MAX_VALUE, validator);
         this.experienceHolderBE = experienceHolderBE;
-        fluid = new FluidStack(Registration.XP_FLUID_SOURCE.get(), getFluidAmount());
+        fluid                   = new FluidStack(Registration.XP_FLUID_SOURCE.get(), getFluidAmount());
+    }
+
+    public int getCapacity() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public FluidStack getFluid() {
+        return new FluidStack(Registration.XP_FLUID_SOURCE.get(), getFluidAmount());
     }
 
     public int getFluidAmount() {
@@ -24,15 +33,6 @@ public class ExperienceHolderFluidTank extends FluidTank {
 
         // Safe to multiply without overflow
         return Math.min(experienceHolderBE.exp * 20, getCapacity());
-    }
-
-    @Override
-    public FluidStack getFluid() {
-        return new FluidStack(Registration.XP_FLUID_SOURCE.get(), getFluidAmount());
-    }
-
-    public int getCapacity() {
-        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -53,8 +53,9 @@ public class ExperienceHolderFluidTank extends FluidTank {
             return returnAmt;
         }
         int filled = resource.getAmount() - insertFluid(resource.getAmount());
-        if (filled > 0)
+        if (filled > 0) {
             onContentsChanged();
+        }
         return filled;
     }
 
@@ -64,18 +65,18 @@ public class ExperienceHolderFluidTank extends FluidTank {
         return (remaining * 20) + excessFluid;
     }
 
-    public int extractFluid(int amt) {
-        int expNeeded = amt / 20;
-        int unAvailable = experienceHolderBE.subExp(expNeeded);
-        return (unAvailable * 20) + (amt % 20);
-    }
-
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
         if (resource.isEmpty() || !FluidStack.isSameFluidSameComponents(resource, fluid)) {
             return FluidStack.EMPTY;
         }
         return drain(resource.getAmount(), action);
+    }
+
+    public int extractFluid(int amt) {
+        int expNeeded = amt / 20;
+        int unAvailable = experienceHolderBE.subExp(expNeeded);
+        return (unAvailable * 20) + (amt % 20);
     }
 
     @Override

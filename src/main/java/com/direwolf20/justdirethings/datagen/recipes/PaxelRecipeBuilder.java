@@ -22,21 +22,20 @@ import java.util.Map;
 
 
 public class PaxelRecipeBuilder implements RecipeBuilder {
+    private final Ingredient                template;
+    private final Ingredient                base;
+    private final Ingredient                addition;
+    private final Item                      result;
+    private final NonNullList<Ingredient>   ingredients = NonNullList.create();
+    private final Map<String, Criterion<?>> criteria    = new LinkedHashMap<>();
     @Nullable
-    private String group;
-
-    private final Ingredient template;
-    private final Ingredient base;
-    private final Ingredient addition;
-    private final Item result;
-    private final NonNullList<Ingredient> ingredients = NonNullList.create();
-    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
+    private       String                    group;
 
     public PaxelRecipeBuilder(Ingredient template, Ingredient base, Ingredient addition, Item result) {
         this.template = template;
-        this.base = base;
+        this.base     = base;
         this.addition = addition;
-        this.result = result;
+        this.result   = result;
     }
 
     public static PaxelRecipeBuilder shapeless(Ingredient template, Ingredient base, Ingredient addition, Item result) {
@@ -47,18 +46,6 @@ public class PaxelRecipeBuilder implements RecipeBuilder {
         return this.requires(Ingredient.of(pTag));
     }
 
-    public PaxelRecipeBuilder requires(ItemLike pItem) {
-        return this.requires(pItem, 1);
-    }
-
-    public PaxelRecipeBuilder requires(ItemLike pItem, int pQuantity) {
-        for (int i = 0; i < pQuantity; ++i) {
-            this.requires(Ingredient.of(pItem));
-        }
-
-        return this;
-    }
-
     public PaxelRecipeBuilder requires(Ingredient pIngredient) {
         return this.requires(pIngredient, 1);
     }
@@ -66,6 +53,18 @@ public class PaxelRecipeBuilder implements RecipeBuilder {
     public PaxelRecipeBuilder requires(Ingredient pIngredient, int pQuantity) {
         for (int i = 0; i < pQuantity; ++i) {
             this.ingredients.add(pIngredient);
+        }
+
+        return this;
+    }
+
+    public PaxelRecipeBuilder requires(ItemLike pItem) {
+        return this.requires(pItem, 1);
+    }
+
+    public PaxelRecipeBuilder requires(ItemLike pItem, int pQuantity) {
+        for (int i = 0; i < pQuantity; ++i) {
+            this.requires(Ingredient.of(pItem));
         }
 
         return this;
